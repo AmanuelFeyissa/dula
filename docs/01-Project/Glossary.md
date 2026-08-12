@@ -70,6 +70,11 @@ phase: Documentation Bootstrap (M000)
 - **Citation** — an evidence reference (`[n]`) attributing a claim to a source chunk.
 - **Prompt injection** — direct (user) or indirect (via retrieved/tool content) attempts to override instructions; defended by trust separation.
 - **Provider** — a pluggable model backend behind the gateway (extractive, Ollama, vLLM, llama.cpp).
+- **SFT (Supervised Fine-Tuning)** — instruction tuning on curated input→output examples.
+- **Contamination** — training data overlapping the held-out benchmark; must be zero.
+- **Ship/retire gate** — the rule that a tuned candidate may ship only if it beats the baseline and does not regress safety; otherwise it is retired.
+- **Model registry** — the record of model versions, variants, metrics, and decisions; artifact naming `dula-<base>-<task>-<method>-vX.Y`.
+- **Model card** — a document stating a model's base, data, metrics, decision, intended use, and safety posture.
 
 ## Platform & Ops
 

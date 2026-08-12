@@ -1,0 +1,46 @@
+# DVC pipeline for Dula AI training (ADR-0010: DVC for dataset/pipeline versioning).
+# Run from the repo root after `pip install -r ml/requirements.txt && pip install -e packages/dula-ml`.
+# DVC tracks data/artifacts by hash so runs are reproducible; the code lives in git (GitHub),
+# large data/model artifacts live in remote storage / the Hugging Face Hub, not in git.
+stages:
+  prepare:
+    cmd: PYTHONPATH=ml python -m dula_train.data_prep --out ml/data
+    deps:
+      - ml/dula_train/data_prep.py
+      - ml/evaluation/benchmark_seed.json
+    outs:
+      - ml/data/train.jsonl
+      - ml/data/val.jsonl
+
+  train:
+    cmd: PYTHONPATH=ml python -m dula_train.train_qlora
+    deps:
+      - ml/dula_train/train_qlora.py
+      - ml/data/train.jsonl
+      - ml/data/val.jsonl
+    outs:
+      - out/dula-qlora
+
+  eval_candidate:
+    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model out/dula-qlora --label candidate --out out/candidate.json
+    deps:
+      - out/dula-qlora
+      - ml/evaluation/benchmark_seed.json
+    outs:
+      - out/candidate.json
+
+  eval_baseline:
+    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model Qwen/Qwen2.5-3B-Instruct --label baseline --out out/baseline.json
+    deps:
+      - ml/evaluation/benchmark_seed.json
+    outs:
+      - out/baseline.json
+
+  decide:
+    cmd: PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --manifest out/registry.jsonl --card-out out/model_card.md
+    deps:
+      - out/candidate.json
+      - out/baseline.json
+    outs:
+      - out/registry.jsonl
+      - out/model_card.md

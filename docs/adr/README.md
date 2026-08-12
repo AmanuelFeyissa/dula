@@ -28,5 +28,6 @@ These ten ADRs were accepted during the M000 review
 | [ADR-0009](./ADR-0009-auth-stack.md) | Authentication & Authorization Stack | Accepted |
 | [ADR-0010](./ADR-0010-mlops-tooling.md) | MLOps Tooling | Accepted |
 | [ADR-0011](./ADR-0011-monorepo.md) | Repository Model — Monorepo | Accepted |
+| [ADR-0012](./ADR-0012-training-and-hosting.md) | Dula AI Training Compute & Artifact Hosting | Accepted |
 
-New ADRs continue the sequence (ADR-0011+). Superseded ADRs keep their number and status.
+New ADRs continue the sequence (ADR-0013+). Superseded ADRs keep their number and status.

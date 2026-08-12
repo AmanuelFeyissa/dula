@@ -27,6 +27,7 @@ dev = [
 members = [
     "packages/common-py",
     "packages/dula-ai",
+    "packages/dula-ml",
     "apps/platform-api",
     "apps/worker",
     "apps/ai-gateway",
@@ -48,6 +49,10 @@ ignore = ["S101"]  # allow asserts in tests
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S"]
+# ml/ is the standalone GPU runner project (not shipped platform code, not mypy-gated):
+# runner docstrings carry copy-paste commands (E501) and human notation like "3B-7B"/"T4x2"
+# (RUF002), and data shuffling uses non-crypto random (S311).
+"ml/**" = ["E501", "S311", "RUF002"]
 
 [tool.mypy]
 python_version = "3.12"

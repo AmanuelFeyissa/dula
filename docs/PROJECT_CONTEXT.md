@@ -68,7 +68,9 @@ deprioritized** · **agents built on LangGraph** + first-party security layer ·
 · MLflow+DVC+Argo. These are production-grade, not MVP staging; ADR-0002/0003/0004 were
 revised during M000 to their permanent form.
 
-**Also decided:** repository model = **monorepo `dula`** (ADR-0011).
+**Also decided:** repository model = **monorepo `dula`** (ADR-0011). **Dula AI training compute &
+artifact hosting** = free GPU (Kaggle/Lightning/Modal) + Hugging Face Hub for datasets/models,
+keeping GitHub for code/CI (ADR-0012); Primus (ODC-BY/MIT) datasets; QLoRA on Qwen/Mistral.
 
 **Still open:** API gateway tech · plugin sandbox mechanism · embedding/reranker model ·
 hardware sizing · SLSA level.
@@ -114,5 +116,8 @@ OPA authorization, tenant-isolation baseline, and an authenticated UI shell. Pha
 the **first shippable MVP**: the model-agnostic LLM Gateway, the RAG subsystem (hybrid
 retrieval with tenant filtering, citations, guardrails), the AI Gateway service (grounded Q&A +
 triage with streaming), an evaluation benchmark, and AI red-team basics — all running fully
-offline on a general model (the Dula AI model begins in Phase 04). Subsequent phases proceed per
-the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+offline on a general model. **Phase 04 (Dula AI)** has its train→eval→**gate**→register→serve
+pipeline delivered and CI-green (torch-free `packages/dula-ml` + standalone `ml/` GPU project +
+OpenAI-compatible serving + ADR-0012); the actual QLoRA training and the **ship/retire decision**
+run on the user's free GPU accounts (no local GPU), after which M004 closes. Subsequent phases
+proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.

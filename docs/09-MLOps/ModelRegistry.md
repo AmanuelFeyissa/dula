@@ -18,6 +18,14 @@ related:
 > **Purpose.** Single source of truth for model artifacts, versions, variants, stages, and
 > their evaluation reports.
 
+> **Implementation status (Phase 04, CURRENT).** A portable registry **manifest** + **model
+> card** are implemented in `packages/dula-ml` (`registry.py`, `modelcard.py`): every candidate
+> records base model, method (QLoRA), dataset version, candidate-vs-baseline metrics, the
+> ship/retire gate decision, and a weight hash (supply-chain), and travels with the artifact
+> (e.g. to the Hugging Face Hub, ADR-0012). MLflow remains the experiment system of record; this
+> manifest is the artifact-side, git/HF-friendly record. Artifact naming follows
+> `dula-<base>-<task>-<method>-vX.Y`.
+
 ## 1. What the Registry Holds
 
 - Model versions (base + adapters), with lineage to dataset/experiment.

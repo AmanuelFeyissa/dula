@@ -7,7 +7,12 @@ from dula_ai.embeddings import Embedder, HashingEmbedder, OllamaEmbedder
 from dula_ai.factory import RagStack, build_offline_stack
 from dula_ai.gateway import AuditHook, LLMGateway
 from dula_ai.knowledge import KnowledgeService
-from dula_ai.providers import ExtractiveProvider, LLMProvider, OllamaProvider
+from dula_ai.providers import (
+    ExtractiveProvider,
+    LLMProvider,
+    OllamaProvider,
+    OpenAICompatProvider,
+)
 from dula_ai.rag import RAGService
 from dula_ai.retrieval import HybridRetriever
 from dula_ai.stores import OpenSearchLexicalStore, QdrantVectorStore
@@ -18,6 +23,12 @@ from dula_ai_gateway.config import Settings
 def _provider(settings: Settings) -> LLMProvider:
     if settings.provider == "ollama":
         return OllamaProvider(settings.ollama_model, settings.ollama_url)
+    if settings.provider == "openai":
+        return OpenAICompatProvider(
+            settings.openai_model,
+            settings.openai_base_url,
+            api_key=settings.openai_api_key or None,
+        )
     return ExtractiveProvider()
 
 

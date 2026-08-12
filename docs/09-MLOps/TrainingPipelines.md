@@ -17,6 +17,14 @@ related:
 
 > **Purpose.** Define the automated, reproducible pipelines that produce model artifacts.
 
+> **Implementation status (Phase 04, CURRENT).** The pipeline is implemented as the standalone
+> `ml/` project (`dula_train`: `data_prep → train_qlora → eval_runner → decide`), reproducible via
+> `ml/dvc.yaml` (DVC) locally and `deploy/argo/dula-ai-training-workflow.yaml` (Argo Workflows) on
+> a cluster, with MLflow tracking (ADR-0010). The quality/safety logic — dataset formatting,
+> dedup, contamination checks, evaluation scoring, and the ship/retire gate — lives in the
+> torch-free, CI-tested `packages/dula-ml` so it cannot drift from CI. Heavy training runs on
+> external free GPU (Kaggle/Lightning/Modal — ADR-0012); the local machine has no GPU.
+
 ## 1. Orchestration
 
 - **Argo Workflows** on Kubernetes; pipeline definitions live in `ml/training` as code.

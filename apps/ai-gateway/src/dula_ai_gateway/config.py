@@ -34,11 +34,17 @@ class Settings(BaseSettings):
     opensearch_url: str = "http://localhost:9200"
     opensearch_index: str = "dula-knowledge"
 
-    # Model provider (ADR-0005). "extractive" is the offline default; "ollama" uses a local server.
-    provider: Literal["extractive", "ollama"] = "extractive"
+    # Model provider (ADR-0005). "extractive" is the offline default; "ollama" uses a local
+    # server; "openai" uses any OpenAI-compatible endpoint (vLLM / llama.cpp) — this is how a
+    # shipped Dula AI checkpoint (Phase 04) is served behind the gateway.
+    provider: Literal["extractive", "ollama", "openai"] = "extractive"
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1:8b"
     ollama_embed_model: str = "nomic-embed-text"
+    # OpenAI-compatible serving (Dula AI / vLLM / llama.cpp).
+    openai_base_url: str = "http://localhost:8000/v1"
+    openai_model: str = "dula-ai"
+    openai_api_key: str = ""
 
     embedding_dim: int = 256
     top_k: int = 5
