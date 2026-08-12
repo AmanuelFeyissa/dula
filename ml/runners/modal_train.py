@@ -85,9 +85,20 @@ def validate() -> dict[str, object]:
     timeout=60 * 60 * 3,
     secrets=[modal.Secret.from_name("huggingface")],
 )
-def full(base_model: str = "Qwen/Qwen2.5-3B-Instruct", version: str = "0.1") -> dict[str, object]:
-    """Real run: prepare -> QLoRA train -> eval candidate vs baseline -> decide."""
+def full(
+    base_model: str = "Qwen/Qwen2.5-0.5B-Instruct",
+    version: str = "0.1",
+    use_reasoning: bool = False,
+    hf_repo: str = "AmanuelFeyissa/dula-ai",
+) -> dict[str, object]:
+    """Real run: prepare (Primus) -> QLoRA train -> eval candidate vs baseline -> decide.
+
+    Small base by default (fast + cheap, well within the free credit). Pushes the merged model
+    to HF only if the gate says ship. Returns the eval reports so the caller registers locally.
+    """
+    import json
     import sys
+    from pathlib import Path
 
     sys.path.insert(0, "/root/ml")
     from dula_train.benchmark_fetch import build as build_bench
@@ -101,22 +112,23 @@ def full(base_model: str = "Qwen/Qwen2.5-3B-Instruct", version: str = "0.1") -> 
     ds = DatasetConfig()
     build_data(
         instruct_dataset=ds.instruct_dataset,
-        reasoning_dataset=ds.reasoning_dataset,
+        reasoning_dataset=ds.reasoning_dataset if use_reasoning else None,
         license=ds.license,
         benchmark_file=BENCH,
         out_dir="data",
         val_fraction=ds.val_fraction,
         seed=ds.seed,
     )
-    cfg = TrainConfig(base_model=base_model)
+    # fp16 (no 4-bit) so a 0.5B model trains fast and the LoRA can merge for eval.
+    cfg = TrainConfig(base_model=base_model, load_in_4bit=False)
     out_dir = train(cfg)
 
-    cand = eval_run(
+    eval_run(
         EvalConfig(
             model=out_dir, label="candidate", benchmark_file=BENCH, report_out="out/candidate.json"
         )
     )
-    base = eval_run(
+    eval_run(
         EvalConfig(
             model=base_model, label="baseline", benchmark_file=BENCH, report_out="out/baseline.json"
         )
@@ -126,15 +138,24 @@ def full(base_model: str = "Qwen/Qwen2.5-3B-Instruct", version: str = "0.1") -> 
         baseline_report="out/baseline.json",
         base_model=base_model,
         version=version,
-        dataset_version="primus-instruct",
+        dataset_version=ds.instruct_dataset,
     )
+
+    adapter_uri = None
+    if entry.decision == "ship":
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+        api.create_repo(hf_repo, repo_type="model", private=True, exist_ok=True)
+        api.upload_folder(folder_path=out_dir, repo_id=hf_repo, path_in_repo=f"v{version}")
+        adapter_uri = f"hf://{hf_repo}/v{version}"
+
     return {
-        "candidate_accuracy": cand.accuracy,
-        "baseline_accuracy": base.accuracy,
-        "candidate_safety": cand.safety_refusal_rate,
-        "baseline_safety": base.safety_refusal_rate,
+        "candidate": json.loads(Path("out/candidate.json").read_text()),
+        "baseline": json.loads(Path("out/baseline.json").read_text()),
         "decision": entry.decision,
-        "gate_reasons": entry.gate.reasons,
+        "reasons": entry.gate.reasons,
+        "adapter_uri": adapter_uri,
     }
 
 
@@ -145,4 +166,12 @@ def run_validate() -> None:
 
 @app.local_entrypoint()
 def run_full() -> None:
-    print(full.remote())
+    import json
+    import pathlib
+
+    res = full.remote()
+    out = pathlib.Path("out")
+    out.mkdir(exist_ok=True)
+    (out / "candidate.json").write_text(json.dumps(res["candidate"], indent=2), encoding="utf-8")
+    (out / "baseline.json").write_text(json.dumps(res["baseline"], indent=2), encoding="utf-8")
+    print(json.dumps({k: res[k] for k in ("decision", "reasons", "adapter_uri")}, indent=2))

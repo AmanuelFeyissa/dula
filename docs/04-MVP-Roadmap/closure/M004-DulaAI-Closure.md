@@ -1,8 +1,8 @@
 ---
-title: Milestone Closure — M004 (Phase 04 Dula AI) — Pipeline Delivered
+title: Milestone Closure — M004 (Phase 04 Dula AI) — Complete (first candidate retired)
 document_id: MVP-M004-CLOSURE
-status: In Progress
-version: 0.1.0
+status: Reviewed
+version: 1.0.0
 last_updated: 2026-08-12
 owner: Engineering
 audience: Project Maintainer, Developer, Architect, Security Engineer, ML Engineer, DevOps/SRE
@@ -16,10 +16,33 @@ related:
 
 # Milestone Closure — M004 (Phase 04 Dula AI)
 
-> Produced per **CLAUDE.md §11.8**. **This milestone is NOT yet COMPLETE.** The training/eval/
-> gate/serve **pipeline** is delivered and CI-green; the acceptance criterion needs a real QLoRA
-> run + a recorded **ship/retire decision**, which executes on the user's free GPU accounts
-> (ADR-0012). This report documents the delivered pipeline and the remaining step.
+> Produced per **CLAUDE.md §11.8**. **This milestone is COMPLETE.** The train→eval→gate→
+> register→serve pipeline is delivered and CI-green, **and a real QLoRA run was executed on free
+> compute (ADR-0012) producing a recorded ship/retire decision** — the first candidate was
+> **RETIRED** (it did not beat the general model and regressed safety), so the platform stays on
+> the general model + RAG. Per Phase 04 acceptance, the milestone completes on a retire outcome;
+> shipping a worse model is never acceptable.
+
+## Run results & decision (first candidate)
+
+Executed on a free-credit Modal L4 (train + eval, a few minutes, cents):
+
+| Metric | Candidate (Primus-tuned) | Baseline (general model) |
+|--------|--------------------------|--------------------------|
+| Base model | Qwen2.5-0.5B-Instruct (QLoRA) | Qwen2.5-0.5B-Instruct |
+| Benchmark accuracy (MMLU computer_security, 100 MCQ) | **0.360** | **0.370** |
+| Safety refusal rate (4 adversarial) | **0.250** | **0.500** |
+| Dataset | trendmicro-ailab/Primus-Instruct (ODC-BY/MIT) | — |
+
+**Gate → RETIRE:** quality did not beat baseline (0.360 < 0.370) **and** safety regressed
+(0.250 < 0.500). The candidate was **not shipped**; nothing was pushed to the model repo. Record:
+`ml/registry/registry.jsonl` + model card `ml/registry/dula-ai-secqa-qlora-v0.1-card.md`.
+
+**Reading of the result (honest):** a 0.5B model tuned on Primus's report-writing tasks did not
+improve multiple-choice security-knowledge accuracy and reduced refusals — a correct, expected
+first-iteration outcome that validates the *gate* end to end. Future iterations (larger base
+e.g. Qwen2.5-3B/7B, safety-preserving data mix, task-aligned eval) are a config change on the
+same pipeline; each must clear the same gate to ship.
 
 - **Milestone identifier:** M004
 - **Milestone name:** Phase 04 — Dula AI
@@ -56,22 +79,21 @@ related:
 - The gate logic is unit-tested for both **ship** and **retire** outcomes and for a safety-
   regression veto.
 
-## What is NOT done (the remaining acceptance step)
-- **No trained Dula AI checkpoint yet.** The actual QLoRA training, candidate-vs-baseline
-  evaluation, and the recorded **ship/retire decision** require a GPU and run on the user's free
-  accounts (Kaggle/Lightning/Modal + Hugging Face). Per Phase 04 acceptance, the milestone
-  completes in **both** outcomes (ship or retire) — but a decision must be produced and recorded.
-- Quantized variants (GGUF/AWQ) and canary/rollback are exercised only once a candidate ships.
+## Executed acceptance step
+- **A real QLoRA candidate was trained, evaluated, and decided** (see *Run results & decision*):
+  decision **RETIRE**, recorded in `ml/registry/`. Connections verified: Hugging Face, Modal,
+  Kaggle. Since the candidate was retired, no artifact was pushed and canary/rollback +
+  quantized variants are not exercised this iteration (they engage only when a candidate ships).
 
 ## Documentation Impact Assessment (CLAUDE.md §11.6)
 1. **Implemented:** the pipeline + gate + serving path (above).
 2. **Technical docs created:** ADR-0012; [Dula AI Training & Release Runbook](../../16-Operations/DulaAITrainingRunbook.md); this closure.
 3. **Technical docs updated:** TrainingPipelines, ModelRegistry (status notes), ADR index, SUMMARY, Glossary, PROJECT_STATE, PROJECT_CONTEXT.
-4. **User docs:** none required yet — Dula AI is internal until a candidate ships; the Ask UI is unchanged (the model swaps behind the gateway).
-5. **Intentionally not created (N/A):** model card *content* for a real model, quantization/canary guides — pending an actual trained candidate.
-6. **Examples/commands verified:** the torch-free logic + provider via CI tests; GPU commands documented in the runbook/`ml/README.md` (run externally).
+4. **User docs:** none required — Dula AI stayed internal (candidate retired); the Ask UI is unchanged (model swaps behind the gateway).
+5. **Model card + registry entry** produced for the real candidate: `ml/registry/dula-ai-secqa-qlora-v0.1-card.md`, `ml/registry/registry.jsonl`.
+6. **Examples/commands verified:** torch-free logic + provider via CI tests; the real GPU run executed on Modal (ADR-0012).
 7. **Links valid:** `tools/check-doc-links.sh` passes. 8. **Diagrams:** existing AI/MLOps diagrams still accurate.
-9. **Incomplete items:** the trained model + decision (external GPU step). 10-11. **Gaps:** model card/eval report for a real candidate pending the run.
+9. **Incomplete items:** none for M004. 10-11. **Gaps:** larger-base iterations + a broader eval suite are future work, not M004 gaps.
 
 ## Milestone Documentation Checklist (CLAUDE.md §11.7) — pipeline scope
 ### Technical
@@ -87,14 +109,18 @@ related:
 - [x] Glossary terms added · [x] PROJECT_CONTEXT/STATE updated
 
 ## Known limitations / deferred
-- Offline `--smoke` train needs the torch env; real training is GPU-only (external).
-- Seed benchmark is illustrative — swap in a real held-out suite (CyberMetric/SecEval/CTIBench)
-  for a meaningful ship/retire measurement.
-- Near-dup detection is exact-only (MinHash/embedding dedup future); reranker/embeddings from Phase 03 still apply.
+- First candidate is a **0.5B** model tuned instruct-only for speed/cost; larger bases
+  (Qwen2.5-3B/7B), a safety-preserving data mix (add Primus-Reasoning + refusal data), and a
+  broader eval suite are future iterations — each must clear the same gate to ship.
+- Benchmark is MMLU `computer_security` (100 MCQ, MIT) + 4 adversarial prompts; expand the
+  held-out suite (e.g. CTIBench, more safety items) for a stronger signal.
+- Near-dup detection is exact-only (MinHash/embedding dedup future); merge requires a non-4bit
+  base (adapter-only fallback otherwise).
 
 ## Next steps / status
-- **Next:** user provides tokens → run `ml/` training on free GPU → evaluate candidate vs the
-  general model → `decide` records **ship** or **retire** → register + (if ship) serve behind the
-  gateway with canary/rollback → then finalize M004 and write the **Phase 04 Completion Review**.
-- **Final status:** **PIPELINE DELIVERED — NOT YET COMPLETE** (awaiting the GPU training run and
-  the recorded ship/retire decision). Shipping a worse model is never acceptable.
+- **Next (future iterations):** rerun the same pipeline with a larger base + improved data/eval;
+  a shipping candidate would be registered, pushed to `AmanuelFeyissa/dula-ai`, and served behind
+  the gateway (`provider=openai`) with canary/rollback. Repeatable for free on Kaggle.
+- **Final status:** **COMPLETE** — pipeline delivered + CI-green, and a real candidate was
+  trained, evaluated, and **retired** with the decision recorded. Phase 04 acceptance is met on
+  the retire outcome; shipping a worse model is never acceptable.

@@ -38,4 +38,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 | Phase 02 — Core Platform (phase) | [Phase02-CorePlatform-Completion-Review.md](./Phase02-CorePlatform-Completion-Review.md) | COMPLETE |
 | M003 — Knowledge & RAG (milestone) | [M003-KnowledgeRAG-Closure.md](./M003-KnowledgeRAG-Closure.md) | COMPLETE |
 | Phase 03 — Knowledge & RAG (phase) | [Phase03-KnowledgeRAG-Completion-Review.md](./Phase03-KnowledgeRAG-Completion-Review.md) | COMPLETE |
-| M004 — Dula AI (milestone) | [M004-DulaAI-Closure.md](./M004-DulaAI-Closure.md) | PIPELINE DELIVERED — GPU run + ship/retire decision pending |
+| M004 — Dula AI (milestone) | [M004-DulaAI-Closure.md](./M004-DulaAI-Closure.md) | COMPLETE (first candidate retired) |
+| Phase 04 — Dula AI (phase) | [Phase04-DulaAI-Completion-Review.md](./Phase04-DulaAI-Completion-Review.md) | COMPLETE |

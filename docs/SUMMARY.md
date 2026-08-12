@@ -95,7 +95,8 @@ phase: Documentation Bootstrap (M000)
   - [Phase 02 — Core Platform Completion Review](./04-MVP-Roadmap/closure/Phase02-CorePlatform-Completion-Review.md)
   - [M003 — Knowledge & RAG Closure](./04-MVP-Roadmap/closure/M003-KnowledgeRAG-Closure.md)
   - [Phase 03 — Knowledge & RAG Completion Review](./04-MVP-Roadmap/closure/Phase03-KnowledgeRAG-Completion-Review.md)
-  - [M004 — Dula AI Closure (pipeline)](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md)
+  - [M004 — Dula AI Closure](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md)
+  - [Phase 04 — Dula AI Completion Review](./04-MVP-Roadmap/closure/Phase04-DulaAI-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)

@@ -24,6 +24,12 @@ def test_from_raw_messages_style() -> None:
     assert rec is not None and rec.instruction == "hi" and rec.output == "yo"
 
 
+def test_from_raw_sharegpt_conversations() -> None:
+    raw = {"conversations": [{"from": "human", "value": "hi"}, {"from": "gpt", "value": "yo"}]}
+    rec = from_raw(raw, source="s")
+    assert rec is not None and rec.instruction == "hi" and rec.output == "yo"
+
+
 def test_from_raw_rejects_incomplete() -> None:
     assert from_raw({"instruction": "only"}, source="s") is None
     assert from_raw({"messages": [{"role": "user", "content": "hi"}]}, source="s") is None
