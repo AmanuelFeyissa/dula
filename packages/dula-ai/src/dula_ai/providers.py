@@ -81,3 +81,45 @@ class OllamaProvider:
             completion_tokens=int(data.get("eval_count", estimate_tokens(text))),
         )
         return text, usage
+
+
+class OpenAICompatProvider:
+    """OpenAI-compatible chat provider — serves the tuned Dula AI model via vLLM / llama.cpp.
+
+    Points at any ``/v1``-style endpoint (vLLM, llama.cpp server, or a hosted endpoint). This is
+    how a shipped Dula AI checkpoint (Phase 04) is served behind the gateway without app changes.
+    """
+
+    def __init__(self, model: str, base_url: str, api_key: str | None = None) -> None:
+        self._model = model
+        self._base_url = base_url.rstrip("/")
+        self._api_key = api_key
+        self.name = f"openai-compat-{model}"
+
+    async def generate(self, system: str, user: str, *, max_tokens: int) -> tuple[str, Usage]:
+        import httpx
+
+        headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                f"{self._base_url}/chat/completions",
+                headers=headers,
+                json={
+                    "model": self._model,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    "max_tokens": max_tokens,
+                    "temperature": 0.0,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        text = data["choices"][0]["message"]["content"]
+        usage_raw = data.get("usage") or {}
+        usage = Usage(
+            prompt_tokens=int(usage_raw.get("prompt_tokens", estimate_tokens(system + user))),
+            completion_tokens=int(usage_raw.get("completion_tokens", estimate_tokens(text))),
+        )
+        return text, usage

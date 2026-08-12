@@ -35,6 +35,7 @@ phase: Documentation Bootstrap (M000)
 - [ADR-0009 — Auth Stack](./adr/ADR-0009-auth-stack.md)
 - [ADR-0010 — MLOps Tooling](./adr/ADR-0010-mlops-tooling.md)
 - [ADR-0011 — Repository Model (Monorepo)](./adr/ADR-0011-monorepo.md)
+- [ADR-0012 — Dula AI Training Compute & Artifact Hosting](./adr/ADR-0012-training-and-hosting.md)
 
 ## 00 — Governance
 - [Documentation Standards](./00-Governance/DocumentationStandards.md)
@@ -94,6 +95,7 @@ phase: Documentation Bootstrap (M000)
   - [Phase 02 — Core Platform Completion Review](./04-MVP-Roadmap/closure/Phase02-CorePlatform-Completion-Review.md)
   - [M003 — Knowledge & RAG Closure](./04-MVP-Roadmap/closure/M003-KnowledgeRAG-Closure.md)
   - [Phase 03 — Knowledge & RAG Completion Review](./04-MVP-Roadmap/closure/Phase03-KnowledgeRAG-Completion-Review.md)
+  - [M004 — Dula AI Closure (pipeline)](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
@@ -202,6 +204,7 @@ phase: Documentation Bootstrap (M000)
 - [Backup & Recovery](./16-Operations/BackupRecovery.md)
 - [Operational Runbooks](./16-Operations/OperationalRunbooks.md)
 - [RAG Runbook](./16-Operations/RAGRunbook.md)
+- [Dula AI Training & Release Runbook](./16-Operations/DulaAITrainingRunbook.md)
 
 ## 17 — User & Operator Documentation
 - [Overview](./17-User-Documentation/README.md)

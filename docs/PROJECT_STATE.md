@@ -18,13 +18,13 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 03 — Knowledge & RAG (COMPLETE) |
-| **CURRENT MILESTONE** | M003 ✅ complete |
-| **STATUS** | Phase 03 done & **closed under CLAUDE.md §11** (M003 Closure + Phase 03 Completion Review); LLM Gateway + RAG + AI Gateway service + Ask UI on `main`; offline pipeline + benchmark + injection red-team tested; Qdrant verified live |
-| **LAST COMPLETED TASK** | Phase 03 build + closure: [M003 Closure](./04-MVP-Roadmap/closure/M003-KnowledgeRAG-Closure.md) + [Phase 03 Completion Review](./04-MVP-Roadmap/closure/Phase03-KnowledgeRAG-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 03 complete; awaiting go-ahead for Phase 04) |
-| **NEXT TASK** | Phase 04 — Dula AI (NOT started; do not begin without direction) |
-| **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
+| **CURRENT PHASE** | Phase 04 — Dula AI (pipeline delivered; **GPU training run + ship/retire decision pending**) |
+| **CURRENT MILESTONE** | M004 ⏳ pipeline delivered; not yet COMPLETE |
+| **STATUS** | Phase 04 training→eval→gate→register→serve pipeline on `main` (CI-green): torch-free `packages/dula-ml` (formatting/dedup/contamination/eval/gate/registry/model-card) + standalone `ml/` GPU project (QLoRA/eval/decide + Kaggle/Lightning/Modal runners + DVC + Argo) + OpenAI-compatible serving provider + ADR-0012. **Actual QLoRA training + ship/retire decision run on the user's free GPU accounts** (no local GPU). |
+| **LAST COMPLETED TASK** | Phase 04 pipeline + [M004 Closure (pipeline)](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md); ADR-0012 accepted |
+| **CURRENT TASK** | Awaiting user's GPU accounts/tokens (HF/Kaggle/Lightning/Modal) to run training and record the ship/retire decision, then close M004 |
+| **NEXT TASK** | Run training on free GPU → record decision → complete M004 + Phase 04 Completion Review; then Phase 05 on go-ahead |
+| **BLOCKERS** | None blocking the pipeline. GPU run needs the user's external accounts (ADR-0012). Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
@@ -39,16 +39,19 @@ phase: Documentation Bootstrap (M000)
   **Ask/triage UI**); Keycloak realm; OPA `dula.authz` policy; Docker Compose dev stack
   (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
-  No trained Dula AI model yet — that begins in Phase 04.
+- **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
+  QLoRA train, eval, decide; Kaggle/Lightning/Modal runners; DVC + Argo) + OpenAI-compatible
+  serving provider. Datasets: **Primus** (ODC-BY/MIT); base **Qwen2.5/Mistral** (ADR-0007);
+  compute on free GPU + HF Hub (ADR-0012). No trained Dula AI checkpoint exists yet.
 
 ## What Is Next
 
-**Phase 03 is complete** (first shippable MVP: general-model grounded Q&A + triage). Phase 04 —
-Dula AI ([04-MVP-Roadmap/Phase04-DulaAI.md](./04-MVP-Roadmap/Phase04-DulaAI.md)) is the next
-milestone (M004) but has **not** started; begin only when directed. Remaining non-blocking open
-items: API gateway tech, plugin sandbox mechanism, and empirical choices (embedding/reranker
-model, hardware sizing) — see
-[00-Governance/ArchitectureDecisionRecords.md](./00-Governance/ArchitectureDecisionRecords.md).
+**Phase 04 pipeline is delivered and CI-green**, but M004 is **not COMPLETE**: the acceptance
+criterion needs a real QLoRA run + a recorded **ship/retire decision**, which executes on the
+user's **free GPU accounts** (Kaggle/Lightning/Modal + Hugging Face — ADR-0012). Next: the user
+provides tokens; run training → eval vs the general model → record ship or retire → complete M004
+and write the Phase 04 Completion Review. Then Phase 05 on go-ahead. Remaining non-blocking open
+items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, hardware sizing.
 
 ## Milestone Ledger
 
@@ -58,7 +61,8 @@ model, hardware sizing) — see
 | M001 | Phase 01 — Foundation | ✅ Complete (PR #1 merged; live OIDC verified) |
 | M002 | Phase 02 — Core Platform | ✅ Complete (domain spine + events + OPA + UI; isolation/OPA/events verified live) |
 | M003 | Phase 03 — Knowledge & RAG | ✅ Complete (LLM Gateway + RAG + AI Gateway + Ask UI; benchmark + red-team; Qdrant verified live) |
-| M004+ | Phases 04–11 | ⏳ Not started |
+| M004 | Phase 04 — Dula AI | ⏳ Pipeline delivered + CI-green (train/eval/gate/register/serve); GPU run + ship/retire decision pending (ADR-0012) |
+| M005+ | Phases 05–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -132,3 +136,16 @@ model, hardware sizing) — see
   Completion Review). Deferred: live OpenSearch verify (image pull blocked on constrained network;
   adapter code-complete + BM25 unit-tested), real Ollama model call, semantic embeddings, K8s
   deploy. Ready for Phase 04 on go-ahead.
+- 2026-08-12 — **Phase 04 (M004) pipeline delivered.** Built the Dula AI train→eval→**gate**→
+  register→serve pipeline: torch-free, CI-tested `packages/dula-ml` (SFT record formatting,
+  dedup, benchmark contamination check, training-data safety filter, MCQ/safety scoring, the
+  **ship/retire gate**, registry manifest + model card) and the standalone `ml/` GPU project
+  (`dula_train`: data_prep/train_qlora/eval_runner/decide; Kaggle/Lightning/Modal runners; MLflow;
+  `dvc.yaml`; Argo workflow). Added an **OpenAI-compatible serving provider** to the gateway so a
+  shipped checkpoint plugs in with no app change, and **ADR-0012** (free GPU training + HF Hub +
+  keep GitHub; Primus datasets; Qwen/Mistral base). Verified: ruff/format/mypy-strict clean,
+  **80 pytest**, web build; heavy training excluded from the workspace to keep CI light and the
+  local disk clear. **Not yet COMPLETE:** the actual QLoRA run + recorded ship/retire decision
+  execute on the user's free GPU accounts (no local GPU); M004 closes after that decision. Also
+  did housekeeping: freed ~4.7 GB of Docker images (compaction needs an elevated diskpart run) and
+  saved environment/platform decisions to memory.

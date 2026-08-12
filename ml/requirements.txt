@@ -1,0 +1,15 @@
+# Dula AI training/eval environment (GPU). Install on Kaggle / Lightning AI / Modal / Colab.
+# Also install the torch-free logic package from this repo:
+#   pip install -e packages/dula-ml
+# Pin exact versions per run for reproducibility (ADR-0010). Versions below are lower bounds.
+torch>=2.3
+transformers>=4.44
+peft>=0.12
+trl>=0.9
+datasets>=2.20
+accelerate>=0.33
+bitsandbytes>=0.43       # QLoRA 4-bit (CUDA only)
+mlflow>=2.15
+huggingface_hub>=0.24
+httpx>=0.27
+pydantic>=2.9

@@ -7,6 +7,7 @@ members = [
     "dula-ai",
     "dula-ai-gateway",
     "dula-common",
+    "dula-ml",
     "dula-platform-api",
     "dula-worker",
     "dula-workspace",
@@ -348,6 +349,29 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.9" },
+]
+
+[[package]]
+name = "dula-ml"
+version = "0.1.0"
+source = { editable = "packages/dula-ml" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.11" },
+    { name = "pytest", specifier = ">=8.3" },
 ]
 
 [[package]]
