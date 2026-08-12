@@ -2,5 +2,3 @@
 # TS/JS workspace members are added as they are created (Phase 01+).
 packages:
   - "apps/web"
-  - "packages/common-ts"
-  - "packages/contracts"

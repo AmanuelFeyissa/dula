@@ -72,10 +72,29 @@ Empty repo → first usable MVP (Phase 03, RAG on a general model) → GA/produc
 
 ## Development Prerequisites
 
-Delivered in Phase 01 ([docs/04-MVP-Roadmap/Phase01-Foundation.md](docs/04-MVP-Roadmap/Phase01-Foundation.md)).
-Intended stack: Python 3.12/FastAPI, TypeScript/Next.js, PostgreSQL, Docker/Kubernetes,
-local model serving (vLLM/llama.cpp). Full list:
-[docs/01-Project/TechnologyStack.md](docs/01-Project/TechnologyStack.md).
+Docker, Node 20+ with `pnpm`, and [`uv`](https://docs.astral.sh/uv/) (manages Python 3.12).
+Full stack rationale: [docs/01-Project/TechnologyStack.md](docs/01-Project/TechnologyStack.md).
+
+## Local Development (Phase 01)
+
+```bash
+cp .env.example .env
+make up                                   # dev stack: Postgres, Redis, Qdrant, OpenSearch, MinIO, Redpanda, Keycloak
+
+# Backend (Platform API) — http://localhost:8000  (docs at /docs)
+uv sync --all-packages
+cd apps/platform-api && uv run alembic upgrade head && cd ../..
+uv run uvicorn dula_platform_api.main:app --reload
+
+# Frontend — http://localhost:3000
+cp apps/web/.env.local.example apps/web/.env.local   # set AUTH_SECRET
+pnpm install
+pnpm --filter web dev
+```
+
+Sign in with the seeded Keycloak user **`maya` / `maya`**; the home page then shows the
+verified identity from `GET /api/v1/me` (end-to-end OIDC per ADR-0009). Quality gates:
+`uv run ruff check . && uv run mypy packages apps && uv run pytest`.
 
 ## Contribution
 

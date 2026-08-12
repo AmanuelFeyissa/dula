@@ -4,6 +4,7 @@
 set -uo pipefail
 
 broken=0
+# Prune heavy/vendored dirs; only our own Markdown is checked.
 while IFS= read -r file; do
   dir=$(dirname "$file")
   # extract ](target.md) and ](target.md#anchor), strip anchors, skip http(s)
@@ -15,7 +16,8 @@ while IFS= read -r file; do
           echo "BROKEN: $file -> $link"
         fi
       done
-done < <(find . -path ./.git -prune -o -name '*.md' -print) | tee /tmp/dula-linkcheck.out
+done < <(find . \( -name .git -o -name node_modules -o -name .venv -o -name .next \
+  -o -name dist -o -name build \) -prune -o -name '*.md' -print) | tee /tmp/dula-linkcheck.out
 
 if [ -s /tmp/dula-linkcheck.out ]; then
   echo "Documentation link check FAILED."

@@ -19,12 +19,12 @@ phase: Documentation Bootstrap (M000)
 | Field | Value |
 |-------|-------|
 | **CURRENT PHASE** | Phase 01 — Foundation |
-| **CURRENT MILESTONE** | M001 (in progress) |
-| **STATUS** | Repo initialized (monorepo, ADR-0011); scaffolding + dev stack + CI in place |
-| **LAST COMPLETED TASK** | Monorepo skeleton, root tooling, Docker Compose dev stack, CI workflow |
-| **CURRENT TASK** | Phase 01 foundation build (services, auth, UI) + GitHub repo setup |
-| **NEXT TASK** | First FastAPI service + shared libs + Alembic; Keycloak/OPA; UI login shell |
-| **BLOCKERS** | Awaiting `gh auth login` (user) to create/push the private `dula` repo |
+| **CURRENT MILESTONE** | M001 (near complete) |
+| **STATUS** | Foundation built: common-py, platform-api (+DB/Alembic/tests), Keycloak realm, OPA policy, Next.js login shell; repo on GitHub |
+| **LAST COMPLETED TASK** | platform-api + web verified (ruff/mypy/pytest green; web builds; migration applied to Postgres) |
+| **CURRENT TASK** | Finalize Phase 01: PR review/merge of feature/phase01-platform-foundation |
+| **NEXT TASK** | Live end-to-end OIDC login check; then Phase 02 (core domain services) |
+| **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
@@ -73,3 +73,10 @@ phase: Documentation Bootstrap (M000)
   data-plane. All "for MVP / on trigger / migrate later" staging removed across the docs;
   the chosen stack is now the permanent target (changeable only via a superseding ADR if a
   materially better technology emerges).
+- 2026-08-12 — **Phase 01 (M001) build.** Monorepo initialized (ADR-0011) and pushed to
+  private GitHub repo `AmanuelFeyissa/dula`. Delivered: root tooling (uv/ruff/mypy strict,
+  pnpm/tsc), Docker Compose dev stack, CI gates; `packages/common-py` (config, JSON logging,
+  OIDC verifier); `apps/platform-api` (FastAPI healthz/readyz + `/api/v1/me`, DB, Alembic
+  initial migration with RLS); Keycloak `dula` realm export; OPA authz policy (+tests);
+  `apps/web` Next.js login shell (Keycloak OIDC). Verified: ruff clean, mypy strict clean
+  (19 files), 8 pytest pass, web builds, migration applied+rolled back on live Postgres.

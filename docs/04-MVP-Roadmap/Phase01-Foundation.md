@@ -59,3 +59,21 @@ be built safely.
 
 ## Definition of Done
 - Global DoD ([./MVPOverview.md](./MVPOverview.md) §5) + above criteria met and reviewed.
+
+## Implementation Status (2026-08-12, M001)
+
+| Deliverable | Status |
+|-------------|--------|
+| Monorepo scaffolding (ADR-0011) + private GitHub repo | ✅ Done |
+| Root tooling (uv/ruff/mypy strict, pnpm/tsc, editorconfig) | ✅ Done |
+| Docker Compose dev stack (Postgres, Redis, Qdrant, OpenSearch, MinIO, Redpanda, Keycloak) | ✅ Done (compose validates; Postgres run + migration verified) |
+| CI (docs link-check + naming, ruff/mypy/pytest, web build, gitleaks) | ✅ Authored; first cloud run pending push |
+| `packages/common-py` (config, JSON logging, OIDC verifier) | ✅ Done (tests pass) |
+| `apps/platform-api` (healthz/readyz, `/api/v1/me`, DB, Alembic + RLS) | ✅ Done (ruff/mypy/pytest green; migration applied+rolled back) |
+| Keycloak `dula` realm export (client `dula-web`, user `maya`) | ✅ Done (import wired into compose) |
+| OPA authz policy (`dula.authz`) + policy tests | ✅ Done (enforcement middleware lands Phase 02) |
+| `apps/web` Next.js OIDC login shell → calls `/api/v1/me` | ✅ Built + typechecks; **live end-to-end login pending a stack run** |
+
+**Remaining to fully close acceptance:** a live end-to-end login test (`make up` → run
+platform-api → `pnpm --filter web dev` → sign in as `maya/maya`) and the first green CI run
+on GitHub. Both are runtime checks; all code/config is in place.
