@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     # CORS: the web app origin.
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Authorization — OPA decision endpoint (ADR-0009).
+    opa_url: str = "http://localhost:8181"
+
+    # Event backbone — Redpanda / Kafka API (ADR-0004).
+    events_enabled: bool = True
+    kafka_bootstrap_servers: str = "localhost:19092"
+    events_topic: str = "dula.domain.events"
+
     @property
     def issuer(self) -> str:
         return f"{self.keycloak_url.rstrip('/')}/realms/{self.keycloak_realm}"

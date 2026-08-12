@@ -18,28 +18,31 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 01 — Foundation (COMPLETE) |
-| **CURRENT MILESTONE** | M001 ✅ complete |
-| **STATUS** | Phase 01 done & **closed under CLAUDE.md §11** (M001 Closure + Phase 01 Completion Review); foundation on `main`; live OIDC verified |
-| **LAST COMPLETED TASK** | Phase 01 documentation closure: [M001 Closure](./04-MVP-Roadmap/closure/M001-Foundation-Closure.md) + [Phase 01 Completion Review](./04-MVP-Roadmap/closure/Phase01-Foundation-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 01 complete; awaiting go-ahead for Phase 02) |
-| **NEXT TASK** | Phase 02 — Core Platform (NOT started; do not begin without direction) |
+| **CURRENT PHASE** | Phase 02 — Core Platform (COMPLETE) |
+| **CURRENT MILESTONE** | M002 ✅ complete |
+| **STATUS** | Phase 02 done & **closed under CLAUDE.md §11** (M002 Closure + Phase 02 Completion Review); domain spine + events + OPA + UI shell on `main`; tenant isolation, OPA, and event round-trip verified live |
+| **LAST COMPLETED TASK** | Phase 02 build + closure: [M002 Closure](./04-MVP-Roadmap/closure/M002-CorePlatform-Closure.md) + [Phase 02 Completion Review](./04-MVP-Roadmap/closure/Phase02-CorePlatform-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 02 complete; awaiting go-ahead for Phase 03) |
+| **NEXT TASK** | Phase 03 — Knowledge & RAG (NOT started; do not begin without direction) |
 | **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
 - `docs/` — full engineering handbook (reviewed in M000); `docs/adr/` — ADR-0001…0011 (Accepted).
 - **Monorepo `dula`** on private GitHub with CI (docs/python/web/security gates green).
-- `packages/common-py` (config, JSON logging, OIDC verifier); `apps/platform-api`
-  (FastAPI healthz/readyz + `/api/v1/me`, Postgres + Alembic + RLS); `apps/web` (Next.js
-  Keycloak login shell); Keycloak `dula` realm; OPA authz policy; Docker Compose dev stack.
-- No models/datasets yet; domain services beyond identity start in Phase 02.
+- `packages/common-py` (config, JSON logging, OIDC verifier, **OPA client, event
+  publisher**); `apps/platform-api` (FastAPI: `/api/v1/me` + **CRUD for assets/incidents/
+  alerts** with OPA authz, audit logging, tenant scoping; Postgres + Alembic + RLS);
+  **`apps/worker`** (idempotent Redpanda consumer); `apps/web` (Next.js app shell +
+  alerts/incidents/assets list/detail views); Keycloak `dula` realm; OPA `dula.authz`
+  policy (in the dev stack); Docker Compose dev stack.
+- No models/datasets yet; RAG/LLM, agents, and plugins start in Phase 03+.
 
 ## What Is Next
 
-**Phase 01 is complete.** Phase 02 — Core Platform
-([04-MVP-Roadmap/Phase02-CorePlatform.md](./04-MVP-Roadmap/Phase02-CorePlatform.md)) is the
-next milestone (M002) but has **not** started; begin only when directed. Remaining
+**Phase 02 is complete.** Phase 03 — Knowledge & RAG
+([04-MVP-Roadmap/Phase03-KnowledgeRAG.md](./04-MVP-Roadmap/Phase03-KnowledgeRAG.md)) is the
+next milestone (M003) but has **not** started; begin only when directed. Remaining
 non-blocking open items: API gateway tech + plugin sandbox mechanism (see
 [00-Governance/ArchitectureDecisionRecords.md](./00-Governance/ArchitectureDecisionRecords.md)).
 
@@ -49,7 +52,8 @@ non-blocking open items: API gateway tech + plugin sandbox mechanism (see
 |-----------|-------|--------|
 | M000 | Documentation Bootstrap | ✅ Docs complete + reviewed; ADR-0001…0011 Accepted |
 | M001 | Phase 01 — Foundation | ✅ Complete (PR #1 merged; live OIDC verified) |
-| M002+ | Phases 02–11 | ⏳ Not started |
+| M002 | Phase 02 — Core Platform | ✅ Complete (domain spine + events + OPA + UI; isolation/OPA/events verified live) |
+| M003+ | Phases 03–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -97,3 +101,15 @@ non-blocking open items: API gateway tech + plugin sandbox mechanism (see
   §11.9 phase verification (links, terminology, architecture/security consistency). Phase 01
   now satisfies the strengthened DoD: implementation + tests + security + technical/user
   documentation + M001 Closure + Phase Completion Review. Ready for Phase 02 on go-ahead.
+- 2026-08-12 — **Phase 02 (M002) build + closure.** Delivered the core domain: `assets`,
+  `incidents`, `alerts` (+ immutable `audit_events`) via migration `0002_domain_spine` with
+  RLS on every tenant table; tenant-scoped repositories + application services (ports &
+  adapters); 15 CRUD endpoints ([12-API/CoreDomainAPI.md](./12-API/CoreDomainAPI.md)) with
+  service-layer OPA authorization (fail-closed, audited) and domain-event emission; the shared
+  `EventPublisher` + `apps/worker` idempotent Redpanda consumer; OPA added to the dev stack;
+  and a Next.js app shell with alerts/incidents/assets list/detail views over a typed API
+  client. Verified: ruff/format/mypy-strict clean, **26 pytest**, **OPA 11/11**, web build;
+  live Alembic upgrade/downgrade roundtrip, RLS/policies present, live OPA decisions, and a
+  full event round-trip with idempotent dedupe. Closed under §11 (M002 Closure + Phase 02
+  Completion Review). Deferred: K8s deploy, RLS FORCE + non-owner role, UI write forms, E2E in
+  CI. Ready for Phase 03 on go-ahead.

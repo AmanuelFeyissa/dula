@@ -97,6 +97,19 @@ services:
     volumes:
       - redpandadata:/var/lib/redpanda/data
 
+  opa:
+    image: openpolicyagent/opa:0.68.0
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=error"
+      - "/policies"
+    ports:
+      - "8181:8181"   # OPA Data API
+    volumes:
+      - ../opa/policy:/policies:ro
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     command: ["start-dev", "--import-realm"]

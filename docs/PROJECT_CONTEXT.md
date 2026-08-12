@@ -106,7 +106,9 @@ Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) li
 
 ## 10. Boundary
 
-Implementation has begun: **Phase 01 (M001) is complete and closed** (see
+Implementation is underway: **Phases 01 (M001) and 02 (M002) are complete and closed** (see
 [PROJECT_STATE.md](./PROJECT_STATE.md) and
-[04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Subsequent phases proceed
-per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+[04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Phase 02 delivered the core
+domain (assets/alerts/incidents + audit), the Redpanda event backbone + worker, service-layer
+OPA authorization, tenant-isolation baseline, and an authenticated UI shell. Subsequent phases
+proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.

@@ -49,6 +49,12 @@ flowchart LR
 - Event naming: `domain.entity.action` (see [../00-Governance/NamingConventions.md](../00-Governance/NamingConventions.md)).
 - At-least-once delivery; consumers are idempotent (dedupe by event id).
 
+> **Implementation status (Phase 02, CURRENT).** The Platform API publishes JSON event
+> envelopes on domain writes via the shared `EventPublisher` (best-effort — it degrades
+> gracefully when the bus is down, honouring the air-gapped principle), and `apps/worker`
+> consumes them with manual offset commits and idempotent, dedupe-by-`event.id` processing.
+> Enrichment/indexing on top of this substrate is FUTURE.
+
 ## 3. Ingestion Data Flow (High Level)
 
 ```mermaid

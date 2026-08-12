@@ -1,39 +1,69 @@
 # Dula authorization policy (RBAC + tenant scope) — ADR-0009, docs/12-API/Authorization.md.
-# Enforced at the service layer and at RAG retrieval. This is the Phase 01 starter policy;
-# fine-grained ABAC and per-capability rules are added as endpoints land.
+# Enforced at the service layer and (later) at RAG retrieval. Phase 02 covers the core
+# domain: assets, alerts, incidents. Fine-grained ABAC (owner, data classification) is
+# layered on as those attributes land.
 #
 # Input contract:
 #   {
 #     "subject": { "roles": ["analyst"], "tenant_id": "..." },
-#     "action":  "me.read",
+#     "action":  "alerts.create",
 #     "resource": { "tenant_id": "..." }   # optional; omitted for non-tenant resources
 #   }
 package dula.authz
 
-import future.keywords.if
-import future.keywords.in
+import rego.v1
 
 default allow := false
 
-# Role -> allowed actions (Phase 01 baseline; move to data bundle later).
+# Operational personas (TargetUsers.md). Any of these may perform coarse reads.
+operational_roles := {"analyst", "hunter", "responder", "engineer", "admin"}
+
+# Coarse read set shared by every operational persona.
+read_actions := {"me.read", "assets.read", "alerts.read", "incidents.read"}
+
+# Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
 role_actions := {
 	"admin": {"*"},
-	"analyst": {"me.read", "alerts.read", "incidents.read"},
+	"analyst": {"alerts.create", "alerts.update", "incidents.create"},
+	"hunter": {"alerts.create", "alerts.update"},
+	"responder": {"incidents.create", "incidents.update", "incidents.delete", "alerts.update"},
+	"engineer": {
+		"assets.create",
+		"assets.update",
+		"assets.delete",
+		"alerts.create",
+		"alerts.update",
+		"alerts.delete",
+	},
 }
 
-# A subject's effective actions across all its roles.
+# A subject's effective write actions across all of its roles.
 subject_actions contains action if {
 	some role in input.subject.roles
-	action in role_actions[role]
+	some action in role_actions[role]
+}
+
+# The subject holds at least one operational role.
+has_operational_role if {
+	some role in input.subject.roles
+	role in operational_roles
 }
 
 # The subject is permitted the requested action.
 action_permitted if "*" in subject_actions
+
 action_permitted if input.action in subject_actions
+
+action_permitted if {
+	input.action in read_actions
+	has_operational_role
+}
 
 # Tenant scope: if the resource is tenant-bound, it must match the subject's tenant.
 tenant_ok if not input.resource
+
 tenant_ok if not input.resource.tenant_id
+
 tenant_ok if input.resource.tenant_id == input.subject.tenant_id
 
 allow if {

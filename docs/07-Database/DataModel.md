@@ -46,6 +46,20 @@ erDiagram
   ([../13-Agents/AgentLifecycle.md](../13-Agents/AgentLifecycle.md)).
 - **Audit event:** immutable audit trail ([../10-Security/DataSecurity.md](../10-Security/DataSecurity.md)).
 
+## 2a. Implementation Status (CURRENT)
+
+Delivered per phase via migrations (`apps/platform-api/alembic/versions/`):
+
+- **Phase 01 (`0001_initial`):** `tenants`, `users` (+ RLS on `users`).
+- **Phase 02 (`0002_domain_spine`):** `assets`, `incidents`, `alerts` (soft-deletable,
+  tenant-scoped) and append-only `audit_events`. RLS enabled with a
+  `<table>_tenant_isolation` policy on every tenant table. Alerts optionally link to an
+  asset and an incident (`ON DELETE SET NULL`). API surface:
+  [../12-API/CoreDomainAPI.md](../12-API/CoreDomainAPI.md).
+
+Entities in §1 not listed above (Indicator, Detection, Knowledge doc, Embedding, Agent run,
+Tool call) remain **FUTURE** and arrive in their delivering phases.
+
 ## 3. Conventions
 
 - `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`; naming per
