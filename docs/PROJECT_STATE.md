@@ -18,33 +18,37 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 02 — Core Platform (COMPLETE) |
-| **CURRENT MILESTONE** | M002 ✅ complete |
-| **STATUS** | Phase 02 done & **closed under CLAUDE.md §11** (M002 Closure + Phase 02 Completion Review); domain spine + events + OPA + UI shell on `main`; tenant isolation, OPA, and event round-trip verified live |
-| **LAST COMPLETED TASK** | Phase 02 build + closure: [M002 Closure](./04-MVP-Roadmap/closure/M002-CorePlatform-Closure.md) + [Phase 02 Completion Review](./04-MVP-Roadmap/closure/Phase02-CorePlatform-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 02 complete; awaiting go-ahead for Phase 03) |
-| **NEXT TASK** | Phase 03 — Knowledge & RAG (NOT started; do not begin without direction) |
+| **CURRENT PHASE** | Phase 03 — Knowledge & RAG (COMPLETE) |
+| **CURRENT MILESTONE** | M003 ✅ complete |
+| **STATUS** | Phase 03 done & **closed under CLAUDE.md §11** (M003 Closure + Phase 03 Completion Review); LLM Gateway + RAG + AI Gateway service + Ask UI on `main`; offline pipeline + benchmark + injection red-team tested; Qdrant verified live |
+| **LAST COMPLETED TASK** | Phase 03 build + closure: [M003 Closure](./04-MVP-Roadmap/closure/M003-KnowledgeRAG-Closure.md) + [Phase 03 Completion Review](./04-MVP-Roadmap/closure/Phase03-KnowledgeRAG-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 03 complete; awaiting go-ahead for Phase 04) |
+| **NEXT TASK** | Phase 04 — Dula AI (NOT started; do not begin without direction) |
 | **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
 - `docs/` — full engineering handbook (reviewed in M000); `docs/adr/` — ADR-0001…0011 (Accepted).
 - **Monorepo `dula`** on private GitHub with CI (docs/python/web/security gates green).
-- `packages/common-py` (config, JSON logging, OIDC verifier, **OPA client, event
-  publisher**); `apps/platform-api` (FastAPI: `/api/v1/me` + **CRUD for assets/incidents/
-  alerts** with OPA authz, audit logging, tenant scoping; Postgres + Alembic + RLS);
-  **`apps/worker`** (idempotent Redpanda consumer); `apps/web` (Next.js app shell +
-  alerts/incidents/assets list/detail views); Keycloak `dula` realm; OPA `dula.authz`
-  policy (in the dev stack); Docker Compose dev stack.
-- No models/datasets yet; RAG/LLM, agents, and plugins start in Phase 03+.
+- `packages/common-py` (config, JSON logging, OIDC verifier, OPA client, event publisher);
+  **`packages/dula-ai`** (LLM Gateway + RAG: chunking, embeddings, Qdrant/OpenSearch stores,
+  hybrid retrieval, guardrails, providers, knowledge ingestion, offline factory + benchmark);
+  `apps/platform-api` (CRUD for assets/incidents/alerts, OPA authz, audit, RLS);
+  `apps/worker` (idempotent Redpanda consumer); **`apps/ai-gateway`** (grounded Q&A, triage,
+  knowledge ingest; SSE streaming); `apps/web` (app shell + alerts/incidents/assets +
+  **Ask/triage UI**); Keycloak realm; OPA `dula.authz` policy; Docker Compose dev stack
+  (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
+- Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
+  No trained Dula AI model yet — that begins in Phase 04.
 
 ## What Is Next
 
-**Phase 02 is complete.** Phase 03 — Knowledge & RAG
-([04-MVP-Roadmap/Phase03-KnowledgeRAG.md](./04-MVP-Roadmap/Phase03-KnowledgeRAG.md)) is the
-next milestone (M003) but has **not** started; begin only when directed. Remaining
-non-blocking open items: API gateway tech + plugin sandbox mechanism (see
-[00-Governance/ArchitectureDecisionRecords.md](./00-Governance/ArchitectureDecisionRecords.md)).
+**Phase 03 is complete** (first shippable MVP: general-model grounded Q&A + triage). Phase 04 —
+Dula AI ([04-MVP-Roadmap/Phase04-DulaAI.md](./04-MVP-Roadmap/Phase04-DulaAI.md)) is the next
+milestone (M004) but has **not** started; begin only when directed. Remaining non-blocking open
+items: API gateway tech, plugin sandbox mechanism, and empirical choices (embedding/reranker
+model, hardware sizing) — see
+[00-Governance/ArchitectureDecisionRecords.md](./00-Governance/ArchitectureDecisionRecords.md).
 
 ## Milestone Ledger
 
@@ -53,7 +57,8 @@ non-blocking open items: API gateway tech + plugin sandbox mechanism (see
 | M000 | Documentation Bootstrap | ✅ Docs complete + reviewed; ADR-0001…0011 Accepted |
 | M001 | Phase 01 — Foundation | ✅ Complete (PR #1 merged; live OIDC verified) |
 | M002 | Phase 02 — Core Platform | ✅ Complete (domain spine + events + OPA + UI; isolation/OPA/events verified live) |
-| M003+ | Phases 03–11 | ⏳ Not started |
+| M003 | Phase 03 — Knowledge & RAG | ✅ Complete (LLM Gateway + RAG + AI Gateway + Ask UI; benchmark + red-team; Qdrant verified live) |
+| M004+ | Phases 04–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -113,3 +118,17 @@ non-blocking open items: API gateway tech + plugin sandbox mechanism (see
   full event round-trip with idempotent dedupe. Closed under §11 (M002 Closure + Phase 02
   Completion Review). Deferred: K8s deploy, RLS FORCE + non-owner role, UI write forms, E2E in
   CI. Ready for Phase 03 on go-ahead.
+- 2026-08-12 — **Phase 03 (M003) build + closure.** Delivered the first shippable MVP: the
+  model-agnostic **LLM Gateway** (`packages/dula-ai`) with pluggable providers (offline
+  `extractive-v1` default; Ollama), per-tenant token budgets, per-tenant response cache, output
+  secret-redaction, and audit; the **RAG** subsystem (chunking, hashing/Ollama embeddings,
+  Qdrant + OpenSearch stores, RRF hybrid retrieval with tenant filtering + reranking, guardrails,
+  cited context) with knowledge ingestion (license checks + purge); **`apps/ai-gateway`**
+  (grounded Q&A `/ask` + SSE `/ask/stream`, `/triage`, `/knowledge`); expanded OPA policy; optional
+  Ollama in the dev stack; and an **Ask/triage UI** with streaming + evidence. Added an offline RAG
+  **evaluation benchmark** (recall/citation/groundedness baselines) and **AI red-team** injection
+  tests. Verified: ruff/format/mypy-strict clean, **56 pytest**, **OPA 16/16**, web build; **live
+  Qdrant** ingest/retrieve with tenant payload filtering. Closed under §11 (M003 Closure + Phase 03
+  Completion Review). Deferred: live OpenSearch verify (image pull blocked on constrained network;
+  adapter code-complete + BM25 unit-tested), real Ollama model call, semantic embeddings, K8s
+  deploy. Ready for Phase 04 on go-ahead.

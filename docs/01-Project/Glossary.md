@@ -63,6 +63,13 @@ phase: Documentation Bootstrap (M000)
 - **Guardrails** — input/output controls constraining model/agent behavior.
 - **LLM Gateway** — internal service abstracting model providers/runtimes.
 - **Evaluation / Benchmark** — measuring model/system quality against a fixed dataset.
+- **Chunking** — splitting documents into retrievable units with provenance metadata.
+- **Reciprocal Rank Fusion (RRF)** — combining ranked result lists (e.g. vector + BM25) by summing 1/(k+rank).
+- **Reranking** — reordering retrieved candidates for precision (e.g. cross-encoder or overlap).
+- **Grounding / Groundedness** — answering only from retrieved evidence, with citations.
+- **Citation** — an evidence reference (`[n]`) attributing a claim to a source chunk.
+- **Prompt injection** — direct (user) or indirect (via retrieved/tool content) attempts to override instructions; defended by trust separation.
+- **Provider** — a pluggable model backend behind the gateway (extractive, Ollama, vLLM, llama.cpp).
 
 ## Platform & Ops
 

@@ -21,11 +21,14 @@ operational_roles := {"analyst", "hunter", "responder", "engineer", "admin"}
 # Coarse read set shared by every operational persona.
 read_actions := {"me.read", "assets.read", "alerts.read", "incidents.read"}
 
+# AI actions (grounded Q&A / triage) — available to every operational persona (Phase 03).
+ai_actions := {"ai.ask", "ai.triage"}
+
 # Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
 role_actions := {
 	"admin": {"*"},
-	"analyst": {"alerts.create", "alerts.update", "incidents.create"},
-	"hunter": {"alerts.create", "alerts.update"},
+	"analyst": {"alerts.create", "alerts.update", "incidents.create", "knowledge.ingest"},
+	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest"},
 	"responder": {"incidents.create", "incidents.update", "incidents.delete", "alerts.update"},
 	"engineer": {
 		"assets.create",
@@ -34,6 +37,7 @@ role_actions := {
 		"alerts.create",
 		"alerts.update",
 		"alerts.delete",
+		"knowledge.ingest",
 	},
 }
 
@@ -56,6 +60,11 @@ action_permitted if input.action in subject_actions
 
 action_permitted if {
 	input.action in read_actions
+	has_operational_role
+}
+
+action_permitted if {
+	input.action in ai_actions
 	has_operational_role
 }
 

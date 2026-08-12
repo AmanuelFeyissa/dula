@@ -26,6 +26,13 @@ retraining a model. It delivers value on a general model (see
 [../02-Vision/ProductStrategy.md](../02-Vision/ProductStrategy.md)) and reduces
 hallucination by citing evidence.
 
+> **Implementation status (Phase 03, CURRENT).** The RAG subsystem ships in `packages/dula-ai`
+> and is served by `apps/ai-gateway`: chunking → embeddings → hybrid retrieval (RRF over
+> Qdrant vectors + OpenSearch BM25) → tenant/relevance filtering → reranking → cited context →
+> LLM Gateway. It runs **fully offline** by default (hashing embedder, in-memory stores,
+> extractive provider); Qdrant/OpenSearch/Ollama plug in via configuration. Engineering
+> detail: [../08-AI/RAGEngineering.md](../08-AI/RAGEngineering.md).
+
 ## 2. Indexing Pipeline
 
 ```mermaid

@@ -20,6 +20,7 @@ phase: Documentation Bootstrap (M000)
 - [Authorization.md](./Authorization.md) — RBAC/ABAC via OPA.
 - [Versioning.md](./Versioning.md) — evolution & deprecation.
 - [CoreDomainAPI.md](./CoreDomainAPI.md) — assets, alerts, incidents endpoints (Phase 02, CURRENT).
+- [AIGatewayAPI.md](./AIGatewayAPI.md) — grounded Q&A, triage, knowledge endpoints (Phase 03, CURRENT).
 
 ## Contract-First
 

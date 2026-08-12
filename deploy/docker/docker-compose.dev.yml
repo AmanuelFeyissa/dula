@@ -97,6 +97,17 @@ services:
     volumes:
       - redpandadata:/var/lib/redpanda/data
 
+  # Local LLM serving for dev (ADR-0005). Opt-in: it is large and needs a model pulled
+  # (`docker compose ... --profile ai up -d ollama` then `ollama pull llama3.1:8b`). The AI
+  # Gateway defaults to the offline extractive provider, so this is not required for dev.
+  ollama:
+    image: ollama/ollama:0.3.14
+    profiles: ["ai"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamadata:/root/.ollama
+
   opa:
     image: openpolicyagent/opa:0.68.0
     command:
@@ -129,3 +140,4 @@ volumes:
   osdata:
   miniodata:
   redpandadata:
+  ollamadata:

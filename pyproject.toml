@@ -26,12 +26,15 @@ dev = [
 # Members are added as packages are created (each must have its own pyproject.toml).
 members = [
     "packages/common-py",
+    "packages/dula-ai",
     "apps/platform-api",
     "apps/worker",
+    "apps/ai-gateway",
 ]
 
 [tool.uv.sources]
 dula-common = { workspace = true }
+dula-ai = { workspace = true }
 
 [tool.ruff]
 target-version = "py312"
@@ -53,7 +56,11 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 show_error_codes = true
 namespace_packages = true
-exclude = ["(^|/)(\\.venv|build|dist|alembic)/"]
+# Type-check shippable source under src/. Test files are excluded from the strict gate:
+# with hyphenated package directories (dula-ai, ai-gateway) their duplicate basenames
+# (conftest.py, test_health.py) cannot form unique module paths. Tests are validated by
+# ruff + pytest instead.
+exclude = ["(^|/)(\\.venv|build|dist|alembic)/", "(^|/)tests/"]
 
 [[tool.mypy.overrides]]
 # aiokafka ships no type information (no py.typed); we isolate the untyped import at the
@@ -61,7 +68,15 @@ exclude = ["(^|/)(\\.venv|build|dist|alembic)/"]
 module = ["aiokafka.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# qdrant-client / opensearch-py are lazy-imported inside store adapters; their type surface
+# is treated as Any (isolated to dula_ai.stores).
+module = ["qdrant_client.*", "opensearchpy.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
-addopts = "-q --strict-markers"
+# importlib mode lets test files with the same basename live in different package test dirs
+# (e.g. multiple conftest.py / test_health.py) without collection clashes.
+addopts = "-q --strict-markers --import-mode=importlib"
 asyncio_mode = "auto"
 testpaths = ["packages", "services", "apps", "tests"]

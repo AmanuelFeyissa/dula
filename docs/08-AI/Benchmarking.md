@@ -24,6 +24,22 @@ Public benchmarks don't measure our security tasks and are prone to contaminatio
 a held-out, security-specific benchmark tied to our use cases
 ([../02-Vision/UseCases.md](../02-Vision/UseCases.md)).
 
+## 1a. Implemented Baseline (Phase 03, CURRENT)
+
+The first evaluation harness ships as a CI test:
+`packages/dula-ai/tests/test_eval_benchmark.py`. Over the fixed offline public corpus
+(`dula_ai.corpus`) it runs a set of security questions and measures, per query:
+
+- **recall@k** — the expected supporting document is retrieved,
+- **citation correctness** — the answer cites the expected document,
+- **groundedness** — the answer is grounded (cited), and out-of-domain questions are **not**.
+
+Baselines are asserted (recall ≥ 0.8, citation correctness ≥ 0.8; an out-of-domain question
+must return ungrounded). Because it runs offline in CI, a RAG/prompt/retrieval regression
+below baseline **blocks the build** ("evaluation gates everything"). This is the Knowledge-QA
+suite (UC-14/UC-01) baseline; the fuller composition below is built out in later phases,
+before any fine-tuning.
+
 ## 2. Benchmark Composition (Planned)
 
 | Suite | Measures | Maps to UC |
