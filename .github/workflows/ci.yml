@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: Docs (link check + naming)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Relative-link check
+        run: bash tools/check-doc-links.sh
+      - name: No old placeholder names
+        run: |
+          # Old codenames must not reappear as product identifiers. The ADR that records the
+          # rename and the guardrail files that mention them by name are allowlisted.
+          matches=$(grep -rn --exclude-dir=.git 'Aegis\|SecLLM' . \
+            | grep -vE 'docs/adr/ADR-0001-product-naming\.md|(^|/)CLAUDE\.md|(^|/)Makefile|\.github/workflows/ci\.yml' \
+            || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"; echo "Found forbidden placeholder names."; exit 1
+          fi
+          echo "Naming check passed."
+
+  python:
+    name: Python (ruff + mypy + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Lint (ruff)
+        run: uvx ruff check .
+      - name: Format check (ruff)
+        run: uvx ruff format --check .
+      - name: Type check (mypy) — runs once Python packages exist
+        run: |
+          if find packages services apps ml -name '*.py' 2>/dev/null | grep -q .; then
+            uv run mypy .
+          else
+            echo "No Python sources yet — skipping mypy."
+          fi
+      - name: Tests (pytest) — runs once tests exist
+        run: |
+          if find packages services apps tests -name 'test_*.py' -o -name '*_test.py' 2>/dev/null | grep -q .; then
+            uv run pytest
+          else
+            echo "No tests yet — skipping pytest."
+          fi
+
+  web:
+    name: Web (lint + typecheck + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile || pnpm install
+      - name: Lint / typecheck / test (no-op until web app exists)
+        run: |
+          pnpm -r --if-present run lint
+          pnpm -r --if-present run typecheck
+          pnpm -r --if-present run test
+
+  security:
+    name: Security (secret scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

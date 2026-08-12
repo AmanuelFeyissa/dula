@@ -1,0 +1,63 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# ---- uv ----
+# lockfile IS committed (uv.lock); caches are not
+.uv/
+
+# ---- Node / TypeScript ----
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+.pnpm-store/
+coverage/
+playwright-report/
+test-results/
+
+# ---- Editors / OS ----
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- Secrets / local ----
+*.pem
+*.key
+!**/testdata/**/*.key
+secrets/
+*.local
+
+# ---- Data / models / artifacts (tracked via DVC/registry, not git) ----
+/data/
+/models/
+*.gguf
+*.safetensors
+*.bin
+mlruns/
+
+# ---- Docker / infra local state ----
+.docker-data/
+*.tfstate
+*.tfstate.*
+.terraform/

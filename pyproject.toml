@@ -1,0 +1,49 @@
+# Dula monorepo — Python workspace root (uv).
+# Individual Python packages/services live under packages/*, services/*, apps/*, ml/*
+# and declare their own pyproject.toml; this root pins the toolchain and shared config.
+# See docs/00-Governance/CodingStandards.md §2 and docs/01-Project/TechnologyStack.md.
+
+[project]
+name = "dula-workspace"
+version = "0.0.0"
+description = "Dula monorepo workspace root (tooling only)."
+requires-python = ">=3.12,<3.13"
+
+[tool.uv]
+# uv workspace: member projects are added here as they are created (Phase 01+).
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/*",
+    "services/*",
+    "apps/platform-api",
+    "apps/worker",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["packages", "services", "apps", "ml", "tools"]
+
+[tool.ruff.lint]
+# Sensible, security-aware default set; expand per CodingStandards as code lands.
+select = ["E", "F", "I", "UP", "B", "S", "ASYNC", "C4", "SIM", "RUF"]
+ignore = ["S101"]  # allow asserts in tests
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+namespace_packages = true
+exclude = ["(^|/)(\\.venv|build|dist)/"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["packages", "services", "apps", "tests"]

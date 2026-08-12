@@ -1,0 +1,2 @@
+# The Keycloak `dula` realm export (realm-export.json) is added in the Keycloak/OPA task.
+# On `start-dev --import-realm`, any *.json realm files placed here are imported.

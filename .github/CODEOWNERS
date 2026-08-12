@@ -1,0 +1,16 @@
+# CODEOWNERS — routes reviews by path (docs/00-Governance/RepositoryGovernance.md §5).
+# Replace @amanuelfeyissa with teams as the org grows. Security-critical paths need review.
+
+*                       @amanuelfeyissa
+
+# Governance & architecture
+/docs/00-Governance/    @amanuelfeyissa
+/docs/03-Architecture/  @amanuelfeyissa
+/docs/adr/              @amanuelfeyissa
+
+# Security-critical paths (two-reviewer rule per RepositoryGovernance.md §5)
+/services/agent-runtime/ @amanuelfeyissa
+/services/connectors/    @amanuelfeyissa
+/packages/common-py/auth @amanuelfeyissa
+/deploy/                 @amanuelfeyissa
+/.github/                @amanuelfeyissa
