@@ -22,11 +22,13 @@ async def readyz(request: Request, response: Response) -> dict[str, Any]:
     """Readiness: dependencies (DB) reachable."""
     engine: AsyncEngine = request.app.state.engine
     checks: dict[str, str] = {}
+    ready = True
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         checks["database"] = "ok"
     except Exception:
         checks["database"] = "unavailable"
+        ready = False
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return {"status": "ok" if response.status_code == 200 else "degraded", "checks": checks}
+    return {"status": "ok" if ready else "degraded", "checks": checks}
