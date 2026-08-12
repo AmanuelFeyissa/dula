@@ -69,9 +69,14 @@ Security requirements · Documentation · Acceptance criteria · Definition of D
 ## 5. Definition of Done (Global)
 
 A phase is Done when all its deliverables meet acceptance criteria, tests + security gates
-pass, docs are updated, and it deploys across the profiles it targets (including a viable
-air-gapped path where applicable). Global DoD is inherited by every phase unless
-tightened.
+pass, it deploys across the profiles it targets (including a viable air-gapped path where
+applicable), and its **documentation closure** is complete. Documentation is part of the
+DoD, not optional follow-up: every milestone must produce/update its required **technical
+and user/operator** documentation and a **Milestone Closure Report**, and every phase a
+**Phase Completion Review**, per the mandatory lifecycle in **[CLAUDE.md §11](../../CLAUDE.md)**
+(artifacts in [./closure/](./closure/README.md)). A milestone whose implementation is done
+but whose required documentation is missing is `DOCUMENTATION-INCOMPLETE`, not `COMPLETE`.
+Global DoD is inherited by every phase unless tightened.
 
 ## 6. Estimates
 

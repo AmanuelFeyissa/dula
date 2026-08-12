@@ -163,6 +163,18 @@ A document is acceptable only if it:
 - Cross-references rather than duplicates.
 - Reads correctly without access to the conversation or context that produced it.
 
+## 11. Milestone & Phase Documentation Closure
+
+Documentation is **part of the Definition of Done**. Every milestone and every phase must
+produce/update its required **technical** and **user/operator** documentation before it can
+be declared complete; a milestone with implementation done but documentation missing is
+`DOCUMENTATION-INCOMPLETE`, not `COMPLETE`. The authoritative process — closure lifecycle,
+Documentation Impact Assessment, checklist, Milestone Closure Report, and Phase Completion
+Review — is defined in **[CLAUDE.md §11](../../CLAUDE.md)**, and closure artifacts live in
+[../04-MVP-Roadmap/closure/](../04-MVP-Roadmap/closure/README.md). User/operator docs live
+in [../17-User-Documentation/](../17-User-Documentation/README.md). This is also reflected in
+the Global Definition of Done ([../04-MVP-Roadmap/MVPOverview.md](../04-MVP-Roadmap/MVPOverview.md) §5).
+
 ## Related Documents
 
 - [CodingStandards.md](./CodingStandards.md)

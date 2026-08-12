@@ -97,7 +97,16 @@ the candidate set; OWASP LLM Top 10 : 2025 pinned in the AI threat model.)*
 Handbook guide: [README.md](./README.md); full index: [SUMMARY.md](./SUMMARY.md);
 standards: [00-Governance/](./00-Governance/DocumentationStandards.md).
 
+**Documentation lifecycle (mandatory).** Every milestone and phase closes under
+**CLAUDE.md §11**: technical docs (areas `00`–`16`) **and** user/operator docs
+([17-User-Documentation/](./17-User-Documentation/README.md)) are part of the Definition of
+Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) live in
+[04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md); a milestone is
+`DOCUMENTATION-INCOMPLETE` (not `COMPLETE`) if required docs are missing.
+
 ## 10. Boundary
 
-This is the documentation foundation only. Implementation begins under a separate Master
-Engineering Instruction, starting at M001 (Phase 01).
+Implementation has begun: **Phase 01 (M001) is complete and closed** (see
+[PROJECT_STATE.md](./PROJECT_STATE.md) and
+[04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Subsequent phases proceed
+per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
