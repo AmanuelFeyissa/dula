@@ -13,13 +13,24 @@ requires-python = ">=3.12,<3.13"
 # uv workspace: member projects are added here as they are created (Phase 01+).
 package = false
 
-[tool.uv.workspace]
-members = [
-    "packages/*",
-    "services/*",
-    "apps/platform-api",
-    "apps/worker",
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "mypy>=1.11",
+    "ruff>=0.6",
 ]
+
+[tool.uv.workspace]
+# Members are added as packages are created (each must have its own pyproject.toml).
+members = [
+    "packages/common-py",
+    "apps/platform-api",
+]
+
+[tool.uv.sources]
+dula-common = { workspace = true }
 
 [tool.ruff]
 target-version = "py312"
@@ -41,7 +52,7 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 show_error_codes = true
 namespace_packages = true
-exclude = ["(^|/)(\\.venv|build|dist)/"]
+exclude = ["(^|/)(\\.venv|build|dist|alembic)/"]
 
 [tool.pytest.ini_options]
 addopts = "-q --strict-markers"

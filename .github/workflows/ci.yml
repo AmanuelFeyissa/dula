@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -40,24 +41,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v3
+      - name: Sync workspace
+        run: uv sync --all-packages
       - name: Lint (ruff)
-        run: uvx ruff check .
+        run: uv run ruff check .
       - name: Format check (ruff)
-        run: uvx ruff format --check .
-      - name: Type check (mypy) — runs once Python packages exist
-        run: |
-          if find packages services apps ml -name '*.py' 2>/dev/null | grep -q .; then
-            uv run mypy .
-          else
-            echo "No Python sources yet — skipping mypy."
-          fi
-      - name: Tests (pytest) — runs once tests exist
-        run: |
-          if find packages services apps tests -name 'test_*.py' -o -name '*_test.py' 2>/dev/null | grep -q .; then
-            uv run pytest
-          else
-            echo "No tests yet — skipping pytest."
-          fi
+        run: uv run ruff format --check .
+      - name: Type check (mypy, strict)
+        run: uv run mypy packages apps
+      - name: Tests (pytest)
+        run: uv run pytest
 
   web:
     name: Web (lint + typecheck + test)
@@ -65,19 +58,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
       - name: Install
-        run: pnpm install --frozen-lockfile || pnpm install
-      - name: Lint / typecheck / test (no-op until web app exists)
-        run: |
-          pnpm -r --if-present run lint
-          pnpm -r --if-present run typecheck
-          pnpm -r --if-present run test
+        run: pnpm install --frozen-lockfile
+      - name: Build web (runs lint + type-check via next build)
+        env:
+          AUTH_SECRET: ci-dummy-secret-not-used-at-runtime
+        run: pnpm --filter web build
 
   security:
     name: Security (secret scan)
