@@ -20,8 +20,8 @@ phase: Documentation Bootstrap (M000)
 |-------|-------|
 | **CURRENT PHASE** | Phase 01 — Foundation (COMPLETE) |
 | **CURRENT MILESTONE** | M001 ✅ complete |
-| **STATUS** | Phase 01 done. Foundation merged to `main` (PR #1); live end-to-end OIDC login verified against Keycloak |
-| **LAST COMPLETED TASK** | Live OIDC check: `maya` token → `GET /api/v1/me` HTTP 200 with claims; readyz status-label fix + tests |
+| **STATUS** | Phase 01 done & **closed under CLAUDE.md §11** (M001 Closure + Phase 01 Completion Review); foundation on `main`; live OIDC verified |
+| **LAST COMPLETED TASK** | Phase 01 documentation closure: [M001 Closure](./04-MVP-Roadmap/closure/M001-Foundation-Closure.md) + [Phase 01 Completion Review](./04-MVP-Roadmap/closure/Phase01-Foundation-Completion-Review.md) |
 | **CURRENT TASK** | — (Phase 01 complete; awaiting go-ahead for Phase 02) |
 | **NEXT TASK** | Phase 02 — Core Platform (NOT started; do not begin without direction) |
 | **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
@@ -86,3 +86,14 @@ non-blocking open items: API gateway tech + plugin sandbox mechanism (see
   (aud `dula-api`, tenant_id, role `analyst`) and `GET /api/v1/me` returned HTTP 200 with the
   verified claims. Fixed a `/readyz` status-label bug (reported `degraded` while DB was ok)
   and added regression tests (10 pytest total).
+- 2026-08-12 — **Documentation lifecycle governance added.** New **CLAUDE.md §11 (Phase &
+  Milestone Documentation Closure)** makes technical + user/operator documentation part of
+  the Definition of Done (impact assessment, checklist, Milestone Closure Report / Phase
+  Completion Review, `DOCUMENTATION-INCOMPLETE` status). Added `docs/17-User-Documentation/`
+  and `docs/04-MVP-Roadmap/closure/` (with a retroactive M001 closure report). Referenced
+  from DocumentationStandards §11, MVPOverview §5 DoD, NamingConventions (USR prefix),
+  Glossary, and SUMMARY. No ADRs changed.
+- 2026-08-12 — **Phase 01 closed under §11.** Added the Phase 01 Completion Review; ran the
+  §11.9 phase verification (links, terminology, architecture/security consistency). Phase 01
+  now satisfies the strengthened DoD: implementation + tests + security + technical/user
+  documentation + M001 Closure + Phase Completion Review. Ready for Phase 02 on go-ahead.

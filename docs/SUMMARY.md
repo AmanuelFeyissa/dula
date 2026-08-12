@@ -86,6 +86,10 @@ phase: Documentation Bootstrap (M000)
 - [Phase 09 — Production](./04-MVP-Roadmap/Phase09-Production.md)
 - [Phase 10 — MLOps](./04-MVP-Roadmap/Phase10-MLOps.md)
 - [Phase 11 — Advanced AI](./04-MVP-Roadmap/Phase11-AdvancedAI.md)
+- Closure artifacts:
+  - [Milestone & Phase Closure — Index](./04-MVP-Roadmap/closure/README.md)
+  - [M001 — Foundation Closure](./04-MVP-Roadmap/closure/M001-Foundation-Closure.md)
+  - [Phase 01 — Foundation Completion Review](./04-MVP-Roadmap/closure/Phase01-Foundation-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
@@ -190,3 +194,6 @@ phase: Documentation Bootstrap (M000)
 - [Incident Management](./16-Operations/IncidentManagement.md)
 - [Backup & Recovery](./16-Operations/BackupRecovery.md)
 - [Operational Runbooks](./16-Operations/OperationalRunbooks.md)
+
+## 17 — User & Operator Documentation
+- [Overview](./17-User-Documentation/README.md)

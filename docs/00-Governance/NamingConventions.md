@@ -42,6 +42,11 @@ related:
 | PLG | 14-Plugins |
 | TST | 15-Testing |
 | OPS | 16-Operations |
+| USR | 17-User-Documentation |
+
+Lifecycle-closure artifacts live in `04-MVP-Roadmap/closure/` (see **CLAUDE.md §11**):
+Milestone Closure Reports `M0NN-<slug>-Closure.md` (`document_id: MVP-M0NN-CLOSURE`) and
+Phase Completion Reviews `PhaseNN-<slug>-Completion-Review.md` (`document_id: MVP-PNN-COMPLETION`).
 
 ## 2. Files & Directories (Code)
 

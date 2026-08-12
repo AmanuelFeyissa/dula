@@ -74,6 +74,21 @@ phase: Documentation Bootstrap (M000)
 - **Observability** — logs, metrics, traces used to understand system behavior.
 - **SBOM** — Software Bill of Materials.
 
+## Lifecycle & Documentation
+
+- **Technical Documentation** — engineering docs (areas `00`–`16`, `adr/`) for developers,
+  architects, security/ML/DevOps engineers, and maintainers: how it works / is built.
+- **User Documentation** — user/operator docs (`17-User-Documentation/`) for end users,
+  administrators, and operators: how to use / run / operate.
+- **Documentation Impact Assessment** — the 11-question review done at each milestone
+  (CLAUDE.md §11.6) determining which docs were created/updated/not-applicable.
+- **Milestone Closure Report** — required completion document per milestone
+  (`04-MVP-Roadmap/closure/M0NN-<slug>-Closure.md`, CLAUDE.md §11.8).
+- **Phase Completion Review** — required document when a phase completes
+  (`04-MVP-Roadmap/closure/PhaseNN-<slug>-Completion-Review.md`, CLAUDE.md §11.9).
+- **DOCUMENTATION-INCOMPLETE** — milestone status when implementation/tests/security are
+  done but required documentation is not; blocks `COMPLETE` (CLAUDE.md §11.8).
+
 ## Documentation Maturity Tags
 
 - **CURRENT** — true today. **MVP** — targeted for first release. **FUTURE** — later.
