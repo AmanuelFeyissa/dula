@@ -35,6 +35,7 @@ Guides are created **only when the corresponding capability is actually usable**
 | Guide | Status | Notes |
 |-------|--------|-------|
 | [Core Entities User Guide](./CoreEntitiesUserGuide.md) | MVP | Alerts, incidents, assets — browse in the web app; create/update via API (Phase 02) |
+| [Ask Dula User Guide](./AskDulaUserGuide.md) | MVP | Grounded, cited Q&A and alert triage (Phase 03) |
 | Product Overview | FUTURE | User-facing summary; authoritative product scope stays in [../02-Vision/Vision.md](../02-Vision/Vision.md) |
 | Installation Guide | FUTURE | Arrives with a packaged/deployable release (Phase 09) |
 | Getting Started | MVP | Interim: local dev quickstart in the root [README](../../README.md); user-facing version when UI features land |
@@ -62,8 +63,9 @@ Guides are created **only when the corresponding capability is actually usable**
 
 ## Current State
 
-Phase 02 delivers the first usable end-user capability: browsing alerts, incidents, and
-assets in the web app (with create/update via the API), documented in the
-[Core Entities User Guide](./CoreEntitiesUserGuide.md). The interim getting-started path
-remains the local-dev quickstart in the root [README](../../README.md). Further user guides
-are added as features become usable, closed out per **CLAUDE.md §11**.
+Phase 02 delivered browsing of alerts, incidents, and assets in the web app (create/update via
+the API) — see the [Core Entities User Guide](./CoreEntitiesUserGuide.md). Phase 03 adds the
+first AI capability: grounded, cited Q&A and alert triage — see the
+[Ask Dula User Guide](./AskDulaUserGuide.md). The interim getting-started path remains the
+local-dev quickstart in the root [README](../../README.md). Further user guides are added as
+features become usable, closed out per **CLAUDE.md §11**.

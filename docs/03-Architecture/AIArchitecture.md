@@ -52,6 +52,13 @@ The gateway provides: unified request/response contract, model routing/selection
 input/output guardrails, quotas & rate limits (incl. **per-tenant token/cost budgets**),
 token accounting, caching, retries, and audit. It is the single choke point for AI policy.
 
+> **Implementation status (Phase 03, CURRENT).** The gateway (`dula_ai.gateway.LLMGateway`)
+> and the AI service (`apps/ai-gateway`) implement: model-agnostic providers (offline
+> `extractive-v1` default; Ollama; vLLM/llama.cpp to follow — ADR-0005), per-tenant token
+> budgets (429 on exceed), a **per-tenant** response cache (never shared across tenants),
+> output secret-redaction, token accounting, and an audit hook (structured log +
+> `ai.query.completed` event). API: [../12-API/AIGatewayAPI.md](../12-API/AIGatewayAPI.md).
+
 > **Cross-tenant AI isolation (ADR-0006).** Any caching — prompt cache, KV cache, response
 > cache — is **scoped per tenant**; no cache entry is ever shared across tenant boundaries.
 > System prompts are treated as **non-secret** (assume they can leak — T13/LLM07), so no

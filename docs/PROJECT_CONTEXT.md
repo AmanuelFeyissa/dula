@@ -106,9 +106,13 @@ Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) li
 
 ## 10. Boundary
 
-Implementation is underway: **Phases 01 (M001) and 02 (M002) are complete and closed** (see
-[PROJECT_STATE.md](./PROJECT_STATE.md) and
+Implementation is underway: **Phases 01 (M001), 02 (M002), and 03 (M003) are complete and
+closed** (see [PROJECT_STATE.md](./PROJECT_STATE.md) and
 [04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Phase 02 delivered the core
 domain (assets/alerts/incidents + audit), the Redpanda event backbone + worker, service-layer
-OPA authorization, tenant-isolation baseline, and an authenticated UI shell. Subsequent phases
-proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+OPA authorization, tenant-isolation baseline, and an authenticated UI shell. Phase 03 delivered
+the **first shippable MVP**: the model-agnostic LLM Gateway, the RAG subsystem (hybrid
+retrieval with tenant filtering, citations, guardrails), the AI Gateway service (grounded Q&A +
+triage with streaming), an evaluation benchmark, and AI red-team basics — all running fully
+offline on a general model (the Dula AI model begins in Phase 04). Subsequent phases proceed per
+the roadmap and the §11 closure lifecycle; a phase begins only when directed.
