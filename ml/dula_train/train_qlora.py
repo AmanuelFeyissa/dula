@@ -26,13 +26,24 @@ def train(cfg: TrainConfig) -> str:
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    # Fallback chat template for bases without one (e.g. the tiny smoke model), so trl can
+    # render conversational "messages" rows.
+    if tokenizer.chat_template is None:
+        tokenizer.chat_template = (
+            "{% for m in messages %}<|{{ m['role'] }}|>\n{{ m['content'] }}\n{% endfor %}"
+            "{% if add_generation_prompt %}<|assistant|>\n{% endif %}"
+        )
+
+    cuda = torch.cuda.is_available()
+    bf16 = cuda and torch.cuda.is_bf16_supported()  # Ampere+ (A100/L4); False on Kaggle T4
+    compute_dtype = torch.bfloat16 if bf16 else torch.float16
 
     quant = None
     if cfg.load_in_4bit:
         quant = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=True,
         )
     model = AutoModelForCausalLM.from_pretrained(
@@ -51,19 +62,30 @@ def train(cfg: TrainConfig) -> str:
     train_ds = load_dataset("json", data_files=cfg.train_file, split="train")
     eval_ds = load_dataset("json", data_files=cfg.val_file, split="train")
 
-    sft = SFTConfig(
-        output_dir=cfg.output_dir,
-        num_train_epochs=cfg.epochs,
-        max_steps=cfg.max_steps,
-        per_device_train_batch_size=cfg.batch_size,
-        gradient_accumulation_steps=cfg.grad_accum,
-        learning_rate=cfg.learning_rate,
-        max_seq_length=cfg.max_seq_len,
-        logging_steps=1,
-        save_strategy="no",
-        seed=cfg.seed,
-        report_to=[],
-    )
+    import inspect
+
+    sft_kwargs: dict[str, object] = {
+        "output_dir": cfg.output_dir,
+        "num_train_epochs": cfg.epochs,
+        "max_steps": cfg.max_steps,
+        "per_device_train_batch_size": cfg.batch_size,
+        "gradient_accumulation_steps": cfg.grad_accum,
+        "learning_rate": cfg.learning_rate,
+        "logging_steps": 1,
+        "save_strategy": "no",
+        "seed": cfg.seed,
+        "report_to": [],
+        "use_cpu": not cuda,
+        "bf16": bf16,
+        "fp16": cuda and not bf16,
+    }
+    # trl renamed the sequence-length arg across versions (max_seq_length -> max_length).
+    sft_params = inspect.signature(SFTConfig.__init__).parameters
+    if "max_seq_length" in sft_params:
+        sft_kwargs["max_seq_length"] = cfg.max_seq_len
+    elif "max_length" in sft_params:
+        sft_kwargs["max_length"] = cfg.max_seq_len
+    sft = SFTConfig(**sft_kwargs)
 
     mlflow.set_experiment(cfg.mlflow_experiment)
     with mlflow.start_run():

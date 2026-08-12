@@ -47,6 +47,15 @@ Thumbs.db
 *.key
 !**/testdata/**/*.key
 secrets/
+# Credentials must never be committed (keep them in the CLI's standard location instead).
+.kaggle/
+kaggle.json
+*.hf_token
+# ---- ML training artifacts (large; belong on HF Hub / DVC remote, not git) ----
+ml/data/
+out/
+mlruns/
+**/.ipynb_checkpoints/
 *.local
 
 # ---- Data / models / artifacts (tracked via DVC/registry, not git) ----
