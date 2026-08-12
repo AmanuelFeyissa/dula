@@ -26,6 +26,16 @@ related:
   classification, environment.
 - Policies expressed in **OPA/Rego**, externalized from services for consistency.
 
+### Implemented policy (Phase 02, CURRENT)
+
+The `dula.authz` policy (`deploy/opa/policy/authz.rego`) is enforced at the service layer by
+the Platform API. Actions follow `resource.verb` (e.g. `alerts.create`, `assets.delete`).
+Roles: `admin` (unrestricted); all operational personas (`analyst`, `hunter`, `responder`,
+`engineer`) may read (`*.read`); write actions are least-privilege per role — e.g. `engineer`
+manages assets, `responder` manages incidents, `analyst`/`hunter` create/triage alerts.
+Decisions **fail closed** (OPA unreachable → deny) and every **deny** is audited. See
+[CoreDomainAPI.md](./CoreDomainAPI.md) for the action↔endpoint mapping.
+
 ## 2. Enforcement Points
 
 ```mermaid

@@ -34,3 +34,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 |-------------------|--------|--------|
 | M001 — Foundation (milestone) | [M001-Foundation-Closure.md](./M001-Foundation-Closure.md) | COMPLETE |
 | Phase 01 — Foundation (phase) | [Phase01-Foundation-Completion-Review.md](./Phase01-Foundation-Completion-Review.md) | COMPLETE |
+| M002 — Core Platform (milestone) | [M002-CorePlatform-Closure.md](./M002-CorePlatform-Closure.md) | COMPLETE |
+| Phase 02 — Core Platform (phase) | [Phase02-CorePlatform-Completion-Review.md](./Phase02-CorePlatform-Completion-Review.md) | COMPLETE |

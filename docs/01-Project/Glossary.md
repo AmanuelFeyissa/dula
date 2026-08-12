@@ -42,6 +42,9 @@ phase: Documentation Bootstrap (M000)
 - **STIX / TAXII** — structured threat-info representation / transport protocol.
 - **Detection Engineering** — the discipline of building/maintaining detections.
 - **Threat Hunting** — proactive search for undetected threats.
+- **Alert** — a detection signal to be triaged; may relate to an asset and escalate to an incident.
+- **Incident** — an investigation case aggregating one or more alerts (the IR spine).
+- **Asset** — a monitored entity (host, account, cloud/K8s resource).
 
 ## AI / ML
 
@@ -66,6 +69,14 @@ phase: Documentation Bootstrap (M000)
 - **Tenant** — an isolated customer/organization within a deployment.
 - **Multi-tenancy** — serving multiple tenants from shared infrastructure with isolation.
 - **RBAC / ABAC** — Role- / Attribute-Based Access Control.
+- **OPA / Rego** — Open Policy Agent and its policy language; externalizes authorization.
+- **RLS** — Row-Level Security; Postgres row filtering used for tenant isolation.
+- **Event backbone / bus** — Redpanda (Kafka API) stream carrying `domain.entity.action` events.
+- **Idempotent consumer** — a worker that safely processes at-least-once delivery by
+  deduplicating on event id.
+- **Audit event** — an immutable record of data access / authorization decisions.
+- **Ports & adapters** — layering that isolates domain logic from infrastructure (repos, bus).
+- **Soft delete** — marking a row deleted (`deleted_at`) instead of removing it, for audit/history.
 - **Connector** — integration adapter to an external security system.
 - **Plugin** — packaged, sandboxed extension providing connectors/tools/capabilities.
 - **Deployment profile** — a supported deployment shape: cloud, on-prem, hybrid,

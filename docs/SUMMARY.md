@@ -90,6 +90,8 @@ phase: Documentation Bootstrap (M000)
   - [Milestone & Phase Closure — Index](./04-MVP-Roadmap/closure/README.md)
   - [M001 — Foundation Closure](./04-MVP-Roadmap/closure/M001-Foundation-Closure.md)
   - [Phase 01 — Foundation Completion Review](./04-MVP-Roadmap/closure/Phase01-Foundation-Completion-Review.md)
+  - [M002 — Core Platform Closure](./04-MVP-Roadmap/closure/M002-CorePlatform-Closure.md)
+  - [Phase 02 — Core Platform Completion Review](./04-MVP-Roadmap/closure/Phase02-CorePlatform-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
@@ -160,6 +162,7 @@ phase: Documentation Bootstrap (M000)
 - [Authentication](./12-API/Authentication.md)
 - [Authorization](./12-API/Authorization.md)
 - [Versioning](./12-API/Versioning.md)
+- [Core Domain API](./12-API/CoreDomainAPI.md)
 
 ## 13 — Agents
 - [Overview](./13-Agents/README.md)
@@ -197,3 +200,4 @@ phase: Documentation Bootstrap (M000)
 
 ## 17 — User & Operator Documentation
 - [Overview](./17-User-Documentation/README.md)
+- [Core Entities User Guide](./17-User-Documentation/CoreEntitiesUserGuide.md)
