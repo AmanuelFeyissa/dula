@@ -18,36 +18,37 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 01 — Foundation |
-| **CURRENT MILESTONE** | M001 (near complete) |
-| **STATUS** | Foundation built: common-py, platform-api (+DB/Alembic/tests), Keycloak realm, OPA policy, Next.js login shell; repo on GitHub |
-| **LAST COMPLETED TASK** | platform-api + web verified (ruff/mypy/pytest green; web builds; migration applied to Postgres) |
-| **CURRENT TASK** | Finalize Phase 01: PR review/merge of feature/phase01-platform-foundation |
-| **NEXT TASK** | Live end-to-end OIDC login check; then Phase 02 (core domain services) |
+| **CURRENT PHASE** | Phase 01 — Foundation (COMPLETE) |
+| **CURRENT MILESTONE** | M001 ✅ complete |
+| **STATUS** | Phase 01 done. Foundation merged to `main` (PR #1); live end-to-end OIDC login verified against Keycloak |
+| **LAST COMPLETED TASK** | Live OIDC check: `maya` token → `GET /api/v1/me` HTTP 200 with claims; readyz status-label fix + tests |
+| **CURRENT TASK** | — (Phase 01 complete; awaiting go-ahead for Phase 02) |
+| **NEXT TASK** | Phase 02 — Core Platform (NOT started; do not begin without direction) |
 | **BLOCKERS** | None. GitHub repo live: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
-- `docs/` — full engineering documentation foundation (Draft), **reviewed** in M000.
-- `docs/adr/` — ADR-0001…0010 (Accepted).
-- `docs/PROJECT_REVIEW-M000.md` — architecture & documentation review report.
-- No application code, infrastructure, models, or datasets yet.
+- `docs/` — full engineering handbook (reviewed in M000); `docs/adr/` — ADR-0001…0011 (Accepted).
+- **Monorepo `dula`** on private GitHub with CI (docs/python/web/security gates green).
+- `packages/common-py` (config, JSON logging, OIDC verifier); `apps/platform-api`
+  (FastAPI healthz/readyz + `/api/v1/me`, Postgres + Alembic + RLS); `apps/web` (Next.js
+  Keycloak login shell); Keycloak `dula` realm; OPA authz policy; Docker Compose dev stack.
+- No models/datasets yet; domain services beyond identity start in Phase 02.
 
 ## What Is Next
 
-1. Human review & sign-off of the reviewed foundation (architecture, tech stack, roadmap,
-   ADRs).
-2. Decide the remaining open items (API gateway tech, plugin sandbox mechanism, monorepo →
-   ADR-0011) — non-blocking; can be taken at Phase 01.
-3. Begin **M001 / Phase 01 — Foundation** under the Master Engineering Instruction
-   ([04-MVP-Roadmap/Phase01-Foundation.md](./04-MVP-Roadmap/Phase01-Foundation.md)).
+**Phase 01 is complete.** Phase 02 — Core Platform
+([04-MVP-Roadmap/Phase02-CorePlatform.md](./04-MVP-Roadmap/Phase02-CorePlatform.md)) is the
+next milestone (M002) but has **not** started; begin only when directed. Remaining
+non-blocking open items: API gateway tech + plugin sandbox mechanism (see
+[00-Governance/ArchitectureDecisionRecords.md](./00-Governance/ArchitectureDecisionRecords.md)).
 
 ## Milestone Ledger
 
 | Milestone | Phase | Status |
 |-----------|-------|--------|
-| M000 | Documentation Bootstrap | ✅ Docs complete + reviewed; ADR-0001…0010 Accepted (pending human approval) |
-| M001 | Phase 01 — Foundation | ⏳ Not started |
+| M000 | Documentation Bootstrap | ✅ Docs complete + reviewed; ADR-0001…0011 Accepted |
+| M001 | Phase 01 — Foundation | ✅ Complete (PR #1 merged; live OIDC verified) |
 | M002+ | Phases 02–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
@@ -80,3 +81,8 @@ phase: Documentation Bootstrap (M000)
   initial migration with RLS); Keycloak `dula` realm export; OPA authz policy (+tests);
   `apps/web` Next.js login shell (Keycloak OIDC). Verified: ruff clean, mypy strict clean
   (19 files), 8 pytest pass, web builds, migration applied+rolled back on live Postgres.
+- 2026-08-12 — **Phase 01 (M001) complete.** PR #1 merged to `main`; CI green
+  (docs/python/web/security). Live end-to-end OIDC verified: Keycloak issued `maya` a token
+  (aud `dula-api`, tenant_id, role `analyst`) and `GET /api/v1/me` returned HTTP 200 with the
+  verified claims. Fixed a `/readyz` status-label bug (reported `degraded` while DB was ok)
+  and added regression tests (10 pytest total).
