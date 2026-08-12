@@ -118,6 +118,8 @@ retrieval with tenant filtering, citations, guardrails), the AI Gateway service 
 triage with streaming), an evaluation benchmark, and AI red-team basics — all running fully
 offline on a general model. **Phase 04 (Dula AI)** has its train→eval→**gate**→register→serve
 pipeline delivered and CI-green (torch-free `packages/dula-ml` + standalone `ml/` GPU project +
-OpenAI-compatible serving + ADR-0012); the actual QLoRA training and the **ship/retire decision**
-run on the user's free GPU accounts (no local GPU), after which M004 closes. Subsequent phases
-proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+OpenAI-compatible serving + ADR-0012). **Phase 04 is complete:** a real QLoRA candidate
+(Qwen2.5-0.5B on Primus) was trained + evaluated vs the general model on free compute and
+**retired** by the gate (didn't beat quality, regressed safety) — so the platform stays on the
+general model + RAG (acceptance met on the retire outcome; a worse model never ships). Subsequent
+phases proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.

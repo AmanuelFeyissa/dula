@@ -49,9 +49,10 @@ class TrainConfig(BaseModel):
 
 
 class DatasetConfig(BaseModel):
-    # Primus (ODC-BY/MIT) instruction/reasoning sets on the HF Hub (verify exact ids at run).
-    instruct_dataset: str = "trend-cybertron/Primus-Instruct"
-    reasoning_dataset: str | None = "trend-cybertron/Primus-Reasoning"
+    # Primus (ODC-BY/MIT) instruction/reasoning sets. The canonical repos are gated (accept
+    # terms once on HF, then use your token); the trend-cybertron mirrors are ungated but empty.
+    instruct_dataset: str = "trendmicro-ailab/Primus-Instruct"
+    reasoning_dataset: str | None = "trendmicro-ailab/Primus-Reasoning"
     license: str = "ODC-BY / MIT"
     val_fraction: float = 0.05
     seed: int = 42

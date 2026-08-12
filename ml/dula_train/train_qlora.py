@@ -99,9 +99,16 @@ def train(cfg: TrainConfig) -> str:
             processing_class=tokenizer,
         )
         trainer.train()
-        trainer.save_model(cfg.output_dir)
+        # Save a full, self-contained model when possible (merge LoRA into the base) so the
+        # evaluator/serving can load it directly. Merging isn't supported on a 4-bit base, so
+        # fall back to saving just the adapter there.
+        try:
+            merged = trainer.model.merge_and_unload()
+            merged.save_pretrained(cfg.output_dir)
+        except Exception:
+            trainer.save_model(cfg.output_dir)
         tokenizer.save_pretrained(cfg.output_dir)
-        mlflow.log_artifacts(cfg.output_dir, artifact_path="adapter")
+        mlflow.log_artifacts(cfg.output_dir, artifact_path="model")
 
     print(json.dumps({"output_dir": cfg.output_dir, "base_model": cfg.base_model}))
     return cfg.output_dir

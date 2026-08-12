@@ -18,13 +18,13 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 04 — Dula AI (pipeline delivered; **GPU training run + ship/retire decision pending**) |
-| **CURRENT MILESTONE** | M004 ⏳ pipeline delivered; not yet COMPLETE |
-| **STATUS** | Phase 04 training→eval→gate→register→serve pipeline on `main` (CI-green): torch-free `packages/dula-ml` (formatting/dedup/contamination/eval/gate/registry/model-card) + standalone `ml/` GPU project (QLoRA/eval/decide + Kaggle/Lightning/Modal runners + DVC + Argo) + OpenAI-compatible serving provider + ADR-0012. **Actual QLoRA training + ship/retire decision run on the user's free GPU accounts** (no local GPU). |
-| **LAST COMPLETED TASK** | Phase 04 pipeline + [M004 Closure (pipeline)](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md); ADR-0012 accepted |
-| **CURRENT TASK** | Awaiting user's GPU accounts/tokens (HF/Kaggle/Lightning/Modal) to run training and record the ship/retire decision, then close M004 |
-| **NEXT TASK** | Run training on free GPU → record decision → complete M004 + Phase 04 Completion Review; then Phase 05 on go-ahead |
-| **BLOCKERS** | None blocking the pipeline. GPU run needs the user's external accounts (ADR-0012). Repo: github.com/AmanuelFeyissa/dula (private) |
+| **CURRENT PHASE** | Phase 04 — Dula AI (COMPLETE; first candidate **retired**) |
+| **CURRENT MILESTONE** | M004 ✅ complete |
+| **STATUS** | Phase 04 done & **closed under CLAUDE.md §11** (M004 Closure + Phase 04 Completion Review). Pipeline on `main`; a **real QLoRA run executed** on free-credit Modal (Qwen2.5-0.5B on Primus → eval vs baseline on MMLU security) → **RETIRE** (0.36 vs 0.37 accuracy; safety 0.25 vs 0.50). Nothing shipped; platform stays on the general model + RAG. Record in `ml/registry/`. |
+| **LAST COMPLETED TASK** | Phase 04 real run + decision + closure: [M004 Closure](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md) + [Phase 04 Completion Review](./04-MVP-Roadmap/closure/Phase04-DulaAI-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 04 complete; awaiting go-ahead for Phase 05) |
+| **NEXT TASK** | Phase 05 — Cyber Intelligence (NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the same pipeline, shipping only if they clear the gate. |
+| **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
@@ -61,7 +61,7 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
 | M001 | Phase 01 — Foundation | ✅ Complete (PR #1 merged; live OIDC verified) |
 | M002 | Phase 02 — Core Platform | ✅ Complete (domain spine + events + OPA + UI; isolation/OPA/events verified live) |
 | M003 | Phase 03 — Knowledge & RAG | ✅ Complete (LLM Gateway + RAG + AI Gateway + Ask UI; benchmark + red-team; Qdrant verified live) |
-| M004 | Phase 04 — Dula AI | ⏳ Pipeline delivered + CI-green (train/eval/gate/register/serve); GPU run + ship/retire decision pending (ADR-0012) |
+| M004 | Phase 04 — Dula AI | ✅ Complete (pipeline + real QLoRA run; first candidate **retired** by the gate; platform stays on general model) |
 | M005+ | Phases 05–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
@@ -136,6 +136,15 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
   Completion Review). Deferred: live OpenSearch verify (image pull blocked on constrained network;
   adapter code-complete + BM25 unit-tested), real Ollama model call, semantic embeddings, K8s
   deploy. Ready for Phase 04 on go-ahead.
+- 2026-08-12 — **Phase 04 (M004) complete — first candidate retired.** Connected HF/Modal/Kaggle;
+  chose MMLU `computer_security` (MIT) as the permissive benchmark; hardened the trainer (trl arg
+  rename, fp16-on-T4 vs bf16, adapter merge, ShareGPT mapping) — caught cheaply by a Modal CPU
+  validation. Ran a **real QLoRA fine-tune** (Qwen2.5-0.5B on Primus-Instruct, ODC-BY/MIT) on
+  free-credit Modal and evaluated candidate vs the general-model baseline: **accuracy 0.360 vs
+  0.370, safety-refusal 0.250 vs 0.500 → gate = RETIRE.** Correct outcome (never ship a worse/
+  less-safe model); nothing pushed; platform continues on the general model + RAG. Decision
+  recorded in `ml/registry/` (model card + manifest). Closed under §11 (M004 Closure + Phase 04
+  Completion Review). Verified: ruff/format/mypy clean, 81 pytest.
 - 2026-08-12 — **Phase 04 (M004) pipeline delivered.** Built the Dula AI train→eval→**gate**→
   register→serve pipeline: torch-free, CI-tested `packages/dula-ml` (SFT record formatting,
   dedup, benchmark contamination check, training-data safety filter, MCQ/safety scoring, the

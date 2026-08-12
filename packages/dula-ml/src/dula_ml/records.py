@@ -64,6 +64,19 @@ def from_raw(raw: dict[str, Any], *, source: str, license: str = "unknown") -> S
             return SFTRecord(instruction=user, output=assistant, source=source, license=license)
         return None
 
+    # ShareGPT-style rows: {"conversations": [{"from": "human", "value": ...}, ...]}.
+    conversations = raw.get("conversations")
+    if isinstance(conversations, list):
+        user = next(
+            (t.get("value") for t in conversations if t.get("from") in ("human", "user")), None
+        )
+        assistant = next(
+            (t.get("value") for t in conversations if t.get("from") in ("gpt", "assistant")), None
+        )
+        if isinstance(user, str) and isinstance(assistant, str) and user and assistant:
+            return SFTRecord(instruction=user, output=assistant, source=source, license=license)
+        return None
+
     instruction = _first(raw, "instruction", "question", "prompt", "query")
     output = _first(raw, "output", "answer", "response", "completion")
     if instruction is None or output is None:
