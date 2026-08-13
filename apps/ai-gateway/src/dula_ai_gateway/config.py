@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # Seed the built-in demo public corpus at startup so answers are grounded out of the box.
     seed_demo_corpus: bool = True
 
+    # Plugin/connector egress (Phase 07). Off by default = air-gapped: connectors that require
+    # network egress (e.g. live TI feeds) are inert until this is enabled with an allowlist.
+    plugins_egress_enabled: bool = False
+
     # Event backbone (ADR-0004) for AI-call audit events.
     events_enabled: bool = True
     kafka_bootstrap_servers: str = "localhost:19092"

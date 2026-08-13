@@ -1,23 +1,19 @@
 [project]
-name = "dula-ai-gateway"
+name = "dula-plugins"
 version = "0.1.0"
-description = "Dula AI Gateway service — grounded Q&A and alert triage over the RAG subsystem."
+description = "Dula plugin/connector framework: signed manifests, sandboxed host, egress allowlist, connectors (Phase 07)."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "dula-common",
     "dula-ai",
-    "dula-agents",
-    "dula-plugins",
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
-    "pydantic-settings>=2.5",
+    "pydantic>=2.9",
+    "cryptography>=43",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
-    "httpx>=0.27",
     "mypy>=1.11",
 ]
 
@@ -26,4 +22,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dula_ai_gateway"]
+packages = ["src/dula_plugins"]

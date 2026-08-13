@@ -12,10 +12,14 @@ phase: Documentation Bootstrap (M000)
 # 14 — Plugins
 
 > **Purpose.** The extensibility framework: sandboxed plugins providing connectors and
-> tools for external security systems. **Status: FUTURE (Phase 07).**
+> tools for external security systems. **Status: CURRENT (Phase 07, M007)** — signing, manifest/
+> permission model, egress allowlist + SSRF, host lifecycle, and the first connectors are
+> implemented (offline profile). The process/WASM **sandbox mechanism** is still REQUIRES
+> DECISION; real external connectors and a third-party loader are FUTURE.
 
 ## Documents
 
+- [PluginImplementation.md](./PluginImplementation.md) — **the delivered framework** (design→code), CURRENT.
 - [PluginFramework.md](./PluginFramework.md)
 - [PluginLifecycle.md](./PluginLifecycle.md)
 - [ConnectorStandards.md](./ConnectorStandards.md)

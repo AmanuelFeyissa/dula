@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 06 — Agents (COMPLETE) |
-| **CURRENT MILESTONE** | M006 ✅ complete |
-| **STATUS** | Phase 06 done & **closed under CLAUDE.md §11** (M006 Closure + Phase 06 Completion Review). Delivered on `main`: a first-party **agent runtime** (`packages/dula-agents`) — plan/act loop with per-call permission checks (**agent ⊆ user**, OPA), human approval for consequential tools, step/cost/time limits, and full audit; the **investigation assistant** (UC-03) on read-first tools; exposed via `apps/ai-gateway` `/api/v1/agents/*` (OPA `agents.run`/`agents.read`/`agents.approve` + per-`tool.*`) and an `apps/web` **Agents** page. Release-blocking **safety suite** = zero unauthorized actions. Ruff/format/mypy clean; **157 pytest**; web build clean. |
-| **LAST COMPLETED TASK** | Phase 06 build + closure: [M006 Closure](./04-MVP-Roadmap/closure/M006-Agents-Closure.md) + [Phase 06 Completion Review](./04-MVP-Roadmap/closure/Phase06-Agents-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 06 complete; awaiting go-ahead for Phase 07) |
-| **NEXT TASK** | Phase 07 — Integrations (connectors/plugins; real tool backends for agents; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Phase 07 — Integrations (COMPLETE) |
+| **CURRENT MILESTONE** | M007 ✅ complete |
+| **STATUS** | Phase 07 done & **closed under CLAUDE.md §11** (M007 Closure + Phase 07 Completion Review). Delivered on `main`: a **signed, sandboxed plugin/connector framework** (`packages/dula-plugins`) — Ed25519 manifest signing + trust/revocation, default-deny **egress allowlist + SSRF** guard, a **host** (install/enable/disable/revoke/invoke) with per-call OPA authz + limits + audit + untrusted output, and the first connectors (`siem.search`, `ti.lookup_indicator`/`ti.live_lookup`, `ticketing.create_ticket`). Exposed via `apps/ai-gateway` `/api/v1/plugins` + `/api/v1/connectors/*` (OPA `plugins.read`/`plugins.admin`/`connectors.invoke` + per-`connector.*`) and an `apps/web` **Integrations** page; the **agent's search_logs + create_ticket are now connector-backed** (agent→connector). Air-gapped verified (egress-gated connector inert). Ruff/format/mypy clean; **199 pytest**; web build clean. |
+| **LAST COMPLETED TASK** | Phase 07 build + closure: [M007 Closure](./04-MVP-Roadmap/closure/M007-Integrations-Closure.md) + [Phase 07 Completion Review](./04-MVP-Roadmap/closure/Phase07-Integrations-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 07 complete; awaiting go-ahead for Phase 08) |
+| **NEXT TASK** | Phase 08 — Automation (workflows/playbooks; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -36,10 +36,12 @@ phase: Documentation Bootstrap (M000)
   **`dula_ai.intel`**: deterministic CTI/vuln/detection engineering — see below);
   `apps/platform-api` (CRUD for assets/incidents/alerts, OPA authz, audit, RLS);
   `apps/worker` (idempotent Redpanda consumer); **`apps/ai-gateway`** (grounded Q&A, triage,
-  knowledge ingest, **cyber-intelligence `/intel/*`**, **agents `/agents/*`**; SSE streaming);
-  **`packages/dula-agents`** (agent runtime: tools, permissions, approval, limits, audit,
-  planner, store); `apps/web` (app shell + alerts/incidents/assets + **Ask/triage UI** +
-  **Intel workbench** + **Agents** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
+  knowledge ingest, **cyber-intelligence `/intel/*`**, **agents `/agents/*`**, **integrations
+  `/plugins` + `/connectors/*`**; SSE streaming); **`packages/dula-agents`** (agent runtime:
+  tools, permissions, approval, limits, audit, planner, store); **`packages/dula-plugins`**
+  (plugin/connector framework: Ed25519 signing, egress+SSRF, host lifecycle, connectors);
+  `apps/web` (app shell + alerts/incidents/assets + **Ask/triage UI** + **Intel workbench** +
+  **Agents** + **Integrations** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
   dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
 - **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
@@ -61,14 +63,25 @@ phase: Documentation Bootstrap (M000)
   an `apps/web` Agents page. A **release-blocking safety suite** proves zero unauthorized actions
   under adversarial planners, missing permissions, rejected/unauthorized approvers, and runaway
   loops.
+- **Phase 07 integrations:** `dula_plugins` — a **signed, sandboxed** plugin/connector framework:
+  Ed25519 manifest signing with a trust store + revocation, a **default-deny egress allowlist with
+  SSRF** protection, and a **host** that verifies-on-install, grants only manifest-declared
+  permissions on enable, OPA-authorizes every capability call, bounds resources, and returns
+  **untrusted** output. First connectors: `siem.search`, `ti.lookup_indicator` (+ egress-gated
+  `ti.live_lookup`), `ticketing.create_ticket` (consequential). The investigation agent's
+  `search_logs`/`create_ticket` tools are now **connector-backed** (agent→connector), the ticket
+  still approval-gated. **Air-gapped-first**: egress is disabled by default so live-feed
+  connectors are inert with no phone-home. Exposed via `/api/v1/plugins` + `/api/v1/connectors/*`
+  and an `apps/web` Integrations page.
 
 ## What Is Next
 
-**Phase 06 (M006) is complete and closed under §11.** Phase 07 — Integrations (connector/plugin
-framework; wiring real SIEM/EDR/ticketing backends behind the agent tool ports) is next, on
-explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase 04 pipeline,
-shipping only if a future candidate clears the evaluation gate. Remaining non-blocking open
-items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, hardware sizing.
+**Phase 07 (M007) is complete and closed under §11.** Phase 08 — Automation (security workflows/
+playbooks composing agents + connectors) is next, on explicit go-ahead. Dula AI iterations (a
+larger base model) continue on the Phase 04 pipeline, shipping only if a future candidate clears
+the evaluation gate. Remaining non-blocking open items: **plugin sandbox mechanism (process/WASM
+— REQUIRES DECISION)**, API gateway tech, embedding/reranker model, hardware sizing, real
+connector HTTP clients + third-party plugin loader.
 
 ## Milestone Ledger
 
@@ -81,7 +94,8 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
 | M004 | Phase 04 — Dula AI | ✅ Complete (pipeline + real QLoRA run; first candidate **retired** by the gate; platform stays on general model) |
 | M005 | Phase 05 — Cyber Intelligence | ✅ Complete (CTI extraction + STIX, CVSS/prioritization, Sigma/YARA authoring + validation, ATT&CK coverage; intel API; benchmark + red-team gates) |
 | M006 | Phase 06 — Agents | ✅ Complete (first-party agent runtime; investigation assistant UC-03; permissions/approval/limits/audit; agents API + UI; release-blocking safety suite) |
-| M007+ | Phases 07–11 | ⏳ Not started |
+| M007 | Phase 07 — Integrations | ✅ Complete (signed plugin/connector framework; egress allowlist + SSRF; host lifecycle; SIEM/TI/ticketing connectors; plugins API + UI; agent→connector bridge; air-gapped verified) |
+| M008+ | Phases 08–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -209,3 +223,20 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
   **157 pytest** (up from 129; +18 runtime +10 API), OPA policy extended, web eslint/tsc/build
   clean. Closed under §11 (M006 Closure + Phase 06 Completion Review). Ready for Phase 07 on
   go-ahead.
+- 2026-08-13 — **Phase 07 (M007) build + closure — Integrations.** Delivered `packages/dula-plugins`,
+  a **signed, sandboxed** plugin/connector framework (docs/14-Plugins): **Ed25519** manifest
+  signing with a trust store + **revocation** (verify-on-install, tamper/untrusted-key rejected);
+  a **default-deny egress allowlist with SSRF** protection (private/loopback/unresolvable blocked;
+  globally disabled when air-gapped); a **host** with the full lifecycle (install→enable→disable→
+  revoke) that OPA-authorizes every capability call, applies timeouts/output limits, and returns
+  **untrusted** output; a connector **SDK**; and the first connectors — `siem.search`,
+  `ti.lookup_indicator` + egress-gated `ti.live_lookup`, and consequential `ticketing.create_ticket`.
+  Wired into `apps/ai-gateway` as `/api/v1/plugins` (list; `plugins.read`), enable/disable
+  (`plugins.admin`), and `/api/v1/connectors/{cap}/invoke` (`connectors.invoke` + per-`connector.*`;
+  consequential caps blocked from direct invoke → must go via an agent). **Bridged the investigation
+  agent's `search_logs` + `create_ticket` tools to the SIEM/ticketing connectors** (agent→connector;
+  ticket still approval-gated). Added an `apps/web` **Integrations** page. Verified: ruff/format/
+  mypy-strict clean (**103 files**), **199 pytest** (up from 157; +31 package, +11 API), OPA policy
+  extended, web eslint/tsc/build clean; **air-gapped inertness** of egress-gated connectors proven.
+  Closed under §11 (M007 Closure + Phase 07 Completion Review). Sandbox mechanism (process/WASM)
+  remains REQUIRES DECISION. Ready for Phase 08 on go-ahead.
