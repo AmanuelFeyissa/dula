@@ -22,6 +22,7 @@ phase: Documentation Bootstrap (M000)
 - [CoreDomainAPI.md](./CoreDomainAPI.md) — assets, alerts, incidents endpoints (Phase 02, CURRENT).
 - [AIGatewayAPI.md](./AIGatewayAPI.md) — grounded Q&A, triage, knowledge, and cyber-intel endpoints (Phase 03/05, CURRENT).
 - [AgentsAPI.md](./AgentsAPI.md) — agent investigation runs + approvals (Phase 06, CURRENT).
+- [IntegrationsAPI.md](./IntegrationsAPI.md) — plugins + connector invocation (Phase 07, CURRENT).
 
 ## Contract-First
 

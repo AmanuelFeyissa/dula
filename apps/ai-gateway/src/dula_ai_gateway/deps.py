@@ -20,6 +20,7 @@ from fastapi import Depends, Header, HTTPException, Request, status
 
 from dula_ai_gateway.agents_wiring import AgentSubsystem
 from dula_ai_gateway.config import Settings, get_settings
+from dula_ai_gateway.plugins_wiring import PluginsSubsystem
 
 _log = logging.getLogger(__name__)
 
@@ -95,6 +96,14 @@ def get_agents(request: Request) -> AgentSubsystem:
 
 
 Agents = Annotated[AgentSubsystem, Depends(get_agents)]
+
+
+def get_plugins(request: Request) -> PluginsSubsystem:
+    plugins: PluginsSubsystem = request.app.state.plugins
+    return plugins
+
+
+Plugins = Annotated[PluginsSubsystem, Depends(get_plugins)]
 
 
 def require(action: str) -> Callable[..., Awaitable[None]]:

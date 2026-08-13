@@ -194,3 +194,51 @@ test_agent_run_denied_cross_tenant if {
 		"resource": {"tenant_id": "t2"},
 	}
 }
+
+test_analyst_can_list_plugins if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "plugins.read",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_analyst_can_invoke_read_connector if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "connector.siem.search",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_analyst_cannot_admin_plugins if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "plugins.admin",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_admin_can_admin_plugins if {
+	allow with input as {
+		"subject": {"roles": ["admin"], "tenant_id": "t1"},
+		"action": "plugins.admin",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_responder_can_create_ticket_connector if {
+	allow with input as {
+		"subject": {"roles": ["responder"], "tenant_id": "t1"},
+		"action": "connector.ticketing.create",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_connector_denied_cross_tenant if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "connector.siem.search",
+		"resource": {"tenant_id": "t2"},
+	}
+}

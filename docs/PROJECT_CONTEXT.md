@@ -108,7 +108,7 @@ Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) li
 
 ## 10. Boundary
 
-Implementation is underway: **Phases 01 (M001) through 06 (M006) are complete and closed**
+Implementation is underway: **Phases 01 (M001) through 07 (M007) are complete and closed**
 (see [PROJECT_STATE.md](./PROJECT_STATE.md) and
 [04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Phase 02 delivered the core
 domain (assets/alerts/incidents + audit), the Redpanda event backbone + worker, service-layer
@@ -138,5 +138,14 @@ assistant** (UC-03) works an alert with read-first tools and gates its recommend
 approval; a **release-blocking safety suite** proves zero unauthorized actions under adversarial
 conditions. It is exposed via `/api/v1/agents/*` and an `apps/web` Agents page; the planner is
 deterministic/offline today (LangGraph or a model planner can back it later behind the same
-interface). Subsequent phases proceed per the roadmap and the §11 closure lifecycle; a phase
-begins only when directed.
+interface). **Phase 07 (Integrations) is complete:** a **signed, sandboxed** plugin/connector
+framework (`packages/dula-plugins`) connects Dula to external systems — Ed25519 manifest signing
++ trust/revocation, a **default-deny egress allowlist with SSRF** protection, and a host that
+verifies-on-install, grants only manifest-declared permissions, OPA-authorizes every capability
+call, bounds resources, and treats output as untrusted. First connectors (SIEM search, TI
+lookup, ticketing create) are fixture-backed offline, with the investigation agent's log-search
+and ticket-creation tools now **connector-backed** (agent→connector; ticket approval-gated).
+Air-gapped-first: egress is disabled by default, so live-feed connectors are inert with no
+phone-home; the process/WASM **sandbox mechanism** is still REQUIRES DECISION (the framework
+enforces the policy controls it will reinforce). Subsequent phases proceed per the roadmap and
+the §11 closure lifecycle; a phase begins only when directed.

@@ -44,3 +44,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 | Phase 05 — Cyber Intelligence (phase) | [Phase05-CyberIntelligence-Completion-Review.md](./Phase05-CyberIntelligence-Completion-Review.md) | COMPLETE |
 | M006 — Agents (milestone) | [M006-Agents-Closure.md](./M006-Agents-Closure.md) | COMPLETE |
 | Phase 06 — Agents (phase) | [Phase06-Agents-Completion-Review.md](./Phase06-Agents-Completion-Review.md) | COMPLETE |
+| M007 — Integrations (milestone) | [M007-Integrations-Closure.md](./M007-Integrations-Closure.md) | COMPLETE |
+| Phase 07 — Integrations (phase) | [Phase07-Integrations-Completion-Review.md](./Phase07-Integrations-Completion-Review.md) | COMPLETE |

@@ -104,6 +104,16 @@ phase: Documentation Bootstrap (M000)
 - **Soft delete** — marking a row deleted (`deleted_at`) instead of removing it, for audit/history.
 - **Connector** — integration adapter to an external security system.
 - **Plugin** — packaged, sandboxed extension providing connectors/tools/capabilities.
+- **Plugin manifest** — a plugin's signed declaration: identity, version, capabilities, required
+  permissions, egress allowlist, and resource limits; the host grants only what it declares.
+- **Capability** — a named connector operation (`<system>.<capability>`, e.g. `siem.search`),
+  classified read or consequential.
+- **Egress allowlist** — the default-deny set of external hosts a plugin may reach; everything
+  else is blocked, with SSRF protection.
+- **SSRF** — Server-Side Request Forgery; blocked by refusing requests that resolve to
+  private/loopback/link-local addresses.
+- **Plugin signing** — Ed25519 signature over the manifest, verified against a trust store before
+  install, so tampered or untrusted plugins are rejected (and publishers can be revoked).
 - **Deployment profile** — a supported deployment shape: cloud, on-prem, hybrid,
   air-gapped (see [../11-Deployment/README.md](../11-Deployment/README.md)).
 - **Air-gapped** — an environment with no external network connectivity.

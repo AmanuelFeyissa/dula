@@ -32,6 +32,10 @@ ai_actions := {
 	"ai.ask", "ai.triage", "ai.cti", "ai.vuln", "ai.detect",
 	"agents.run", "agents.read", "agents.approve",
 	"tool.search_logs", "tool.enrich_indicator", "tool.list_alerts",
+	# Integrations (Phase 07): list plugins, invoke read connectors. `plugins.admin`
+	# (enable/disable) is admin-only via `*`; consequential connectors run through agents.
+	"plugins.read", "connectors.invoke",
+	"connector.siem.search", "connector.ti.lookup", "connector.ti.live_lookup",
 }
 
 # Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
@@ -39,8 +43,15 @@ ai_actions := {
 # higher-impact isolate_host containment for responders only (admin via `*`).
 role_actions := {
 	"admin": {"*"},
-	"analyst": {"alerts.create", "alerts.update", "incidents.create", "knowledge.ingest", "tool.create_ticket"},
-	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest", "tool.create_ticket"},
+	"analyst": {
+		"alerts.create",
+		"alerts.update",
+		"incidents.create",
+		"knowledge.ingest",
+		"tool.create_ticket",
+		"connector.ticketing.create",
+	},
+	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest", "tool.create_ticket", "connector.ticketing.create"},
 	"responder": {
 		"incidents.create",
 		"incidents.update",
@@ -48,6 +59,7 @@ role_actions := {
 		"alerts.update",
 		"tool.create_ticket",
 		"tool.isolate_host",
+		"connector.ticketing.create",
 	},
 	"engineer": {
 		"assets.create",
@@ -58,6 +70,7 @@ role_actions := {
 		"alerts.delete",
 		"knowledge.ingest",
 		"tool.create_ticket",
+		"connector.ticketing.create",
 	},
 }
 

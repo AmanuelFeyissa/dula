@@ -101,6 +101,8 @@ phase: Documentation Bootstrap (M000)
   - [Phase 05 — Cyber Intelligence Completion Review](./04-MVP-Roadmap/closure/Phase05-CyberIntelligence-Completion-Review.md)
   - [M006 — Agents Closure](./04-MVP-Roadmap/closure/M006-Agents-Closure.md)
   - [Phase 06 — Agents Completion Review](./04-MVP-Roadmap/closure/Phase06-Agents-Completion-Review.md)
+  - [M007 — Integrations Closure](./04-MVP-Roadmap/closure/M007-Integrations-Closure.md)
+  - [Phase 07 — Integrations Completion Review](./04-MVP-Roadmap/closure/Phase07-Integrations-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
@@ -176,6 +178,7 @@ phase: Documentation Bootstrap (M000)
 - [Core Domain API](./12-API/CoreDomainAPI.md)
 - [AI Gateway API](./12-API/AIGatewayAPI.md)
 - [Agents API](./12-API/AgentsAPI.md)
+- [Integrations API](./12-API/IntegrationsAPI.md)
 
 ## 13 — Agents
 - [Overview](./13-Agents/README.md)
@@ -188,6 +191,7 @@ phase: Documentation Bootstrap (M000)
 
 ## 14 — Plugins
 - [Overview](./14-Plugins/README.md)
+- [Plugin Framework Implementation](./14-Plugins/PluginImplementation.md)
 - [Plugin Framework](./14-Plugins/PluginFramework.md)
 - [Plugin Lifecycle](./14-Plugins/PluginLifecycle.md)
 - [Connector Standards](./14-Plugins/ConnectorStandards.md)
@@ -220,3 +224,4 @@ phase: Documentation Bootstrap (M000)
 - [Ask Dula User Guide](./17-User-Documentation/AskDulaUserGuide.md)
 - [Cyber Intelligence User Guide](./17-User-Documentation/CyberIntelligenceUserGuide.md)
 - [Investigation Agent User Guide](./17-User-Documentation/AgentsUserGuide.md)
+- [Integrations User Guide](./17-User-Documentation/IntegrationsUserGuide.md)

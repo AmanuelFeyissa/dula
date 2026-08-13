@@ -39,6 +39,9 @@ export async function Nav() {
       <Link href="/agents" style={linkStyle}>
         Agents
       </Link>
+      <Link href="/integrations" style={linkStyle}>
+        Integrations
+      </Link>
       <span style={{ flex: 1 }} />
       {session?.user ? (
         <form
