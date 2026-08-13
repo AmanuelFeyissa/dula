@@ -63,8 +63,10 @@ related:
   (inbound ingestion/enrichment + gated outbound). New product dependency **cryptography**
   (Apache-2.0/BSD, permissive; already transitively present via `pyjwt[crypto]`) for Ed25519
   signing. Reuses OPA (ADR-0009) + tenant isolation (ADR-0006). The **sandbox isolation mechanism
-  (process/WASM) remains REQUIRES DECISION**; the framework enforces the policy controls it will
-  reinforce.
+  is DECIDED ([ADR-0013](../../adr/ADR-0013-plugin-sandbox.md), recorded at close-out)** — an
+  out-of-process worker with host-brokered capabilities (baseline) + container per profile, behind
+  a pluggable runner; the framework's policy controls hold regardless of runner, and the in-process
+  runner seam is delivered (OS-level runners FUTURE).
 
 ## Database changes
 - None. The plugin registry + run/secret state are in-memory (durable registry + Vault FUTURE).
@@ -113,9 +115,9 @@ related:
 3. **Technical docs updated:** 14-Plugins README (→CURRENT), 12-API README, SUMMARY, Glossary, PROJECT_STATE, PROJECT_CONTEXT, closure README.
 4. **User docs created:** [../../17-User-Documentation/IntegrationsUserGuide.md](../../17-User-Documentation/IntegrationsUserGuide.md).
 5. **User docs updated:** User-Documentation README index.
-6. **Intentionally not created (N/A):** Database/Migration (no schema), Model card (no training), DR/Backup (in-memory MVP), full sandbox-runtime doc (mechanism REQUIRES DECISION — deferred).
+6. **Intentionally not created (N/A):** Database/Migration (no schema), Model card (no training), DR/Backup (in-memory MVP). (The sandbox mechanism was **decided at close-out** — see ADR-0013; a full sandbox-runtime enforcement doc lands with the OS-level worker runners.)
 7. **Examples/commands verified:** endpoint request/response shapes exercised by integration tests.
-8. **Links valid:** relative-link check passes. 9. **Diagrams:** existing plugin/integration diagrams remain accurate. 10-11. **Incomplete/gaps:** none blocking; real HTTP connectors, third-party loader, and the process/WASM sandbox are FUTURE, not M007 gaps.
+8. **Links valid:** relative-link check passes. 9. **Diagrams:** existing plugin/integration diagrams remain accurate. 10-11. **Incomplete/gaps:** none blocking; the sandbox mechanism is decided (ADR-0013), with real HTTP connectors, third-party loader, and the OS-level sandbox runners FUTURE, not M007 gaps.
 
 ### Milestone Documentation Checklist (CLAUDE.md §11.7)
 #### Technical
@@ -132,8 +134,11 @@ related:
 - [x] SUMMARY updated · [x] Glossary terms added · [x] PROJECT_CONTEXT/STATE updated
 
 ## Known limitations
-- **Sandbox mechanism REQUIRES DECISION** (process/container/WASM); today isolation is the policy
-  layer (signing, permissions, egress, limits, untrusted output, revocation).
+- **Sandbox mechanism DECIDED post-closure — [ADR-0013](../../adr/ADR-0013-plugin-sandbox.md)**
+  (out-of-process worker + host-brokered capabilities baseline; container per orchestrated
+  profile; pluggable `SandboxRunner`). The in-process runner is delivered; the **OS-level
+  worker/container runners** are FUTURE. Today's isolation is the policy layer (signing,
+  permissions, egress, limits, untrusted output, revocation) plus the runner seam.
 - Connectors are **fixture-backed**; real SIEM/EDR/TI HTTP clients (via the egress guard) and a
   third-party plugin **loader** are FUTURE.
 - The plugin registry + secrets are **in-memory** (durable registry + Vault-backed secrets FUTURE).
@@ -142,16 +147,18 @@ related:
 - None outstanding.
 
 ## Deferred work
-- Sandbox runtime (process/WASM) decision + enforcement; real connector HTTP clients; third-party
-  plugin loader + marketplace review; durable registry + Vault secrets; OCSF/ECS normalization;
-  STIX/TAXII feed connector; connector rate-limiting/circuit-breakers.
+- Sandbox runtime **enforcement** (the OS-level subprocess/container runners per ADR-0013; the
+  decision + runner seam are done); real connector HTTP clients; third-party plugin loader +
+  marketplace review; durable registry + Vault secrets; OCSF/ECS normalization; STIX/TAXII feed
+  connector; connector rate-limiting/circuit-breakers.
 
 ## Lessons learned
 - Separating the **policy controls** (signing, permissions, egress, limits, untrusted output,
   revocation) from the **isolation mechanism** let Phase 07 ship real, tested safety guarantees
-  now while the process/WASM sandbox decision is still open — the mechanism reinforces controls
-  that already hold. Backing agent tools with connectors kept the agent runtime as the single
-  authorization/approval boundary, avoiding a second surface.
+  before committing to a sandbox mechanism — and that separation directly shaped the mechanism
+  **decision (ADR-0013)**: a pluggable runner where the out-of-process worker + host-brokered
+  capabilities reinforce controls that already hold. Backing agent tools with connectors kept the
+  agent runtime as the single authorization/approval boundary, avoiding a second surface.
 
 ## Next milestone
 - **Phase 08 — Automation** (security workflows/playbooks composing agents + connectors) on

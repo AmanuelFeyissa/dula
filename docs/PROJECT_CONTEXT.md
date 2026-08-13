@@ -72,8 +72,8 @@ revised during M000 to their permanent form.
 artifact hosting** = free GPU (Kaggle/Lightning/Modal) + Hugging Face Hub for datasets/models,
 keeping GitHub for code/CI (ADR-0012); Primus (ODC-BY/MIT) datasets; QLoRA on Qwen/Mistral.
 
-**Still open:** API gateway tech · plugin sandbox mechanism · embedding/reranker model ·
-hardware sizing · SLSA level.
+**Still open:** API gateway tech · embedding/reranker model · hardware sizing · SLSA level.
+(Plugin sandbox mechanism is now **DECIDED — ADR-0013**.)
 
 ## 7. Key Risks (durable watchlist)
 
@@ -146,6 +146,8 @@ call, bounds resources, and treats output as untrusted. First connectors (SIEM s
 lookup, ticketing create) are fixture-backed offline, with the investigation agent's log-search
 and ticket-creation tools now **connector-backed** (agent→connector; ticket approval-gated).
 Air-gapped-first: egress is disabled by default, so live-feed connectors are inert with no
-phone-home; the process/WASM **sandbox mechanism** is still REQUIRES DECISION (the framework
-enforces the policy controls it will reinforce). Subsequent phases proceed per the roadmap and
-the §11 closure lifecycle; a phase begins only when directed.
+phone-home. The **sandbox mechanism is DECIDED (ADR-0013)** — an out-of-process worker with
+host-brokered capabilities (no ambient network) as the portable baseline + a container per
+orchestrated profile, behind a pluggable `SandboxRunner`; the in-process default is delivered and
+the OS-level worker runners are FUTURE. Subsequent phases proceed per the roadmap and the §11
+closure lifecycle; a phase begins only when directed.

@@ -193,8 +193,9 @@ technology emerges (via a new/superseding ADR).
 
 **Still open** (not architectural staging — genuinely undecided or empirical):
 1. API gateway technology (Envoy vs FastAPI edge) — **REQUIRES DECISION**.
-2. Plugin sandbox mechanism (container/WASM/subprocess) — **REQUIRES DECISION** (default
-   container isolation pending a spike).
+2. ~~Plugin sandbox mechanism~~ — **DECIDED (ADR-0013)**: out-of-process worker with
+   host-brokered capabilities (baseline) + container per orchestrated profile, behind a
+   pluggable runner; WASM a future runner option.
 3. Embedding/reranker model choice — **REQUIRES RESEARCH** (tuned via retrieval eval).
 4. Monorepo vs polyrepo — recommended monorepo; confirm as ADR-0011 at Phase 01.
 5. Training/inference hardware sizing & SLSA target level — **REQUIRES RESEARCH** (measure).

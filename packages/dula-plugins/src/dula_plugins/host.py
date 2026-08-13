@@ -11,7 +11,6 @@ plugin (least privilege).
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -20,6 +19,7 @@ from typing import Any, Protocol
 from dula_plugins.connector import Connector, ConnectorContext, ConnectorResult, SecretProvider
 from dula_plugins.egress import EgressGuard, EgressPolicy
 from dula_plugins.manifest import Capability, PluginManifest
+from dula_plugins.sandbox import InProcessRunner, SandboxRunner, SandboxSpec
 from dula_plugins.signing import SignedPlugin, TrustStore, verify_plugin
 
 
@@ -64,6 +64,9 @@ class PluginHost:
     egress_enabled: bool = True  # False in air-gapped installs → egress-dependent caps inert
     resolve_egress: bool = True  # SSRF DNS resolution (disabled in offline unit tests)
     audit: AuditHook | None = None
+    # Isolation boundary (ADR-0013). Default is in-process; deploy profiles supply a
+    # subprocess/container runner with the same interface for a real OS boundary.
+    runner: SandboxRunner = field(default_factory=InProcessRunner)
     _plugins: dict[str, InstalledPlugin] = field(default_factory=dict)
 
     def install(self, signed: SignedPlugin, connector: Connector) -> InstalledPlugin:
@@ -131,13 +134,10 @@ class PluginHost:
             egress=self._egress_for(plugin.manifest),
             secrets=self.secrets,
         )
-        try:
-            result = await asyncio.wait_for(
-                plugin.connector.invoke(capability, args, ctx),
-                timeout=plugin.manifest.limits.timeout_seconds,
-            )
-        except TimeoutError:
-            result = ConnectorResult(ok=False, error="connector timed out")
+        # Run the call through the sandbox runner (ADR-0013). The default enforces the wall-time
+        # limit in-process; the network stays brokered (the connector holds only an EgressGuard).
+        spec = SandboxSpec.from_manifest(plugin.manifest)
+        result = await self.runner.run(plugin.connector, capability, args, ctx, spec)
         await self._emit(capability, tenant, subject, "invoked", {"ok": result.ok})
         return result
 
