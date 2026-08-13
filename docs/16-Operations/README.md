@@ -21,6 +21,7 @@ phase: Documentation Bootstrap (M000)
 - [IncidentManagement.md](./IncidentManagement.md)
 - [BackupRecovery.md](./BackupRecovery.md)
 - [OperationalRunbooks.md](./OperationalRunbooks.md)
+- [TelemetryScaleTest.md](./TelemetryScaleTest.md) — high-volume ingestion scale-test (Phase 08).
 
 ## Foundations
 

@@ -12,13 +12,15 @@ phase: Documentation Bootstrap (M000)
 # 13 — Agents
 
 > **Purpose.** The agent framework: how AI agents plan and act safely with permissioned
-> tools and human oversight. **Status: CURRENT (Phase 06, M006)** — the runtime, the
-> investigation assistant (UC-03), permissions, approval, limits, and audit are implemented
-> (offline profile); real external connectors remain FUTURE (Phase 07).
+> tools and human oversight, and how playbooks compose them into supervised automation.
+> **Status: CURRENT (Phase 06/08, M006/M008)** — the runtime, the investigation assistant
+> (UC-03), permissions, approval, limits, and audit are implemented, and Phase 08 adds
+> declarative, approval-gated **playbooks** + grounded reporting (offline profile).
 
 ## Documents
 
 - [AgentImplementation.md](./AgentImplementation.md) — **the delivered runtime** (design→code), CURRENT.
+- [Playbooks.md](./Playbooks.md) — **automation playbooks & grounded reporting** (Phase 08, CURRENT).
 - [AgentFramework.md](./AgentFramework.md) — runtime & structure.
 - [AgentLifecycle.md](./AgentLifecycle.md) — run lifecycle & state.
 - [ToolCalling.md](./ToolCalling.md) — tool contracts.

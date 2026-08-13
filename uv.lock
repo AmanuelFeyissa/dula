@@ -4,11 +4,14 @@ requires-python = "==3.12.*"
 
 [manifest]
 members = [
+    "dula-agents",
     "dula-ai",
     "dula-ai-gateway",
+    "dula-automation",
     "dula-common",
     "dula-ml",
     "dula-platform-api",
+    "dula-plugins",
     "dula-worker",
     "dula-workspace",
 ]
@@ -259,6 +262,37 @@ wheels = [
 ]
 
 [[package]]
+name = "dula-agents"
+version = "0.1.0"
+source = { editable = "packages/dula-agents" }
+dependencies = [
+    { name = "dula-ai" },
+    { name = "dula-common" },
+    { name = "pydantic" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dula-ai", editable = "packages/dula-ai" },
+    { name = "dula-common", editable = "packages/common-py" },
+    { name = "pydantic", specifier = ">=2.9" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.11" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
 name = "dula-ai"
 version = "0.1.0"
 source = { editable = "packages/dula-ai" }
@@ -298,8 +332,11 @@ name = "dula-ai-gateway"
 version = "0.1.0"
 source = { editable = "apps/ai-gateway" }
 dependencies = [
+    { name = "dula-agents" },
     { name = "dula-ai" },
+    { name = "dula-automation" },
     { name = "dula-common" },
+    { name = "dula-plugins" },
     { name = "fastapi" },
     { name = "pydantic-settings" },
     { name = "uvicorn", extra = ["standard"] },
@@ -315,8 +352,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dula-agents", editable = "packages/dula-agents" },
     { name = "dula-ai", editable = "packages/dula-ai" },
+    { name = "dula-automation", editable = "packages/dula-automation" },
     { name = "dula-common", editable = "packages/common-py" },
+    { name = "dula-plugins", editable = "packages/dula-plugins" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
@@ -325,6 +365,35 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.27" },
+    { name = "mypy", specifier = ">=1.11" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "dula-automation"
+version = "0.1.0"
+source = { editable = "packages/dula-automation" }
+dependencies = [
+    { name = "dula-agents" },
+    { name = "dula-common" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dula-agents", editable = "packages/dula-agents" },
+    { name = "dula-common", editable = "packages/common-py" },
+]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "mypy", specifier = ">=1.11" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
@@ -410,6 +479,39 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.27" },
+    { name = "mypy", specifier = ">=1.11" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "dula-plugins"
+version = "0.1.0"
+source = { editable = "packages/dula-plugins" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "dula-ai" },
+    { name = "dula-common" },
+    { name = "pydantic" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cryptography", specifier = ">=43" },
+    { name = "dula-ai", editable = "packages/dula-ai" },
+    { name = "dula-common", editable = "packages/common-py" },
+    { name = "pydantic", specifier = ">=2.9" },
+]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "mypy", specifier = ">=1.11" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },

@@ -46,3 +46,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 | Phase 06 — Agents (phase) | [Phase06-Agents-Completion-Review.md](./Phase06-Agents-Completion-Review.md) | COMPLETE |
 | M007 — Integrations (milestone) | [M007-Integrations-Closure.md](./M007-Integrations-Closure.md) | COMPLETE |
 | Phase 07 — Integrations (phase) | [Phase07-Integrations-Completion-Review.md](./Phase07-Integrations-Completion-Review.md) | COMPLETE |
+| M008 — Automation (milestone) | [M008-Automation-Closure.md](./M008-Automation-Closure.md) | COMPLETE |
+| Phase 08 — Automation (phase) | [Phase08-Automation-Completion-Review.md](./Phase08-Automation-Completion-Review.md) | COMPLETE |

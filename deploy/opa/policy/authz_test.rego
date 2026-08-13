@@ -242,3 +242,43 @@ test_connector_denied_cross_tenant if {
 		"resource": {"tenant_id": "t2"},
 	}
 }
+
+test_analyst_can_run_playbook if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "automation.run",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_hunter_can_read_report if {
+	allow with input as {
+		"subject": {"roles": ["hunter"], "tenant_id": "t1"},
+		"action": "reports.read",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_responder_can_approve_playbook if {
+	allow with input as {
+		"subject": {"roles": ["responder"], "tenant_id": "t1"},
+		"action": "automation.approve",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_playbook_run_denied_cross_tenant if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "automation.run",
+		"resource": {"tenant_id": "t2"},
+	}
+}
+
+test_no_roles_cannot_run_playbook if {
+	not allow with input as {
+		"subject": {"roles": [], "tenant_id": "t1"},
+		"action": "automation.run",
+		"resource": {"tenant_id": "t1"},
+	}
+}

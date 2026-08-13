@@ -36,6 +36,11 @@ ai_actions := {
 	# (enable/disable) is admin-only via `*`; consequential connectors run through agents.
 	"plugins.read", "connectors.invoke",
 	"connector.siem.search", "connector.ti.lookup", "connector.ti.live_lookup",
+	# Automation (Phase 08): list/run playbooks, read a run, hit the approval endpoint, and read a
+	# grounded report. A playbook run *is* an agent run, so the consequential steps inside it are
+	# still gated by the per-tool permissions above + human approval; `automation.approve` here just
+	# admits the approval request (the runtime re-checks the approver for the specific tool).
+	"automation.read", "automation.run", "automation.approve", "reports.read",
 }
 
 # Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
