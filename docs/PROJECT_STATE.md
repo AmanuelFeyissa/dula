@@ -315,6 +315,9 @@ cluster-scale telemetry load test).
   helm lint clean, 26 manifests render per profile, kubeconform 19 valid/0 invalid, air-gap assertion
   passes; ruff/format/mypy clean, **227 pytest**, web build clean, doc-links/naming clean. Closed under
   §11 (M009 Closure + Phase 09 Completion Review). **GA sign-off is pending operational acceptance**
-  (live multi-profile deploy, external pen test, DR drill — real infra required; GAReadiness.md). The
-  live Postgres backup/restore roundtrip was not run locally (Docker engine unavailable); scripts are
-  syntax-validated. Ready for Phase 10 on go-ahead.
+  (live multi-profile deploy, external pen test, DR drill with RPO/RTO — real infra required;
+  GAReadiness.md). A live Postgres **backup/restore roundtrip was executed and verified** (backup →
+  drop → checksum-verified restore → all rows recovered, real pg_dump/pg_restore). Added a top-level
+  **RUNNING.md** run-the-system guide (URLs + dev credentials), and the local dev stack was brought
+  up end-to-end (web + platform-api + ai-gateway + Keycloak/OPA/Postgres, offline profile). Ready
+  for Phase 10 on go-ahead.

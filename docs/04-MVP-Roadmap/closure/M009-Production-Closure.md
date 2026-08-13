@@ -101,8 +101,11 @@ related:
   multi-profile deploy, admission enforcement behaviour, zero-downtime upgrade, air-gap enclave
   rehearsal, and the DR restore drill are **operational** (no cluster/registry/pen-test vendor in
   this environment) — tracked in [GAReadiness.md](../../11-Deployment/GAReadiness.md).
-- A live Postgres backup/restore roundtrip was **not** run here (the local Docker engine was
-  unavailable); the scripts are syntax-validated and use standard `pg_dump`/`pg_restore`.
+- A live Postgres **backup/restore roundtrip was executed and verified**: the `deploy/backup`
+  scripts backed up a seeded database, the table was dropped to simulate loss, and
+  `pg-restore.sh` performed a checksum-verified restore recovering all rows (real `pg_dump`/
+  `pg_restore` against `postgres:16-alpine`). The full DR **drill with RPO/RTO measurement** on a
+  production-like target remains operational.
 
 ## Documentation completed
 
