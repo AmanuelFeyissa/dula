@@ -36,6 +36,7 @@ Guides are created **only when the corresponding capability is actually usable**
 |-------|--------|-------|
 | [Core Entities User Guide](./CoreEntitiesUserGuide.md) | MVP | Alerts, incidents, assets — browse in the web app; create/update via API (Phase 02) |
 | [Ask Dula User Guide](./AskDulaUserGuide.md) | MVP | Grounded, cited Q&A and alert triage (Phase 03) |
+| [Cyber Intelligence User Guide](./CyberIntelligenceUserGuide.md) | MVP | CTI extraction, vulnerability prioritization, Sigma/YARA authoring (Phase 05) |
 | Product Overview | FUTURE | User-facing summary; authoritative product scope stays in [../02-Vision/Vision.md](../02-Vision/Vision.md) |
 | Installation Guide | FUTURE | Arrives with a packaged/deployable release (Phase 09) |
 | Getting Started | MVP | Interim: local dev quickstart in the root [README](../../README.md); user-facing version when UI features land |

@@ -40,6 +40,21 @@ below baseline **blocks the build** ("evaluation gates everything"). This is the
 suite (UC-14/UC-01) baseline; the fuller composition below is built out in later phases,
 before any fine-tuning.
 
+## 1b. Domain Suites — Cyber Intelligence (Phase 05, CURRENT)
+
+Phase 05 adds domain benchmark suites in `dula_ai.intel.benchmark`, asserted by
+`packages/dula-ai/tests/test_intel_benchmark.py` and `test_intel_redteam.py`:
+
+- **CTI extraction** — IOC and ATT&CK-technique **precision/recall** over curated advisories
+  (baselines: IOC precision ≥ 0.85, IOC recall ≥ 0.9, technique recall ≥ 0.9).
+- **Detection authoring** — **100% syntactic validity**: every authored Sigma and YARA rule
+  must pass its validator (UC-04 acceptance criterion).
+- **Red-team / dual-use** — indirect prompt injection in an advisory is flagged and not
+  obeyed; secret-like content is redacted from summaries; oversized advisories are rejected.
+
+These run offline in CI, so a regression in extraction quality or rule validity blocks the
+build. Full capability reference: [./CyberIntelligence.md](./CyberIntelligence.md).
+
 ## 2. Benchmark Composition (Planned)
 
 | Suite | Measures | Maps to UC |

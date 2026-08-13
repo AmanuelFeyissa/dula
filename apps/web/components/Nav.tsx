@@ -33,6 +33,9 @@ export async function Nav() {
       <Link href="/ask" style={linkStyle}>
         Ask
       </Link>
+      <Link href="/intel" style={linkStyle}>
+        Intel
+      </Link>
       <span style={{ flex: 1 }} />
       {session?.user ? (
         <form

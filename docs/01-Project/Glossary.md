@@ -36,6 +36,10 @@ phase: Documentation Bootstrap (M000)
 - **TTP** — Tactics, Techniques, and Procedures.
 - **MITRE ATT&CK** — knowledge base of adversary TTPs.
 - **CVE / NVD** — Common Vulnerabilities and Exposures / National Vulnerability Database.
+- **CVSS** — Common Vulnerability Scoring System; a vector string yields a 0–10 base severity score.
+- **KEV** — CISA's Known Exploited Vulnerabilities catalogue (a signal for prioritization).
+- **Defang / Refang** — rendering an indicator inert for display (`evil[.]com`, `hxxp://`) /
+  reversing that to match the real value.
 - **CAPEC** — Common Attack Pattern Enumeration and Classification.
 - **Sigma** — generic signature format for SIEM detection rules.
 - **YARA** — pattern-matching rules for malware identification.
