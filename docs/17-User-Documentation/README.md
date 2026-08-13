@@ -39,6 +39,7 @@ Guides are created **only when the corresponding capability is actually usable**
 | [Cyber Intelligence User Guide](./CyberIntelligenceUserGuide.md) | MVP | CTI extraction, vulnerability prioritization, Sigma/YARA authoring (Phase 05) |
 | [Investigation Agent User Guide](./AgentsUserGuide.md) | MVP | Run the investigation agent; approve/reject consequential actions (Phase 06) |
 | [Integrations User Guide](./IntegrationsUserGuide.md) | MVP | View connectors; run read lookups; admin enable/disable (Phase 07) |
+| [Automation Playbooks User Guide](./PlaybooksUserGuide.md) | MVP | Run supervised playbooks; approve safely; read grounded reports (Phase 08) |
 | Product Overview | FUTURE | User-facing summary; authoritative product scope stays in [../02-Vision/Vision.md](../02-Vision/Vision.md) |
 | Installation Guide | FUTURE | Arrives with a packaged/deployable release (Phase 09) |
 | Getting Started | MVP | Interim: local dev quickstart in the root [README](../../README.md); user-facing version when UI features land |

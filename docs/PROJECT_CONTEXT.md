@@ -149,5 +149,15 @@ Air-gapped-first: egress is disabled by default, so live-feed connectors are ine
 phone-home. The **sandbox mechanism is DECIDED (ADR-0013)** — an out-of-process worker with
 host-brokered capabilities (no ambient network) as the portable baseline + a container per
 orchestrated profile, behind a pluggable `SandboxRunner`; the in-process default is delivered and
-the OS-level worker runners are FUTURE. Subsequent phases proceed per the roadmap and the §11
-closure lifecycle; a phase begins only when directed.
+the OS-level worker runners are FUTURE. **Phase 08 (Automation) is complete:** a security
+**automation** layer (`packages/dula-automation`) composes the agent runtime and connectors into
+**declarative, approval-gated playbooks** and **grounded reporting**. A playbook is compiled into a
+planner and executed by the *existing* runtime, so it adds **no new execution path and no new
+security surface** — the runtime stays the sole executor and every control (allowlist ∩ user
+authorization, human approval for consequential steps, limits, audit, tenant isolation) holds
+unchanged. The built-in `triage-enrich-ticket` playbook runs read steps automatically and pauses at
+a consequential **approval checkpoint**; reports are grounded strictly in the run trace (no action
+claimed that did not execute; tool output labelled untrusted). Exposed via `/api/v1/automation/*`
+and an `apps/web` Automation page; high-volume telemetry ingestion is guarded by an offline
+throughput benchmark (cluster-scale load testing documented as FUTURE). Subsequent phases proceed
+per the roadmap and the §11 closure lifecycle; a phase begins only when directed.

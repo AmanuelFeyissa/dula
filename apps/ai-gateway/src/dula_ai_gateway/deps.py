@@ -19,6 +19,7 @@ from dula_common.opa import OPAClient
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from dula_ai_gateway.agents_wiring import AgentSubsystem
+from dula_ai_gateway.automation_wiring import AutomationSubsystem
 from dula_ai_gateway.config import Settings, get_settings
 from dula_ai_gateway.plugins_wiring import PluginsSubsystem
 
@@ -104,6 +105,14 @@ def get_plugins(request: Request) -> PluginsSubsystem:
 
 
 Plugins = Annotated[PluginsSubsystem, Depends(get_plugins)]
+
+
+def get_automation(request: Request) -> AutomationSubsystem:
+    automation: AutomationSubsystem = request.app.state.automation
+    return automation
+
+
+Automation = Annotated[AutomationSubsystem, Depends(get_automation)]
 
 
 def require(action: str) -> Callable[..., Awaitable[None]]:

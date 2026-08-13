@@ -73,6 +73,14 @@ phase: Documentation Bootstrap (M000)
   action and resolves it on approve/reject (or timeout → halt).
 - **Consequential action** — an irreversible/high-impact tool action (e.g. create a ticket,
   isolate a host) that requires explicit human approval by default.
+- **Playbook** — a declarative, multi-step security procedure compiled into a planner and run by
+  the agent runtime; read steps run automatically, consequential steps pause for approval. It
+  adds no new execution path, so all agent controls (permissions, approval, limits, audit) apply.
+- **Approval checkpoint** — the point in a playbook where a consequential step pauses the run for
+  human approval before it can execute.
+- **Grounded report** — an executive/technical report derived strictly from a run's trace, citing
+  the step each statement came from, with tool output labelled untrusted; it never claims an
+  action that did not actually execute.
 - **Guardrails** — input/output controls constraining model/agent behavior.
 - **LLM Gateway** — internal service abstracting model providers/runtimes.
 - **Evaluation / Benchmark** — measuring model/system quality against a fixed dataset.

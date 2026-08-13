@@ -14,6 +14,13 @@ related:
 
 # Phase 08 — Automation
 
+> **Status: COMPLETE (M008).** Delivered `packages/dula-automation` (declarative, approval-gated
+> playbooks over the agent runtime + grounded reporting), the `/api/v1/automation/*` API, an
+> `apps/web` Automation page, and an offline telemetry-ingestion throughput benchmark. See
+> [../13-Agents/Playbooks.md](../13-Agents/Playbooks.md),
+> [closure/M008-Automation-Closure.md](./closure/M008-Automation-Closure.md), and
+> [closure/Phase08-Automation-Completion-Review.md](./closure/Phase08-Automation-Completion-Review.md).
+
 > **Purpose.** Compose agents + connectors into supervised playbooks and automated
 > reporting — efficiency with humans in command.
 

@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 07 — Integrations (COMPLETE) |
-| **CURRENT MILESTONE** | M007 ✅ complete |
-| **STATUS** | Phase 07 done & **closed under CLAUDE.md §11** (M007 Closure + Phase 07 Completion Review). Delivered on `main`: a **signed, sandboxed plugin/connector framework** (`packages/dula-plugins`) — Ed25519 manifest signing + trust/revocation, default-deny **egress allowlist + SSRF** guard, a **host** (install/enable/disable/revoke/invoke) with per-call OPA authz + limits + audit + untrusted output, and the first connectors (`siem.search`, `ti.lookup_indicator`/`ti.live_lookup`, `ticketing.create_ticket`). Exposed via `apps/ai-gateway` `/api/v1/plugins` + `/api/v1/connectors/*` (OPA `plugins.read`/`plugins.admin`/`connectors.invoke` + per-`connector.*`) and an `apps/web` **Integrations** page; the **agent's search_logs + create_ticket are now connector-backed** (agent→connector). Air-gapped verified (egress-gated connector inert). Ruff/format/mypy clean; **199 pytest**; web build clean. |
-| **LAST COMPLETED TASK** | Phase 07 build + closure: [M007 Closure](./04-MVP-Roadmap/closure/M007-Integrations-Closure.md) + [Phase 07 Completion Review](./04-MVP-Roadmap/closure/Phase07-Integrations-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 07 complete; awaiting go-ahead for Phase 08) |
-| **NEXT TASK** | Phase 08 — Automation (workflows/playbooks; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Phase 08 — Automation (COMPLETE) |
+| **CURRENT MILESTONE** | M008 ✅ complete |
+| **STATUS** | Phase 08 done & **closed under CLAUDE.md §11** (M008 Closure + Phase 08 Completion Review). Delivered on `main`: a **security automation** layer (`packages/dula-automation`) composing the agent runtime + connectors into **declarative, approval-gated playbooks** and **grounded reporting**. A playbook compiles into a planner run by the *existing* `AgentRuntime`, so it adds **no new execution path** — allowlist ∩ user authz, human approval for consequential steps, limits, audit, and tenant isolation all hold. Built-in `triage-enrich-ticket` playbook (read steps auto-run; ticket is an **approval checkpoint**); reports grounded strictly in the trace (untrusted-labelled, no unexecuted action claimed). Exposed via `apps/ai-gateway` `/api/v1/automation/*` (OPA `automation.read`/`automation.run`/`automation.approve`/`reports.read`) and an `apps/web` **Automation** page. High-volume ingestion guarded by an offline throughput benchmark (cluster-scale load = FUTURE). Ruff/format/mypy clean; **227 pytest**; web build clean. |
+| **LAST COMPLETED TASK** | Phase 08 build + closure: [M008 Closure](./04-MVP-Roadmap/closure/M008-Automation-Closure.md) + [Phase 08 Completion Review](./04-MVP-Roadmap/closure/Phase08-Automation-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 08 complete; awaiting go-ahead for Phase 09) |
+| **NEXT TASK** | Phase 09 — Production (deployment hardening, scale, operability; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -40,8 +40,10 @@ phase: Documentation Bootstrap (M000)
   `/plugins` + `/connectors/*`**; SSE streaming); **`packages/dula-agents`** (agent runtime:
   tools, permissions, approval, limits, audit, planner, store); **`packages/dula-plugins`**
   (plugin/connector framework: Ed25519 signing, egress+SSRF, host lifecycle, connectors);
+  **`packages/dula-automation`** (playbook framework: declarative steps + planner + grounded
+  reporting + library);
   `apps/web` (app shell + alerts/incidents/assets + **Ask/triage UI** + **Intel workbench** +
-  **Agents** + **Integrations** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
+  **Agents** + **Integrations** + **Automation** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
   dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
 - **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
@@ -73,17 +75,28 @@ phase: Documentation Bootstrap (M000)
   still approval-gated. **Air-gapped-first**: egress is disabled by default so live-feed
   connectors are inert with no phone-home. Exposed via `/api/v1/plugins` + `/api/v1/connectors/*`
   and an `apps/web` Integrations page.
+- **Phase 08 automation:** `dula_automation` — a **security automation** layer composing the agent
+  runtime + connectors into **declarative, approval-gated playbooks** and **grounded reporting**. A
+  playbook (`Ref`/`Template`/`Condition`/`PlaybookStep`) compiles into a stateless planner run by the
+  *existing* `AgentRuntime`, so it adds **no new execution path** — allowlist ∩ user authz, human
+  approval for consequential steps, limits, audit, and tenant isolation hold unchanged. Built-in
+  `triage-enrich-ticket` playbook (read steps auto-run; ticket is an **approval checkpoint**);
+  `generate_report` produces executive + technical reports grounded strictly in the trace (untrusted
+  tool output; no unexecuted action claimed). Exposed via `/api/v1/automation/*` and an `apps/web`
+  Automation page. High-volume telemetry ingestion is guarded by an offline throughput benchmark
+  (`apps/worker`); cluster-scale load testing is documented as FUTURE.
 
 ## What Is Next
 
-**Phase 07 (M007) is complete and closed under §11**, and the **plugin sandbox mechanism is now
-DECIDED (ADR-0013)** — out-of-process worker with host-brokered capabilities (baseline) +
-container per orchestrated profile, behind a pluggable `SandboxRunner` (in-process default
-delivered). Phase 08 — Automation (security workflows/playbooks composing agents + connectors) is
-next, on explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase 04
-pipeline, shipping only if a future candidate clears the evaluation gate. Remaining non-blocking
-open items: API gateway tech, embedding/reranker model, hardware sizing, and the OS-level
-worker/container sandbox runners + real connector HTTP clients + third-party plugin loader.
+**Phase 08 (M008) is complete and closed under §11.** Automation composes agents + connectors into
+supervised playbooks with grounded reporting, reusing the runtime's security controls with no new
+execution path. **Phase 09 — Production** (deployment hardening, scale, operability: K8s/Argo CD/
+Terraform, full OTel, GPU serving) is next, on explicit go-ahead. Dula AI iterations (a larger base
+model) continue on the Phase 04 pipeline, shipping only if a future candidate clears the evaluation
+gate. Remaining non-blocking open items: API gateway tech, embedding/reranker model, hardware
+sizing; the OS-level worker/container sandbox runners + real connector HTTP clients + third-party
+plugin loader; and automation follow-ons (scheduled/triggered playbooks, durable run store, PDF
+reports, cluster-scale telemetry load test).
 
 ## Milestone Ledger
 
@@ -97,7 +110,8 @@ worker/container sandbox runners + real connector HTTP clients + third-party plu
 | M005 | Phase 05 — Cyber Intelligence | ✅ Complete (CTI extraction + STIX, CVSS/prioritization, Sigma/YARA authoring + validation, ATT&CK coverage; intel API; benchmark + red-team gates) |
 | M006 | Phase 06 — Agents | ✅ Complete (first-party agent runtime; investigation assistant UC-03; permissions/approval/limits/audit; agents API + UI; release-blocking safety suite) |
 | M007 | Phase 07 — Integrations | ✅ Complete (signed plugin/connector framework; egress allowlist + SSRF; host lifecycle; SIEM/TI/ticketing connectors; plugins API + UI; agent→connector bridge; air-gapped verified) |
-| M008+ | Phases 08–11 | ⏳ Not started |
+| M008 | Phase 08 — Automation | ✅ Complete (declarative approval-gated playbooks over the agent runtime; grounded reporting; automation API + UI; ingestion throughput benchmark; no-bypass/no-auto-approval safety) |
+| M009+ | Phases 09–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -253,3 +267,19 @@ worker/container sandbox runners + real connector HTTP clients + third-party plu
   wired into the host); the OS-level worker/container runners are FUTURE. Updated ADR index/table,
   PluginArchitecture/Framework/Security + 10-Security/PluginSecurity, TechnologyStack, and CLAUDE.md
   §6 open items. Verified: ruff/format/mypy clean, **205 pytest** (+6 sandbox).
+- 2026-08-13 — **Phase 08 (M008) build + closure — Automation.** Delivered `packages/dula-automation`,
+  a security **automation** layer composing the agent runtime + connectors into **declarative,
+  approval-gated playbooks** and **grounded reporting**. A playbook (`Ref`/`Template`/`Condition`/
+  `PlaybookStep`/`Playbook`) compiles into a **stateless** `PlaybookPlanner` executed by the *existing*
+  `AgentRuntime`, so it adds **no new execution path and no new security surface** — the runtime stays
+  the sole executor and every control (allowlist ∩ user authz, human approval for consequential steps,
+  limits, audit, tenant isolation) holds unchanged. Built-in `triage-enrich-ticket` playbook (read
+  steps auto-run; `create_ticket` is an **approval checkpoint**); `generate_report` emits executive +
+  technical reports grounded strictly in the trace (tool output labelled untrusted; no unexecuted
+  action claimed). Wired into `apps/ai-gateway` as `/api/v1/automation/*` (list/run/read/approve/report)
+  behind new OPA actions (`automation.read`/`run`/`approve`, `reports.read`); added an `apps/web`
+  **Automation** page. Added an **offline high-volume ingestion throughput benchmark** (`apps/worker`,
+  ADR-0004) — correctness + idempotency at volume + a per-event cost floor; cluster-scale load test
+  documented as FUTURE. Verified: ruff/format/mypy-strict clean, **227 pytest** (up from 205; +12
+  package, +8 API, +2 throughput), OPA policy extended, web eslint/tsc/build clean. Closed under §11
+  (M008 Closure + Phase 08 Completion Review). Ready for Phase 09 on go-ahead.

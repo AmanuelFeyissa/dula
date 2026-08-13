@@ -15,9 +15,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from dula_ai_gateway.agents_wiring import build_agent_subsystem
+from dula_ai_gateway.automation_wiring import build_automation_subsystem
 from dula_ai_gateway.config import Settings, get_settings
 from dula_ai_gateway.plugins_wiring import build_plugins_subsystem
-from dula_ai_gateway.routers import agents, ask, health, intel, knowledge, plugins, triage
+from dula_ai_gateway.routers import (
+    agents,
+    ask,
+    automation,
+    health,
+    intel,
+    knowledge,
+    plugins,
+    triage,
+)
 from dula_ai_gateway.wiring import build_subsystem
 
 _log = logging.getLogger(__name__)
@@ -73,6 +83,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.opa, egress_enabled=settings.plugins_egress_enabled
     )
     app.state.agents = build_agent_subsystem(app.state.opa, app.state.plugins)
+    app.state.automation = build_automation_subsystem(app.state.agents)
     try:
         yield
     finally:
@@ -100,6 +111,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(intel.router)
     app.include_router(agents.router)
     app.include_router(plugins.router)
+    app.include_router(automation.router)
     return app
 
 
