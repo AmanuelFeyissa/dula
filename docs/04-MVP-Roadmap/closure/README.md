@@ -42,3 +42,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 | Phase 04 — Dula AI (phase) | [Phase04-DulaAI-Completion-Review.md](./Phase04-DulaAI-Completion-Review.md) | COMPLETE |
 | M005 — Cyber Intelligence (milestone) | [M005-CyberIntelligence-Closure.md](./M005-CyberIntelligence-Closure.md) | COMPLETE |
 | Phase 05 — Cyber Intelligence (phase) | [Phase05-CyberIntelligence-Completion-Review.md](./Phase05-CyberIntelligence-Completion-Review.md) | COMPLETE |
+| M006 — Agents (milestone) | [M006-Agents-Closure.md](./M006-Agents-Closure.md) | COMPLETE |
+| Phase 06 — Agents (phase) | [Phase06-Agents-Completion-Review.md](./Phase06-Agents-Completion-Review.md) | COMPLETE |

@@ -28,6 +28,7 @@ members = [
     "packages/common-py",
     "packages/dula-ai",
     "packages/dula-ml",
+    "packages/dula-agents",
     "apps/platform-api",
     "apps/worker",
     "apps/ai-gateway",
@@ -36,6 +37,7 @@ members = [
 [tool.uv.sources]
 dula-common = { workspace = true }
 dula-ai = { workspace = true }
+dula-agents = { workspace = true }
 
 [tool.ruff]
 target-version = "py312"

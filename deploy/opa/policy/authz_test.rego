@@ -146,3 +146,51 @@ test_cti_denied_cross_tenant if {
 		"resource": {"tenant_id": "t2"},
 	}
 }
+
+test_analyst_can_run_agent if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "agents.run",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_analyst_can_use_read_tools if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "tool.search_logs",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_responder_can_isolate_host if {
+	allow with input as {
+		"subject": {"roles": ["responder"], "tenant_id": "t1"},
+		"action": "tool.isolate_host",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_analyst_cannot_isolate_host if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "tool.isolate_host",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_analyst_can_create_ticket_tool if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "tool.create_ticket",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_agent_run_denied_cross_tenant if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "agents.run",
+		"resource": {"tenant_id": "t2"},
+	}
+}

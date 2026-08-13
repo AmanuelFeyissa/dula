@@ -18,6 +18,7 @@ from dula_common.auth import AuthError, OIDCVerifier, TokenClaims
 from dula_common.opa import OPAClient
 from fastapi import Depends, Header, HTTPException, Request, status
 
+from dula_ai_gateway.agents_wiring import AgentSubsystem
 from dula_ai_gateway.config import Settings, get_settings
 
 _log = logging.getLogger(__name__)
@@ -86,6 +87,14 @@ def get_subsystem(request: Request) -> RagStack:
 
 
 Subsystem = Annotated[RagStack, Depends(get_subsystem)]
+
+
+def get_agents(request: Request) -> AgentSubsystem:
+    agents: AgentSubsystem = request.app.state.agents
+    return agents
+
+
+Agents = Annotated[AgentSubsystem, Depends(get_agents)]
 
 
 def require(action: str) -> Callable[..., Awaitable[None]]:
