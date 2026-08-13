@@ -24,14 +24,31 @@ read_actions := {"me.read", "assets.read", "alerts.read", "incidents.read"}
 # AI actions (grounded Q&A / triage) — available to every operational persona (Phase 03).
 # Cyber-intelligence actions (Phase 05): CTI extraction, vulnerability analysis, and detection
 # authoring — grounded/deterministic, defensive-only, available to every operational persona.
-ai_actions := {"ai.ask", "ai.triage", "ai.cti", "ai.vuln", "ai.detect"}
+# Agent actions (Phase 06): running an investigation agent, reading its trace, hitting the
+# approval endpoint, and the READ-only agent tools. Approval only *takes effect* if the approver
+# is also authorized for the specific consequential tool (re-checked by the agent runtime), so
+# `agents.approve` here just admits the request. Consequential tools are role-gated below.
+ai_actions := {
+	"ai.ask", "ai.triage", "ai.cti", "ai.vuln", "ai.detect",
+	"agents.run", "agents.read", "agents.approve",
+	"tool.search_logs", "tool.enrich_indicator", "tool.list_alerts",
+}
 
 # Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
+# Consequential agent tools: create_ticket for responders/analysts/hunters/engineers; the
+# higher-impact isolate_host containment for responders only (admin via `*`).
 role_actions := {
 	"admin": {"*"},
-	"analyst": {"alerts.create", "alerts.update", "incidents.create", "knowledge.ingest"},
-	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest"},
-	"responder": {"incidents.create", "incidents.update", "incidents.delete", "alerts.update"},
+	"analyst": {"alerts.create", "alerts.update", "incidents.create", "knowledge.ingest", "tool.create_ticket"},
+	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest", "tool.create_ticket"},
+	"responder": {
+		"incidents.create",
+		"incidents.update",
+		"incidents.delete",
+		"alerts.update",
+		"tool.create_ticket",
+		"tool.isolate_host",
+	},
 	"engineer": {
 		"assets.create",
 		"assets.update",
@@ -40,6 +57,7 @@ role_actions := {
 		"alerts.update",
 		"alerts.delete",
 		"knowledge.ingest",
+		"tool.create_ticket",
 	},
 }
 

@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 05 — Cyber Intelligence (COMPLETE) |
-| **CURRENT MILESTONE** | M005 ✅ complete |
-| **STATUS** | Phase 05 done & **closed under CLAUDE.md §11** (M005 Closure + Phase 05 Completion Review). Delivered on `main`: a **deterministic, offline-first intelligence core** (`dula_ai.intel`) — CTI extraction (IOC/TTP + STIX 2.1), CVSS v3.1 scoring + P1–P4 prioritization, and Sigma/YARA authoring with validators + ATT&CK coverage — exposed via `apps/ai-gateway` `/api/v1/intel/*` (OPA `ai.cti`/`ai.vuln`/`ai.detect`), gated by domain benchmark + red-team suites. Ruff/format/mypy clean; **129 pytest**. |
-| **LAST COMPLETED TASK** | Phase 05 build + closure: [M005 Closure](./04-MVP-Roadmap/closure/M005-CyberIntelligence-Closure.md) + [Phase 05 Completion Review](./04-MVP-Roadmap/closure/Phase05-CyberIntelligence-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 05 complete; awaiting go-ahead for Phase 06) |
-| **NEXT TASK** | Phase 06 — Agents (LangGraph, ADR-0008; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Phase 06 — Agents (COMPLETE) |
+| **CURRENT MILESTONE** | M006 ✅ complete |
+| **STATUS** | Phase 06 done & **closed under CLAUDE.md §11** (M006 Closure + Phase 06 Completion Review). Delivered on `main`: a first-party **agent runtime** (`packages/dula-agents`) — plan/act loop with per-call permission checks (**agent ⊆ user**, OPA), human approval for consequential tools, step/cost/time limits, and full audit; the **investigation assistant** (UC-03) on read-first tools; exposed via `apps/ai-gateway` `/api/v1/agents/*` (OPA `agents.run`/`agents.read`/`agents.approve` + per-`tool.*`) and an `apps/web` **Agents** page. Release-blocking **safety suite** = zero unauthorized actions. Ruff/format/mypy clean; **157 pytest**; web build clean. |
+| **LAST COMPLETED TASK** | Phase 06 build + closure: [M006 Closure](./04-MVP-Roadmap/closure/M006-Agents-Closure.md) + [Phase 06 Completion Review](./04-MVP-Roadmap/closure/Phase06-Agents-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 06 complete; awaiting go-ahead for Phase 07) |
+| **NEXT TASK** | Phase 07 — Integrations (connectors/plugins; real tool backends for agents; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -36,10 +36,11 @@ phase: Documentation Bootstrap (M000)
   **`dula_ai.intel`**: deterministic CTI/vuln/detection engineering — see below);
   `apps/platform-api` (CRUD for assets/incidents/alerts, OPA authz, audit, RLS);
   `apps/worker` (idempotent Redpanda consumer); **`apps/ai-gateway`** (grounded Q&A, triage,
-  knowledge ingest, **cyber-intelligence `/intel/*`**; SSE streaming); `apps/web` (app shell +
-  alerts/incidents/assets + **Ask/triage UI** + **Intel workbench UI**); Keycloak realm; OPA
-  `dula.authz` policy; Docker Compose dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres,
-  Redis, MinIO, optional Ollama).
+  knowledge ingest, **cyber-intelligence `/intel/*`**, **agents `/agents/*`**; SSE streaming);
+  **`packages/dula-agents`** (agent runtime: tools, permissions, approval, limits, audit,
+  planner, store); `apps/web` (app shell + alerts/incidents/assets + **Ask/triage UI** +
+  **Intel workbench** + **Agents** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
+  dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
 - **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
   QLoRA train, eval, decide; Kaggle/Lightning/Modal runners; DVC + Argo) + OpenAI-compatible
@@ -51,14 +52,23 @@ phase: Documentation Bootstrap (M000)
   coverage mapping (UC-04). A grounded CTI summary layers the LLM Gateway on top. Domain
   benchmark (extraction precision/recall, 100% rule validity) and red-team/dual-use safety
   suites gate it in CI.
+- **Phase 06 agents:** `dula_agents` — a first-party **agent runtime** (ADR-0008) that owns the
+  security-critical layer: per-call permission checks (**agent ⊆ user**), human approval for
+  consequential tools, step/cost/time limits, and a full audited, replayable run trace. The
+  **investigation assistant** (UC-03) triages → enriches → corroborates → recommends a ticket
+  (approval-gated) using read-first tools; the planner is deterministic/offline (LangGraph or a
+  model planner can back it later behind the same interface). Exposed via `/api/v1/agents/*` and
+  an `apps/web` Agents page. A **release-blocking safety suite** proves zero unauthorized actions
+  under adversarial planners, missing permissions, rejected/unauthorized approvers, and runaway
+  loops.
 
 ## What Is Next
 
-**Phase 05 (M005) is complete and closed under §11.** Phase 06 — Agents (LangGraph, ADR-0008)
-is next, on explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase
-04 pipeline, shipping only if a future candidate clears the evaluation gate. Remaining
-non-blocking open items: API gateway tech, plugin sandbox mechanism, embedding/reranker model,
-hardware sizing.
+**Phase 06 (M006) is complete and closed under §11.** Phase 07 — Integrations (connector/plugin
+framework; wiring real SIEM/EDR/ticketing backends behind the agent tool ports) is next, on
+explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase 04 pipeline,
+shipping only if a future candidate clears the evaluation gate. Remaining non-blocking open
+items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, hardware sizing.
 
 ## Milestone Ledger
 
@@ -70,7 +80,8 @@ hardware sizing.
 | M003 | Phase 03 — Knowledge & RAG | ✅ Complete (LLM Gateway + RAG + AI Gateway + Ask UI; benchmark + red-team; Qdrant verified live) |
 | M004 | Phase 04 — Dula AI | ✅ Complete (pipeline + real QLoRA run; first candidate **retired** by the gate; platform stays on general model) |
 | M005 | Phase 05 — Cyber Intelligence | ✅ Complete (CTI extraction + STIX, CVSS/prioritization, Sigma/YARA authoring + validation, ATT&CK coverage; intel API; benchmark + red-team gates) |
-| M006+ | Phases 06–11 | ⏳ Not started |
+| M006 | Phase 06 — Agents | ✅ Complete (first-party agent runtime; investigation assistant UC-03; permissions/approval/limits/audit; agents API + UI; release-blocking safety suite) |
+| M007+ | Phases 07–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -181,3 +192,20 @@ hardware sizing.
   advisories don't leak the system prompt; secrets are redacted). Verified: ruff/format/mypy
   strict clean, **129 pytest** (up from 86), web lint/typecheck/build clean. Closed under §11
   (M005 Closure + Phase 05 Completion Review). Ready for Phase 06 on go-ahead.
+- 2026-08-13 — **Phase 06 (M006) build + closure — Agents.** Delivered `packages/dula-agents`,
+  a first-party **agent runtime** per ADR-0008: a plan/act loop where the planner only *proposes*
+  and the runtime is the sole executor, running a step only after it passes the agent's tool
+  **allowlist**, the invoking user's **OPA authorization** (agent ⊆ user), and — for consequential
+  tools — **human approval**; with step/cost/time **limits** and a full **audited** run trace
+  (lifecycle: planning→awaiting_approval→executing→completed/failed/halted). Built the **investigation
+  assistant** (UC-03: list_alerts→enrich_indicator→search_logs→create_ticket, least-privilege — no
+  host isolation), a deterministic offline planner (LangGraph/model planner can back the same
+  interface later), tenant-scoped run store, and injectable tool **ports** (in-memory offline;
+  real connectors FUTURE). `enrich_indicator` reuses the Phase 05 intel core. Exposed six OPA
+  actions (`agents.run/read/approve` + `tool.*`) and `/api/v1/agents/*` (start/read/approve),
+  plus an `apps/web` **Agents** page (run + approve/reject). Added a **release-blocking safety
+  suite** asserting **zero unauthorized actions** under adversarial planners, missing permissions,
+  rejected/unauthorized approvers, and runaway loops. Verified: ruff/format/mypy-strict clean,
+  **157 pytest** (up from 129; +18 runtime +10 API), OPA policy extended, web eslint/tsc/build
+  clean. Closed under §11 (M006 Closure + Phase 06 Completion Review). Ready for Phase 07 on
+  go-ahead.

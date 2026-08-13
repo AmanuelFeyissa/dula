@@ -108,7 +108,7 @@ Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) li
 
 ## 10. Boundary
 
-Implementation is underway: **Phases 01 (M001) through 05 (M005) are complete and closed**
+Implementation is underway: **Phases 01 (M001) through 06 (M006) are complete and closed**
 (see [PROJECT_STATE.md](./PROJECT_STATE.md) and
 [04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Phase 02 delivered the core
 domain (assets/alerts/incidents + audit), the Redpanda event backbone + worker, service-layer
@@ -129,5 +129,14 @@ ATT&CK coverage mapping — exposed via `apps/ai-gateway` `/api/v1/intel/*` and 
 Intel workbench page, gated by domain benchmark and red-team/dual-use safety suites. The
 extraction and rule-authoring are deliberately **deterministic, not model-dependent**, so
 their outputs are explainable, reproducible, and air-gapped by default; a model is used only
-for the optional, guardrailed CTI summary. Subsequent phases proceed per the roadmap and the
-§11 closure lifecycle; a phase begins only when directed.
+for the optional, guardrailed CTI summary. **Phase 06 (Agents) is complete:** a first-party
+**agent runtime** (`packages/dula-agents`, ADR-0008) owns the security-critical layer — the
+planner only proposes, and the runtime executes a step only after it passes the agent's tool
+allowlist, the invoking user's OPA authorization (**agent ⊆ user**), and (for consequential
+tools) **human approval**, all under step/cost/time limits and full audit. The **investigation
+assistant** (UC-03) works an alert with read-first tools and gates its recommended ticket on
+approval; a **release-blocking safety suite** proves zero unauthorized actions under adversarial
+conditions. It is exposed via `/api/v1/agents/*` and an `apps/web` Agents page; the planner is
+deterministic/offline today (LangGraph or a model planner can back it later behind the same
+interface). Subsequent phases proceed per the roadmap and the §11 closure lifecycle; a phase
+begins only when directed.

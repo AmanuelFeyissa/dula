@@ -64,6 +64,15 @@ phase: Documentation Bootstrap (M000)
 - **Inference** — running a trained model to produce output.
 - **Tool calling** — an LLM invoking defined functions/tools.
 - **Agent** — an LLM-driven component that plans and acts via tools under policy.
+- **Agent runtime** — the first-party component that executes an agent's plan/act loop and
+  enforces permissions, approval, limits, and audit; the planner only *proposes*, the runtime
+  decides and executes.
+- **Side-effect class** — a tool's classification as **read** (permissioned, no approval) or
+  **consequential** (writes/containment; requires human approval).
+- **Approval broker** — the human-in-the-loop component that pauses a run for a consequential
+  action and resolves it on approve/reject (or timeout → halt).
+- **Consequential action** — an irreversible/high-impact tool action (e.g. create a ticket,
+  isolate a host) that requires explicit human approval by default.
 - **Guardrails** — input/output controls constraining model/agent behavior.
 - **LLM Gateway** — internal service abstracting model providers/runtimes.
 - **Evaluation / Benchmark** — measuring model/system quality against a fixed dataset.
