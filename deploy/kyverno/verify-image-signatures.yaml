@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dula-verify-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify Dula Image Signatures (cosign, keyed)
+    policies.kyverno.io/category: Supply Chain (ADR-0015)
+    policies.kyverno.io/description: >-
+      Only cosign-signed, attested Dula images may run. Verification uses a keyed cosign
+      public key (offline/air-gapped verifiable — no Sigstore online dependency). Replace
+      COSIGN_PUBLIC_KEY with the mirrored release public key at install time.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-dula-images
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/part-of
+                    operator: In
+                    values: [dula]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/amanuelfeyissa/dula/*"
+            - "registry.internal.example.com/dula/*"
+            - "registry.airgap.internal/dula/*"
+          failureAction: Enforce
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      COSIGN_PUBLIC_KEY_PLACEHOLDER_REPLACE_AT_INSTALL
+                      -----END PUBLIC KEY-----

@@ -1,0 +1,27 @@
+# On-prem profile: in-cluster data services (operators/StatefulSets in dula-data),
+# ingress via Envoy Gateway with an internal CA, egress limited to the on-prem data plane
+# plus any explicitly-allowlisted internal systems (e.g. a corporate SIEM).
+global:
+  imageRegistry: registry.internal.example.com/dula
+  imageTag: "0.1.0"
+
+config:
+  PROFILE: "backed"
+  EVENTS_ENABLED: "true"
+  PLUGINS_EGRESS_ENABLED: "false"
+
+gateway:
+  enabled: true
+  className: envoy-gateway
+  hostname: dula.corp.internal
+  tls:
+    enabled: true
+    secretName: dula-tls
+
+networkPolicy:
+  enabled: true
+  # In-cluster data plane is covered by the baseline policy; add internal SIEM/ticketing CIDRs here.
+  allowedEgressCIDRs: []
+
+metrics:
+  enabled: true

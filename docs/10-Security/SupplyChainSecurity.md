@@ -16,6 +16,13 @@ related:
 
 > **Purpose.** Ensure the integrity of what we build and ship — code, dependencies, images,
 > models, and datasets — across all deployment profiles including air-gapped.
+>
+> **Decided (ADR-0015):** the release-integrity posture is **cosign keyed signing** (offline-
+> verifiable, no Sigstore online dependency) + **syft** SBOM + **grype** scan gate (fail on fixable
+> High/Critical) + **Kyverno** admission (verify signatures + pod-security baseline), targeting
+> **SLSA Build L3**; images pinned by digest; signed commits recommended, enforced on protected
+> branches at GA. Delivered: `.github/workflows/release.yml` (build→SBOM→scan→sign, gated on
+> tag/dispatch) and `deploy/kyverno/`.
 
 ## 1. Objectives
 

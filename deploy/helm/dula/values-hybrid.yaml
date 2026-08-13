@@ -1,0 +1,28 @@
+# Hybrid profile: workloads in-cluster (on-prem or private cloud), some data/services managed
+# externally. Egress is allowlisted to the specific external endpoints in use; everything else
+# stays default-deny. Connector egress may be enabled for approved external feeds.
+global:
+  imageRegistry: registry.internal.example.com/dula
+  imageTag: "0.1.0"
+
+config:
+  PROFILE: "backed"
+  EVENTS_ENABLED: "true"
+  # Hybrid may allow vetted external connector feeds — still per-connector allowlisted + approval-gated.
+  PLUGINS_EGRESS_ENABLED: "true"
+
+gateway:
+  enabled: true
+  className: envoy-gateway
+  hostname: dula.hybrid.example.com
+  tls:
+    enabled: true
+    secretName: dula-tls
+
+networkPolicy:
+  enabled: true
+  # Allowlist the external managed endpoints (DB/search/feeds) this hybrid install reaches.
+  allowedEgressCIDRs: []
+
+metrics:
+  enabled: true

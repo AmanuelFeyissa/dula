@@ -1,0 +1,95 @@
+{{- $root := . -}}
+{{- range $name, $c := .Values.components }}
+{{- if $c.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $root.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  {{- if not (and $c.hpa $c.hpa.enabled) }}
+  replicas: {{ $c.replicas | default 2 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "dula.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "dula.selectorLabels" (dict "root" $root "name" $name) | nindent 8 }}
+      annotations:
+        checksum/config: {{ toYaml $root.Values.config | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "dula.serviceAccountName" $root }}
+      automountServiceAccountToken: false
+      {{- with $root.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $root.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $name }}
+          image: {{ include "dula.image" (dict "root" $root "c" $c) }}
+          imagePullPolicy: {{ $root.Values.global.imagePullPolicy }}
+          {{- with $c.command }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml $root.Values.containerSecurityContext | nindent 12 }}
+          {{- if $c.port }}
+          ports:
+            - name: http
+              containerPort: {{ $c.port }}
+              protocol: TCP
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $root.Release.Name }}-config
+            - secretRef:
+                name: {{ $root.Values.existingSecret }}
+                optional: true
+          {{- if and $c.probes $c.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ $c.probes.livenessPath | default $c.probes.path | default "/" }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ $c.probes.readinessPath | default $c.probes.path | default "/" }}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- end }}
+          resources:
+            {{- toYaml $c.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if eq $name "web" }}
+            - name: cache
+              mountPath: /app/apps/web/.next/cache
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if eq $name "web" }}
+        - name: cache
+          emptyDir: {}
+        {{- end }}
+{{- end }}
+{{- end }}

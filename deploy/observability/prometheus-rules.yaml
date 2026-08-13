@@ -1,0 +1,59 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dula-slo-rules
+  labels:
+    app.kubernetes.io/part-of: dula
+    role: alert-rules
+  annotations:
+    description: >-
+      Dula SLO recording + alerting rules (docs/16-Operations/Observability.md).
+      Infra-signal alerts (target down, crashloop, HPA saturation) fire today; the
+      request-level SLI rules attach when the application Prometheus exporter lands (FUTURE).
+spec:
+  groups:
+    - name: dula.availability
+      rules:
+        # Recording rule: rollup of container restarts per component (real today).
+        - record: dula:container_restarts:rate5m
+          expr: sum by (namespace, pod) (rate(kube_pod_container_status_restarts_total{namespace=~"dula.*"}[5m]))
+        - alert: DulaTargetDown
+          expr: up{namespace=~"dula.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Dula target {{ $labels.job }} is down"
+            description: "A Dula scrape target has been down for 5m."
+        - alert: DulaPodCrashLooping
+          expr: dula:container_restarts:rate5m > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash-looping"
+            description: "Container restarts observed over 15m in {{ $labels.namespace }}."
+        - alert: DulaHPASaturated
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace=~"dula.*"}
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"dula.*"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas"
+            description: "Sustained saturation — review capacity/sizing."
+    - name: dula.slo.requests
+      # FUTURE: attaches to the application /metrics exporter (http_request_* histograms).
+      # SLO targets: availability >= 99.5%, p95 latency < 800ms (docs/16-Operations/Observability.md).
+      rules:
+        - alert: DulaHighErrorRate
+          expr: |
+            sum by (service) (rate(http_requests_total{namespace=~"dula.*",code=~"5.."}[5m]))
+            / sum by (service) (rate(http_requests_total{namespace=~"dula.*"}[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.service }} 5xx rate > 5%"
+            description: "Error budget burning; investigate {{ $labels.service }}."

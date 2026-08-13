@@ -1,0 +1,26 @@
+{{- if .Values.metrics.enabled }}
+{{- $root := . -}}
+# Prometheus scrape config (Prometheus operator CRD). NOTE: the application-side Prometheus
+# exporter (/metrics) is wired as FUTURE — telemetry currently uses an OTel stub. This
+# ServiceMonitor is the scaffolding it will attach to (docs/16-Operations/Observability.md).
+{{- range $name, $c := .Values.components }}
+{{- if and $c.enabled $c.service $c.service.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $root.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "dula.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ $root.Values.metrics.path }}
+      interval: {{ $root.Values.metrics.interval }}
+{{- end }}
+{{- end }}
+{{- end }}

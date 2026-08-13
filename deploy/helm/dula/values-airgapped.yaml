@@ -1,0 +1,32 @@
+# Air-gapped profile: fully offline. Images come from the in-cluster private registry mirror,
+# NO external egress is permitted (allowedEgressCIDRs stays empty), connector egress is OFF, and
+# the AI stack runs on the offline/local model path. This overlay must add no external endpoints;
+# verified by deploy/airgap/verify-airgap.sh + tests.
+global:
+  # The private mirror populated from the offline bundle (deploy/airgap).
+  imageRegistry: registry.airgap.internal/dula
+  imageTag: "0.1.0"
+
+config:
+  # Offline stores + extractive/local provider; no phone-home.
+  PROFILE: "backed"
+  EVENTS_ENABLED: "true"
+  PROVIDER: "extractive"
+  # Air-gapped: connector egress MUST stay disabled (egress-gated connectors are inert).
+  PLUGINS_EGRESS_ENABLED: "false"
+
+gateway:
+  enabled: true
+  className: envoy-gateway
+  hostname: dula.airgap.internal
+  tls:
+    enabled: true
+    secretName: dula-tls
+
+networkPolicy:
+  enabled: true
+  # No external egress at all — the allowlist is intentionally empty (only DNS + in-cluster planes).
+  allowedEgressCIDRs: []
+
+metrics:
+  enabled: true

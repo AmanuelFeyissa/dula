@@ -1,0 +1,28 @@
+# Air-gapped image manifest (ADR-0015 supply-chain; docs/11-Deployment/AirGappedDeployment.md).
+# Every image the platform needs at runtime, to be mirrored into the private registry from the
+# offline bundle. Dula images are signed (cosign, keyed); infra images are pinned by digest in
+# real bundles. One list, all profiles — nothing is pulled from the public internet at runtime.
+#
+# Dula application images (built + signed by the release pipeline).
+dula/web
+dula/platform-api
+dula/ai-gateway
+dula/worker
+#
+# Data plane (ADR-0003/0004).
+qdrant/qdrant:v1.12.1
+opensearchproject/opensearch:2.17.1
+redpandadata/redpanda:v24.2.7
+postgres:16.4
+redis:7.4-alpine
+minio/minio:RELEASE.2024-09-13T20-26-02Z
+#
+# Platform services (ADR-0009 auth, ADR-0014 edge, ADR-0015 admission).
+quay.io/keycloak/keycloak:26.0
+openpolicyagent/opa:1.0.0
+docker.io/envoyproxy/gateway:v1.2.1
+ghcr.io/kyverno/kyverno:v1.13.0
+#
+# Observability (docs/16-Operations).
+prom/prometheus:v3.0.0
+grafana/grafana:11.3.0

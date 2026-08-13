@@ -1,0 +1,22 @@
+{{- $root := . -}}
+{{- range $name, $c := .Values.components }}
+{{- if and $c.enabled $c.service $c.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $root.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "dula.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $c.service.port }}
+      targetPort: http
+      protocol: TCP
+{{- end }}
+{{- end }}

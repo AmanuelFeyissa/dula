@@ -1,0 +1,64 @@
+{
+  "title": "Dula Platform Overview",
+  "uid": "dula-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "tags": ["dula", "platform"],
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "query": "label_values(up, namespace)",
+        "regex": "/dula.*/",
+        "current": { "text": "dula-prod", "value": "dula-prod" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Targets Up",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(up{namespace=~\"$namespace\"})", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Container Restarts (rate 5m)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 18, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "dula:container_restarts:rate5m", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pod Replicas by Component",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum by (label_app_kubernetes_io_component) (kube_pod_info{namespace=~\"$namespace\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Request 5xx Ratio (FUTURE: app exporter)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(http_requests_total{namespace=~\"$namespace\",code=~\"5..\"}[5m])) / sum by (service) (rate(http_requests_total{namespace=~\"$namespace\"}[5m]))",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

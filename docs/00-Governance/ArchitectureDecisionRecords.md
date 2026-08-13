@@ -116,12 +116,16 @@ The ten bootstrap decisions were **resolved during the M000 review** (see
 | [0011](../adr/ADR-0011-monorepo.md) | Repository model | Monorepo (`dula`) | Accepted |
 | [0012](../adr/ADR-0012-training-and-hosting.md) | Dula AI training compute & artifact hosting | GitHub + HF Hub + free GPU (Kaggle/Lightning/Modal) | Accepted |
 | [0013](../adr/ADR-0013-plugin-sandbox.md) | Plugin sandbox mechanism | Out-of-process worker + host-brokered capabilities (baseline) + container per profile; pluggable runner | Accepted |
+| [0014](../adr/ADR-0014-edge-gateway.md) | Edge / API gateway | **Envoy Gateway (Kubernetes Gateway API)** at the edge; FastAPI services behind it | Accepted |
+| [0015](../adr/ADR-0015-supply-chain-release-integrity.md) | Supply-chain & release integrity | cosign **keyed** signing + syft SBOM + grype gate + **Kyverno** admission; **SLSA Build L3** | Accepted |
 
 ### Still open (tracked, not yet ADRs)
 
-- **API gateway technology** (Envoy vs FastAPI edge) — **REQUIRES DECISION**.
-- **Embedding/reranker model, hardware sizing, SLSA level** — **REQUIRES RESEARCH**
-  (empirical; measured when the relevant phase arrives — not architectural).
+- **Embedding/reranker model, hardware sizing** — **REQUIRES RESEARCH** (empirical; measured when
+  the relevant phase arrives — not architectural).
+
+Resolved since M000: **API gateway technology** → ADR-0014 (Envoy Gateway / Gateway API); the
+**admission-control tool** and **SLSA target level** → ADR-0015 (Kyverno; SLSA Build L3).
 
 Note: the vector store, search/log-analytics engine, and event backbone are **no longer
 open or staged** — they are permanent decisions (ADR-0003, ADR-0004). ClickHouse is not

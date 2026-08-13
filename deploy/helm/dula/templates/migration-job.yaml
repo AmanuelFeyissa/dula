@@ -1,0 +1,53 @@
+{{- $root := . -}}
+{{- with (index .Values.components "platform-api") }}
+{{- if and .enabled .migrations .migrations.enabled }}
+# Forward-only schema migration, run as a Helm pre-install/pre-upgrade hook before the new
+# platform-api pods roll out (zero-downtime upgrades require backward-compatible migrations).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $root.Release.Name }}-migrate
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        {{- include "dula.selectorLabels" (dict "root" $root "name" "migrate") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "dula.serviceAccountName" $root }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml $root.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "dula.image" (dict "root" $root "c" .) }}
+          imagePullPolicy: {{ $root.Values.global.imagePullPolicy }}
+          command: ["alembic", "upgrade", "head"]
+          securityContext:
+            {{- toYaml $root.Values.containerSecurityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ $root.Release.Name }}-config
+            - secretRef:
+                name: {{ $root.Values.existingSecret }}
+                optional: true
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: "500m", memory: 512Mi }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
+{{- end }}

@@ -1,0 +1,52 @@
+{{- if .Values.gateway.enabled }}
+{{- $root := . -}}
+# North-south edge via the Kubernetes Gateway API, implemented by Envoy Gateway (ADR-0014).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Release.Name }}-gateway
+  labels:
+    {{- include "dula.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: {{ .Values.gateway.hostname | quote }}
+      {{- if .Values.gateway.tls.enabled }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: {{ .Values.gateway.tls.secretName }}
+      {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- range $name, $c := .Values.components }}
+{{- if and $c.enabled $c.route $c.route.enabled $c.service $c.service.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $root.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  parentRefs:
+    - name: {{ $root.Release.Name }}-gateway
+  hostnames:
+    - {{ $root.Values.gateway.hostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $c.route.path | quote }}
+      backendRefs:
+        - name: {{ $root.Release.Name }}-{{ $name }}
+          port: {{ $c.service.port }}
+{{- end }}
+{{- end }}
+{{- end }}

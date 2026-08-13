@@ -1,0 +1,18 @@
+{{- $root := . -}}
+{{- range $name, $c := .Values.components }}
+{{- if and $c.enabled $c.pdb $c.pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $root.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "dula.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  minAvailable: {{ $c.pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "dula.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+{{- end }}
+{{- end }}

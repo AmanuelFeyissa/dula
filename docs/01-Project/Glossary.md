@@ -81,6 +81,19 @@ phase: Documentation Bootstrap (M000)
 - **Grounded report** — an executive/technical report derived strictly from a run's trace, citing
   the step each statement came from, with tool output labelled untrusted; it never claims an
   action that did not actually execute.
+- **Values overlay** — a Helm values file that expresses a deployment profile's differences
+  (cloud/on-prem/hybrid/air-gapped) on top of one shared chart; profiles differ by config, not code.
+- **Admission control** — cluster-side enforcement (Kyverno, ADR-0015) that admits only pods
+  meeting policy: cosign-signed images plus the pod-security baseline (non-root, read-only rootfs,
+  dropped caps, resource limits).
+- **SBOM** — Software Bill of Materials; the itemized inventory of everything in a build/image,
+  generated with syft and attached as a signed attestation.
+- **SLSA** — Supply-chain Levels for Software Artifacts; Dula targets **Build Level 3** (hardened,
+  non-falsifiable, signed provenance).
+- **No-egress assertion** — a CI check that renders the air-gapped profile and fails if it would
+  reach outside the enclave (external egress, non-mirror images, or a public endpoint).
+- **GA readiness** — the honest checklist separating what Phase 09 delivered/verified from the
+  operational items (live deploy, pen test, DR drill) that require real infrastructure.
 - **Guardrails** — input/output controls constraining model/agent behavior.
 - **LLM Gateway** — internal service abstracting model providers/runtimes.
 - **Evaluation / Benchmark** — measuring model/system quality against a fixed dataset.
