@@ -41,9 +41,11 @@ search/lookup + one consequential), safely and portably (incl. air-gapped).
 ## Architecture delivered
 Realises the plugin (ARC-009) and integration architectures. New product dependency
 **cryptography** (permissive; already transitively present) for Ed25519. Reuses OPA (ADR-0009) +
-tenant isolation (ADR-0006). The **sandbox isolation mechanism (process/WASM) remains REQUIRES
-DECISION**; the framework enforces the policy controls it will reinforce, so the security
-guarantees are real now and a runtime boundary strengthens them later.
+tenant isolation (ADR-0006). The **sandbox isolation mechanism is DECIDED
+([ADR-0013](../../adr/ADR-0013-plugin-sandbox.md), recorded at close-out)** — an out-of-process
+worker with host-brokered capabilities (baseline) + container per profile, behind a pluggable
+runner; the framework's policy controls hold regardless of runner, and the in-process runner seam
+is delivered (OS-level worker runners FUTURE).
 
 ## Security posture
 Plugins are untrusted-by-default: signature-verified on install; granted only manifest-declared
@@ -53,10 +55,10 @@ Air-gapped-first: egress disabled by default, egress-gated connectors inert with
 Aligns with [../../10-Security/PluginSecurity.md](../../10-Security/PluginSecurity.md).
 
 ## Testing status
-`ruff`/`ruff format`/`mypy --strict` clean (103 files); **199 pytest pass, 5 skipped** — +31
-package tests and +11 API tests over Phase 06. OPA policy tests extended. `apps/web` eslint/`tsc
---noEmit`/`next build` clean, including `/integrations`. No live external calls in CI (fixtures +
-unit-tested SSRF path).
+`ruff`/`ruff format`/`mypy --strict` clean; **205 pytest pass, 5 skipped** — +31 package tests,
++11 API tests over Phase 06, plus **+6 sandbox-runner tests** (ADR-0013). OPA policy tests
+extended. `apps/web` eslint/`tsc --noEmit`/`next build` clean, including `/integrations`. No live
+external calls in CI (fixtures + unit-tested SSRF path).
 
 ## Documentation status
 Created the [Plugin Framework Implementation](../../14-Plugins/PluginImplementation.md) and
@@ -70,15 +72,17 @@ connectors; run read lookups; admin enable/disable/revoke); User-Documentation R
 updated.
 
 ## Known limitations / technical debt / deferred
-- **Sandbox mechanism REQUIRES DECISION** (process/container/WASM) — isolation is the policy layer today.
+- **Sandbox mechanism DECIDED — [ADR-0013](../../adr/ADR-0013-plugin-sandbox.md)**; the pluggable
+  runner seam + in-process default are delivered, and the **OS-level subprocess/container worker
+  runners** are FUTURE.
 - Connectors are fixture-backed; real HTTP clients (via the egress guard), a third-party plugin
   loader + marketplace review, durable registry, and Vault-backed secrets are FUTURE.
 - OCSF/ECS normalization and a STIX/TAXII feed connector are deferred.
 
 ## Outstanding risks
 None blocking. The policy controls (signing, permissions, egress, limits, untrusted output,
-revocation) are enforced regardless of the isolation mechanism, so adopting a process/WASM sandbox
-later strengthens — not replaces — the guarantees; tests guard against regressions.
+revocation) are enforced **regardless of runner** (ADR-0013), so delivering the OS-level worker
+runners later strengthens — not replaces — the guarantees; tests guard against regressions.
 
 ## Next-phase prerequisites
 Phase 08 (Automation) composes agents + connectors into workflows/playbooks; the runtime,
@@ -87,5 +91,6 @@ go-ahead.
 
 ## Phase status
 **Phase 07 — COMPLETE.** Implementation, tests, security validation (signing/egress/SSRF/
-air-gapped), and technical *and* user documentation are done and verified. Awaiting go-ahead for
-Phase 08.
+air-gapped), and technical *and* user documentation are done and verified. The one open item at
+close-out — the plugin **sandbox mechanism** — has since been **decided (ADR-0013)** and the
+pluggable runner seam realized. Awaiting go-ahead for Phase 08.

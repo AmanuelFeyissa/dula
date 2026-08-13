@@ -45,8 +45,10 @@ flowchart TB
 
 ## 3. Isolation & Security
 
-- Plugins run **sandboxed** (process/container isolation; **REQUIRES DECISION** on the
-  exact sandbox: separate container vs WASM vs subprocess) with default-deny egress.
+- Plugins run **sandboxed** (**DECIDED — ADR-0013**): an out-of-process worker with
+  host-brokered capabilities (no ambient network) as the portable baseline, reinforced by a
+  rootless container (gVisor/Kata) in orchestrated profiles; behind a pluggable sandbox-runner
+  interface. Default-deny egress throughout.
 - Untrusted plugin output is treated as untrusted evidence.
 - Full detail: [../14-Plugins/PluginSecurity.md](../14-Plugins/PluginSecurity.md).
 

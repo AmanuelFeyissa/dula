@@ -47,8 +47,10 @@ flowchart TB
 
 ## 4. Isolation
 
-- Sandbox mechanism **REQUIRES DECISION** (container vs WASM vs subprocess); default-deny
-  egress; non-root; resource-limited ([./PluginSecurity.md](./PluginSecurity.md)).
+- Sandbox mechanism **DECIDED (ADR-0013)**: out-of-process worker with host-brokered
+  capabilities (no ambient network) as the portable baseline; rootless container (gVisor/Kata)
+  in orchestrated profiles; behind a pluggable **sandbox-runner** interface. Non-root,
+  read-only FS, default-deny egress, resource-limited ([./PluginSecurity.md](./PluginSecurity.md)).
 
 ## 5. Discovery & Enablement
 

@@ -14,8 +14,10 @@ phase: Documentation Bootstrap (M000)
 > **Purpose.** The extensibility framework: sandboxed plugins providing connectors and
 > tools for external security systems. **Status: CURRENT (Phase 07, M007)** — signing, manifest/
 > permission model, egress allowlist + SSRF, host lifecycle, and the first connectors are
-> implemented (offline profile). The process/WASM **sandbox mechanism** is still REQUIRES
-> DECISION; real external connectors and a third-party loader are FUTURE.
+> implemented (offline profile). The **sandbox mechanism** is **DECIDED (ADR-0013)** — an
+> out-of-process worker with host-brokered capabilities (baseline) + container per profile,
+> behind a pluggable runner; the OS-level worker runners, real external connectors, and a
+> third-party loader are FUTURE.
 
 ## Documents
 

@@ -24,7 +24,7 @@ enabling ingestion, enrichment, and (gated) outbound actions.
 ## Scope
 - Plugin host + SDK + manifest/permission model
   ([../14-Plugins/PluginFramework.md](../14-Plugins/PluginFramework.md)); sandbox mechanism
-  decided (REQUIRES DECISION).
+  **decided ([../adr/ADR-0013-plugin-sandbox.md](../adr/ADR-0013-plugin-sandbox.md))**.
 - First connectors ([../14-Plugins/ConnectorStandards.md](../14-Plugins/ConnectorStandards.md)):
   read (search/lookup) + one consequential (e.g. create ticket) behind approval.
 - Normalization of external data to the internal schema (see [../03-Architecture/IntegrationArchitecture.md](../03-Architecture/IntegrationArchitecture.md)).

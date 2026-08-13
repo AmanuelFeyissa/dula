@@ -114,12 +114,12 @@ The ten bootstrap decisions were **resolved during the M000 review** (see
 | [0009](../adr/ADR-0009-auth-stack.md) | Auth stack | Keycloak (OIDC) + OPA (Rego) | Accepted |
 | [0010](../adr/ADR-0010-mlops-tooling.md) | MLOps tooling | MLflow + DVC + Argo Workflows | Accepted |
 | [0011](../adr/ADR-0011-monorepo.md) | Repository model | Monorepo (`dula`) | Accepted |
+| [0012](../adr/ADR-0012-training-and-hosting.md) | Dula AI training compute & artifact hosting | GitHub + HF Hub + free GPU (Kaggle/Lightning/Modal) | Accepted |
+| [0013](../adr/ADR-0013-plugin-sandbox.md) | Plugin sandbox mechanism | Out-of-process worker + host-brokered capabilities (baseline) + container per profile; pluggable runner | Accepted |
 
 ### Still open (tracked, not yet ADRs)
 
 - **API gateway technology** (Envoy vs FastAPI edge) — **REQUIRES DECISION**.
-- **Plugin sandbox mechanism** (container vs WASM vs subprocess) — **REQUIRES DECISION**;
-  default to container isolation pending a spike.
 - **Embedding/reranker model, hardware sizing, SLSA level** — **REQUIRES RESEARCH**
   (empirical; measured when the relevant phase arrives — not architectural).
 

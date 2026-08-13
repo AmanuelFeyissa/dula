@@ -24,7 +24,9 @@ related:
 > **Purpose.** Technical reference for the Phase 07 plugin/connector framework delivered in
 > **`packages/dula-plugins/`** and exposed by **`apps/ai-gateway`**. Realises the design in the
 > other `14-Plugins/` docs and [PluginArchitecture.md](../03-Architecture/PluginArchitecture.md).
-> **Status: CURRENT** (offline profile; process/WASM sandbox mechanism still REQUIRES DECISION).
+> **Status: CURRENT** (offline profile). Sandbox mechanism **DECIDED — ADR-0013**; the pluggable
+> runner seam is delivered (in-process default), with the out-of-process worker + container
+> runners as the deploy-profile enforcers (FUTURE).
 > User guide: [../17-User-Documentation/IntegrationsUserGuide.md](../17-User-Documentation/IntegrationsUserGuide.md).
 
 ## Design stance
@@ -36,8 +38,10 @@ call is **OPA-authorized**; network egress is **default-deny** against the manif
 **SSRF** protection; resource **limits** apply; and connector output is **untrusted evidence**.
 Everything runs **offline** — built-in connectors are fixture-backed so contract tests need no
 live calls, and any egress-requiring capability is **inert air-gapped** (no phone-home). The
-process/container/WASM isolation boundary is deferred (REQUIRES DECISION); this framework provides
-the controls it will reinforce.
+isolation boundary is **DECIDED (ADR-0013)**: an out-of-process worker with **host-brokered
+capabilities** (no ambient network) as the portable baseline, reinforced by a rootless container
+in orchestrated profiles, behind a pluggable **sandbox-runner**. The default in-process runner
+enforces the in-process guarantees today; the OS/container worker runners are FUTURE.
 
 ## Components (`dula_plugins`)
 
@@ -48,7 +52,8 @@ the controls it will reinforce.
 | `egress` | `EgressGuard` + `EgressPolicy`: default-deny allowlist, https-only, SSRF block (private/loopback/link-local/unresolvable), globally disabled when air-gapped. |
 | `connector` | `Connector` protocol, `ConnectorContext` (tenant/subject + egress guard + scoped `SecretProvider`), `ConnectorResult` (`untrusted=True`). |
 | `sdk` | `BaseConnector`: dispatch by capability, reject undeclared capabilities, enforce the manifest output-size limit. |
-| `host` | `PluginHost`: **install** (verify signature) → **enable** → **disable/revoke** (terminal); **invoke** enforces enabled → OPA permission → scoped egress + timeout → untrusted result; audited. |
+| `sandbox` | `SandboxSpec` (isolation guarantees from the manifest) + `SandboxRunner` protocol + `InProcessRunner` (default). The pluggable isolation seam per **ADR-0013**; subprocess/container runners are drop-in. |
+| `host` | `PluginHost`: **install** (verify signature) → **enable** → **disable/revoke** (terminal); **invoke** enforces enabled → OPA permission → runs via the **sandbox runner** (scoped egress + timeout) → untrusted result; audited. |
 | `connectors/` | Built-in `siem.search` (read), `ti.lookup_indicator` (read, offline) + `ti.live_lookup` (read, egress-gated), `ticketing.create_ticket` (consequential). |
 | `builtin` | Signs + installs + enables the built-ins on an offline host (egress disabled by default). |
 
@@ -95,9 +100,10 @@ consequential-blocked-direct rule, and the agent→connector bridge.
 
 ## Maturity & limits
 
-- **Sandbox mechanism REQUIRES DECISION** (process/container/WASM). Today isolation is the
-  policy layer (signing, permissions, egress, limits, untrusted output, revocation); a runtime
-  boundary is FUTURE.
+- **Sandbox mechanism DECIDED — [ADR-0013](../adr/ADR-0013-plugin-sandbox.md)** (out-of-process
+  worker + host-brokered capabilities baseline; container per orchestrated profile; pluggable
+  `SandboxRunner`). The default `InProcessRunner` enforces the in-process guarantees today; the
+  **subprocess/container worker runners** (OS-level isolation) are FUTURE.
 - Built-in connectors are **fixture-backed**; real SIEM/EDR/TI HTTP clients (via the egress guard)
   and a third-party plugin loader are FUTURE.
 - The plugin registry + secrets are in-memory; durable registry + Vault-backed secrets are FUTURE.

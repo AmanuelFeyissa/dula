@@ -76,12 +76,14 @@ phase: Documentation Bootstrap (M000)
 
 ## What Is Next
 
-**Phase 07 (M007) is complete and closed under §11.** Phase 08 — Automation (security workflows/
-playbooks composing agents + connectors) is next, on explicit go-ahead. Dula AI iterations (a
-larger base model) continue on the Phase 04 pipeline, shipping only if a future candidate clears
-the evaluation gate. Remaining non-blocking open items: **plugin sandbox mechanism (process/WASM
-— REQUIRES DECISION)**, API gateway tech, embedding/reranker model, hardware sizing, real
-connector HTTP clients + third-party plugin loader.
+**Phase 07 (M007) is complete and closed under §11**, and the **plugin sandbox mechanism is now
+DECIDED (ADR-0013)** — out-of-process worker with host-brokered capabilities (baseline) +
+container per orchestrated profile, behind a pluggable `SandboxRunner` (in-process default
+delivered). Phase 08 — Automation (security workflows/playbooks composing agents + connectors) is
+next, on explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase 04
+pipeline, shipping only if a future candidate clears the evaluation gate. Remaining non-blocking
+open items: API gateway tech, embedding/reranker model, hardware sizing, and the OS-level
+worker/container sandbox runners + real connector HTTP clients + third-party plugin loader.
 
 ## Milestone Ledger
 
@@ -100,7 +102,8 @@ connector HTTP clients + third-party plugin loader.
 ## Open Items Requiring Human Action
 
 - Sign off the reviewed foundation and ADR-0001…0010.
-- Decide remaining open items (API gateway, sandbox mechanism, monorepo confirmation).
+- Decide remaining open items (API gateway technology; monorepo confirmed as ADR-0011; plugin
+  sandbox decided as ADR-0013).
 - Verify **REQUIRES RESEARCH** items before they inform implementation
   (see [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md) §8 and
   [PROJECT_REVIEW-M000.md](./PROJECT_REVIEW-M000.md) §9).
@@ -238,5 +241,15 @@ connector HTTP clients + third-party plugin loader.
   ticket still approval-gated). Added an `apps/web` **Integrations** page. Verified: ruff/format/
   mypy-strict clean (**103 files**), **199 pytest** (up from 157; +31 package, +11 API), OPA policy
   extended, web eslint/tsc/build clean; **air-gapped inertness** of egress-gated connectors proven.
-  Closed under §11 (M007 Closure + Phase 07 Completion Review). Sandbox mechanism (process/WASM)
-  remains REQUIRES DECISION. Ready for Phase 08 on go-ahead.
+  Closed under §11 (M007 Closure + Phase 07 Completion Review). Ready for Phase 08 on go-ahead.
+- 2026-08-13 — **Plugin sandbox mechanism DECIDED (ADR-0013).** Resolved the last Phase 07 open
+  item: a **layered model behind a pluggable sandbox-runner** — an **out-of-process worker with
+  host-brokered capabilities** (the plugin has **no ambient network**; all egress goes through the
+  host's guard, so even a compromised plugin cannot open a socket) as the portable,
+  air-gapped-capable baseline, hardened per platform (Linux: seccomp/namespaces/cgroups), and
+  reinforced by a **rootless container** (gVisor/Kata) in orchestrated profiles; **WASM** is a
+  future runner option (kept off the primary path while the SDK is Python-first). Realized in
+  `packages/dula-plugins/sandbox.py` (`SandboxSpec` + `SandboxRunner` + default `InProcessRunner`,
+  wired into the host); the OS-level worker/container runners are FUTURE. Updated ADR index/table,
+  PluginArchitecture/Framework/Security + 10-Security/PluginSecurity, TechnologyStack, and CLAUDE.md
+  §6 open items. Verified: ruff/format/mypy clean, **205 pytest** (+6 sandbox).

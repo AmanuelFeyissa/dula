@@ -229,7 +229,10 @@ Accepted baselines a future instance must not casually re-litigate:
 
 Repository model: **monorepo `dula`** (ADR-0011, Accepted).
 
-Still open (non-blocking, not yet ADRs): API gateway technology, plugin sandbox mechanism, and empirical items (embedding/reranker model, hardware sizing, SLSA level).
+- **ADR-0012** — Dula AI training compute & artifact hosting: GitHub (source/CI) + Hugging Face Hub (artifacts) + free GPU tiers (Kaggle/Lightning/Modal).
+- **ADR-0013** — Plugin sandbox: **out-of-process worker with host-brokered capabilities** (no ambient network) as the portable baseline + rootless container (gVisor/Kata) per orchestrated profile, behind a pluggable sandbox-runner; WASM a future runner. The policy controls hold regardless of runner.
+
+Still open (non-blocking, not yet ADRs): API gateway technology, and empirical items (embedding/reranker model, hardware sizing, SLSA level).
 
 ---
 

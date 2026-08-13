@@ -25,7 +25,7 @@ related:
 |---------|-----------|
 | Signing | Verify signature on install/upgrade |
 | Manifest least privilege | Grant only declared permissions |
-| Sandbox | Isolated execution (mechanism REQUIRES DECISION), non-root, read-only FS, resource limits |
+| Sandbox | Isolated execution (mechanism DECIDED — ADR-0013: out-of-process worker + host-brokered capabilities baseline; container per profile), non-root, read-only FS, resource limits |
 | Egress allowlist | Default-deny network; only declared endpoints |
 | Scoped secrets | Vault-injected, per-plugin, never shared/logged |
 | Untrusted output | Treated as evidence, validated |

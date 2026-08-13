@@ -30,8 +30,11 @@ related:
 1. **Signing & verification:** plugins are signed; signature verified before install.
 2. **Manifest & least privilege:** declared capabilities, permissions, and egress needs;
    nothing beyond the manifest is granted.
-3. **Sandboxing:** process/container isolation (exact mechanism **REQUIRES DECISION** —
-   container vs WASM vs subprocess); non-root, read-only FS, resource limits.
+3. **Sandboxing (DECIDED — [../adr/ADR-0013-plugin-sandbox.md](../adr/ADR-0013-plugin-sandbox.md)):**
+   an out-of-process worker with **host-brokered capabilities** (no ambient network — the plugin
+   cannot open a socket; all egress goes through the host) as the portable, air-gapped-capable
+   baseline, reinforced by a rootless container (gVisor/Kata) in orchestrated profiles; non-root,
+   read-only FS, resource limits. The isolation boundary is a pluggable sandbox-runner.
 4. **Egress control:** default-deny network; explicit allowlist per plugin; blocks SSRF.
 5. **Scoped credentials:** external-system creds from Vault, injected at runtime, never
    logged or exposed to other plugins.

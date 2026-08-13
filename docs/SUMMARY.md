@@ -36,6 +36,7 @@ phase: Documentation Bootstrap (M000)
 - [ADR-0010 — MLOps Tooling](./adr/ADR-0010-mlops-tooling.md)
 - [ADR-0011 — Repository Model (Monorepo)](./adr/ADR-0011-monorepo.md)
 - [ADR-0012 — Dula AI Training Compute & Artifact Hosting](./adr/ADR-0012-training-and-hosting.md)
+- [ADR-0013 — Plugin Sandbox Mechanism](./adr/ADR-0013-plugin-sandbox.md)
 
 ## 00 — Governance
 - [Documentation Standards](./00-Governance/DocumentationStandards.md)
