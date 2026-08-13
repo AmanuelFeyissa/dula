@@ -9,6 +9,10 @@ venv/
 .env.*
 !.env.example
 !.env.local.example
+# Local backup/DR drill artifacts (never commit database dumps).
+backups/
+*.dump
+*.dump.sha256
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

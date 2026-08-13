@@ -77,6 +77,9 @@ Full stack rationale: [docs/01-Project/TechnologyStack.md](docs/01-Project/Techn
 
 ## Local Development (Phase 01)
 
+> **New here / want to just see it run?** [**RUNNING.md**](RUNNING.md) is the full copy-paste guide
+> to start, use, and stop the whole system — every URL and login credential included.
+
 ```bash
 cp .env.example .env
 make up                                   # dev stack: Postgres, Redis, Qdrant, OpenSearch, MinIO, Redpanda, Keycloak
