@@ -1,0 +1,16 @@
+apiVersion: v2
+name: dula
+description: >-
+  Dula platform umbrella chart. One chart, all deployment profiles
+  (cloud / on-prem / hybrid / air-gapped) via values overlays
+  (ADR-0014 edge, ADR-0015 supply-chain; docs/03-Architecture/DeploymentArchitecture.md).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - cybersecurity
+  - ai
+  - platform
+maintainers:
+  - name: Dula Platform
+kubeVersion: ">=1.27.0-0"

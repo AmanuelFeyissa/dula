@@ -1,0 +1,67 @@
+{{- if .Values.networkPolicy.enabled }}
+# Default-deny for the whole namespace: no ingress, no egress unless explicitly allowed below.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-default-deny
+  labels:
+    {{- include "dula.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# Baseline allowances: DNS, intra-namespace, and (explicitly) egress to data/system planes.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-baseline
+  labels:
+    {{- include "dula.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    # Same namespace (service-to-service) and the gateway namespace (north-south).
+    - from:
+        - podSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dula-gateway
+  egress:
+    # DNS resolution.
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Same namespace + data/system planes (Postgres, Qdrant, OpenSearch, Redpanda, OPA, Keycloak).
+    - to:
+        - podSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dula-data
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dula-system
+  {{- with .Values.networkPolicy.allowedEgressCIDRs }}
+---
+# Profile-specific external egress allowlist (empty for air-gapped — no external egress at all).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $.Release.Name }}-allow-external-egress
+  labels:
+    {{- include "dula.labels" $ | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        {{- range . }}
+        - ipBlock:
+            cidr: {{ . }}
+        {{- end }}
+  {{- end }}
+{{- end }}

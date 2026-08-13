@@ -80,3 +80,32 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy (helm + policies + air-gap)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install helm + kubeconform
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Helm lint
+        run: helm lint deploy/helm/dula
+      - name: Render + validate every profile
+        run: |
+          for p in cloud onprem hybrid airgapped; do
+            echo "== profile: $p =="
+            helm template dula deploy/helm/dula -f deploy/helm/dula/values-$p.yaml > "/tmp/$p.yaml"
+            kubeconform -strict -ignore-missing-schemas -kubernetes-version 1.29.0 -summary "/tmp/$p.yaml"
+          done
+      - name: Air-gap no-egress assertion
+        run: bash deploy/airgap/verify-airgap.sh
+      - name: Validate policies + observability (YAML/JSON)
+        run: |
+          python -c "import glob,yaml; [list(yaml.safe_load_all(open(f))) for f in glob.glob('deploy/kyverno/*.yaml') + ['deploy/observability/prometheus-rules.yaml']]"
+          python -c "import json; json.load(open('deploy/observability/grafana-dashboard.json'))"
+      - name: Shell script syntax
+        run: for s in deploy/airgap/*.sh deploy/backup/*.sh; do bash -n "$s"; done

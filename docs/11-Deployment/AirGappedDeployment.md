@@ -17,6 +17,12 @@ related:
 
 > **Purpose.** Define deployment into environments with **no external network access** —
 > a first-class, hard requirement that shapes the entire architecture.
+>
+> **Delivered (Phase 09, CURRENT):** offline image bundle tooling at `deploy/airgap/`
+> (`images.txt` manifest + `mirror-images.sh` save/load/push) and the air-gapped Helm overlay
+> (`deploy/helm/dula/values-airgapped.yaml`: no external egress, connector egress off, offline
+> model path). A **no-egress assertion** (`deploy/airgap/verify-airgap.sh`) runs in CI and passes.
+> End-to-end install rehearsal in a disconnected enclave is operational ([GAReadiness.md](./GAReadiness.md)).
 
 ## 1. Constraints
 

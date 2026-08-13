@@ -50,9 +50,10 @@ related:
 | Base model family | **Apache-2.0 (Qwen/Mistral)**; Llama deprioritized | Gemma/Phi | ADR-0007 ✅ |
 | AuthN | Keycloak (OIDC/OAuth2) | Ory, Authentik, Auth0 | ADR-0009 ✅ |
 | AuthZ policy | OPA / Rego | Casbin, Cedar, app-native | ADR-0009 ✅ |
-| API gateway tech | **REQUIRES DECISION** (Envoy vs FastAPI edge) | Kong, APISIX | — |
+| API gateway / edge | **Envoy Gateway (Kubernetes Gateway API)**; FastAPI services behind it | Kong, APISIX, ingress-nginx | ADR-0014 ✅ |
 | Orchestration | Kubernetes + Helm | Nomad, Docker Swarm | — |
 | GitOps/CD | Argo CD | Flux, manual Helm | — |
+| Supply-chain / admission | cosign (keyed) + syft SBOM + grype + **Kyverno**; SLSA Build L3 | policy-controller, Gatekeeper, Trivy | ADR-0015 ✅ |
 | MLOps | MLflow + DVC + Argo Workflows | W&B, ClearML, LakeFS, Kubeflow | ADR-0010 ✅ |
 | Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo | ELK, Datadog | — |
 | Secrets | HashiCorp Vault + SOPS | Sealed Secrets, cloud KMS | — |
@@ -192,13 +193,16 @@ serving (ADR-0005), multi-tenancy (ADR-0006), base model family (ADR-0007), agen
 technology emerges (via a new/superseding ADR).
 
 **Still open** (not architectural staging — genuinely undecided or empirical):
-1. API gateway technology (Envoy vs FastAPI edge) — **REQUIRES DECISION**.
+1. ~~API gateway technology~~ — **DECIDED (ADR-0014)**: Envoy Gateway (Kubernetes Gateway API)
+   at the edge; FastAPI services behind it.
 2. ~~Plugin sandbox mechanism~~ — **DECIDED (ADR-0013)**: out-of-process worker with
    host-brokered capabilities (baseline) + container per orchestrated profile, behind a
    pluggable runner; WASM a future runner option.
 3. Embedding/reranker model choice — **REQUIRES RESEARCH** (tuned via retrieval eval).
 4. Monorepo vs polyrepo — recommended monorepo; confirm as ADR-0011 at Phase 01.
-5. Training/inference hardware sizing & SLSA target level — **REQUIRES RESEARCH** (measure).
+5. ~~SLSA target level & admission-control tool~~ — **DECIDED (ADR-0015)**: SLSA Build L3;
+   cosign (keyed) + syft SBOM + grype + **Kyverno** admission. Training/inference hardware
+   sizing remains **REQUIRES RESEARCH** (measure).
 
 ## Related Documents
 

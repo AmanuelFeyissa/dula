@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 08 — Automation (COMPLETE) |
-| **CURRENT MILESTONE** | M008 ✅ complete |
-| **STATUS** | Phase 08 done & **closed under CLAUDE.md §11** (M008 Closure + Phase 08 Completion Review). Delivered on `main`: a **security automation** layer (`packages/dula-automation`) composing the agent runtime + connectors into **declarative, approval-gated playbooks** and **grounded reporting**. A playbook compiles into a planner run by the *existing* `AgentRuntime`, so it adds **no new execution path** — allowlist ∩ user authz, human approval for consequential steps, limits, audit, and tenant isolation all hold. Built-in `triage-enrich-ticket` playbook (read steps auto-run; ticket is an **approval checkpoint**); reports grounded strictly in the trace (untrusted-labelled, no unexecuted action claimed). Exposed via `apps/ai-gateway` `/api/v1/automation/*` (OPA `automation.read`/`automation.run`/`automation.approve`/`reports.read`) and an `apps/web` **Automation** page. High-volume ingestion guarded by an offline throughput benchmark (cluster-scale load = FUTURE). Ruff/format/mypy clean; **227 pytest**; web build clean. |
-| **LAST COMPLETED TASK** | Phase 08 build + closure: [M008 Closure](./04-MVP-Roadmap/closure/M008-Automation-Closure.md) + [Phase 08 Completion Review](./04-MVP-Roadmap/closure/Phase08-Automation-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 08 complete; awaiting go-ahead for Phase 09) |
-| **NEXT TASK** | Phase 09 — Production (deployment hardening, scale, operability; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Phase 09 — Production (COMPLETE, buildable scope; GA sign-off operational) |
+| **CURRENT MILESTONE** | M009 ✅ complete (GA sign-off pending operational acceptance) |
+| **STATUS** | Phase 09 done & **closed under CLAUDE.md §11** (M009 Closure + Phase 09 Completion Review). Delivered on `main`: a **signed, reproducible, profile-portable release + hardening substrate** — an umbrella **Helm chart** (`deploy/helm/dula`) with **cloud/on-prem/hybrid/air-gapped** overlays (hardened non-root/read-only/limited workloads, HPA, PDB, default-deny NetworkPolicies, **Gateway API** edge, forward-only pre-upgrade migration Job), fixed/added production **Dockerfiles**, **Kyverno** admission (signature verify + pod-security) + a gated **release pipeline** (SBOM/scan/cosign sign), **air-gap** bundle tooling + a CI **no-egress assertion**, **observability** (SLOs/rules/dashboard) and **backup/DR** scripts, and a CI **`deploy`** job. Two ADRs resolved long-open items: **ADR-0014** (Envoy Gateway/Gateway API edge) + **ADR-0015** (cosign keyed + syft + grype + Kyverno; SLSA L3). Validated: helm lint + template (all 4 profiles) + kubeconform + air-gap assertion; **227 pytest**, web build, doc-links/naming clean. **GA is not declared** — live multi-profile deploy, external pen test, and DR drill are operational (see GAReadiness.md). |
+| **LAST COMPLETED TASK** | Phase 09 build + closure: [M009 Closure](./04-MVP-Roadmap/closure/M009-Production-Closure.md) + [Phase 09 Completion Review](./04-MVP-Roadmap/closure/Phase09-Production-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 09 complete for buildable scope; awaiting go-ahead for Phase 10) |
+| **NEXT TASK** | Phase 10 — MLOps at scale (Argo Workflows/MLflow/DVC + GPU serving pools; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) is owned by the deploying team. Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -85,18 +85,32 @@ phase: Documentation Bootstrap (M000)
   tool output; no unexecuted action claimed). Exposed via `/api/v1/automation/*` and an `apps/web`
   Automation page. High-volume telemetry ingestion is guarded by an offline throughput benchmark
   (`apps/worker`); cluster-scale load testing is documented as FUTURE.
+- **Phase 09 production substrate:** `deploy/helm/dula` — one **umbrella Helm chart** deploying
+  web/platform-api/ai-gateway/worker with hardened pods (non-root, read-only rootfs, dropped caps,
+  seccomp, limits), probes, rolling updates, HPA, PDB, default-deny **NetworkPolicies**, **Gateway
+  API** edge (ADR-0014), and a forward-only **pre-upgrade migration Job** — differentiated across
+  **cloud/on-prem/hybrid/air-gapped** by values overlays only. Supply chain (ADR-0015):
+  `deploy/kyverno` (verify cosign signatures + pod-security) + `.github/workflows/release.yml`
+  (build→syft SBOM→grype gate→cosign keyed sign, gated on tag/dispatch). Air-gap: `deploy/airgap`
+  (bundle manifest + mirror script + `verify-airgap.sh` no-egress assertion, passing in CI).
+  Observability (`deploy/observability`: SLOs + Prometheus rules + Grafana dashboard) and backup/DR
+  (`deploy/backup`: pg backup/restore). A CI **`deploy`** job validates the whole surface. **GA
+  acceptance** (live deploy across profiles, external pen test, DR drill) is operational — tracked
+  in `docs/11-Deployment/GAReadiness.md`.
 
 ## What Is Next
 
-**Phase 08 (M008) is complete and closed under §11.** Automation composes agents + connectors into
-supervised playbooks with grounded reporting, reusing the runtime's security controls with no new
-execution path. **Phase 09 — Production** (deployment hardening, scale, operability: K8s/Argo CD/
-Terraform, full OTel, GPU serving) is next, on explicit go-ahead. Dula AI iterations (a larger base
-model) continue on the Phase 04 pipeline, shipping only if a future candidate clears the evaluation
-gate. Remaining non-blocking open items: API gateway tech, embedding/reranker model, hardware
-sizing; the OS-level worker/container sandbox runners + real connector HTTP clients + third-party
-plugin loader; and automation follow-ons (scheduled/triggered playbooks, durable run store, PDF
-reports, cluster-scale telemetry load test).
+**Phase 09 (M009) is complete for its buildable scope and closed under §11**; the API-gateway and
+supply-chain/admission open items are now **DECIDED (ADR-0014, ADR-0015)**. **Phase 10 — MLOps at
+scale** (Argo Workflows/MLflow/DVC + GPU serving pools on the new deployment substrate) is next, on
+explicit go-ahead. **Operational GA acceptance** — live deploy across all four profiles, external
+penetration test, and a DR restore drill meeting RPO/RTO — is owned by the deploying team and needs
+real infrastructure (GAReadiness.md). Dula AI iterations (a larger base model) continue on the Phase
+04 pipeline, shipping only if a future candidate clears the evaluation gate. Remaining non-blocking
+items: embedding/reranker model + hardware sizing (empirical); the app `/metrics` exporter; Terraform
+IaC + GitOps (Argo CD); OS-level sandbox runners + real connector HTTP clients + third-party plugin
+loader; and automation follow-ons (scheduled/triggered playbooks, durable run store, PDF reports,
+cluster-scale telemetry load test).
 
 ## Milestone Ledger
 
@@ -111,7 +125,8 @@ reports, cluster-scale telemetry load test).
 | M006 | Phase 06 — Agents | ✅ Complete (first-party agent runtime; investigation assistant UC-03; permissions/approval/limits/audit; agents API + UI; release-blocking safety suite) |
 | M007 | Phase 07 — Integrations | ✅ Complete (signed plugin/connector framework; egress allowlist + SSRF; host lifecycle; SIEM/TI/ticketing connectors; plugins API + UI; agent→connector bridge; air-gapped verified) |
 | M008 | Phase 08 — Automation | ✅ Complete (declarative approval-gated playbooks over the agent runtime; grounded reporting; automation API + UI; ingestion throughput benchmark; no-bypass/no-auto-approval safety) |
-| M009+ | Phases 09–11 | ⏳ Not started |
+| M009 | Phase 09 — Production | ✅ Complete, buildable scope (Helm chart + 4 profile overlays; hardened workloads + Gateway API edge; Kyverno admission + cosign/SBOM release pipeline; air-gap tooling + no-egress assertion; observability + backup/DR; CI deploy job). **GA sign-off operational** (live deploy/pen-test/DR-drill pending real infra). ADR-0014/0015. |
+| M010+ | Phases 10–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -283,3 +298,23 @@ reports, cluster-scale telemetry load test).
   documented as FUTURE. Verified: ruff/format/mypy-strict clean, **227 pytest** (up from 205; +12
   package, +8 API, +2 throughput), OPA policy extended, web eslint/tsc/build clean. Closed under §11
   (M008 Closure + Phase 08 Completion Review). Ready for Phase 09 on go-ahead.
+- 2026-08-13 — **Phase 09 (M009) build + closure — Production.** Delivered the production substrate:
+  an **umbrella Helm chart** (`deploy/helm/dula`) deploying all four services with hardened pods
+  (non-root, read-only rootfs, dropped caps, seccomp, resource limits), probes, rolling updates
+  (`maxUnavailable: 0`), HPA, PDB, default-deny **NetworkPolicies**, **Gateway API** edge, and a
+  forward-only **pre-upgrade migration Job** — one chart, four **profile overlays**
+  (cloud/on-prem/hybrid/air-gapped). Fixed the `ai-gateway` Dockerfile (missing workspace deps) and
+  added a hardened **web** image. Supply chain: **Kyverno** admission (`deploy/kyverno`: verify
+  cosign signatures + pod-security) and a gated **release pipeline** (`.github/workflows/release.yml`:
+  build→syft SBOM→grype gate→cosign keyed sign). **Air-gap**: `deploy/airgap` bundle tooling +
+  `verify-airgap.sh` no-egress assertion (passing in CI). **Observability** (`deploy/observability`:
+  SLOs + Prometheus rules + Grafana dashboard) and **backup/DR** (`deploy/backup`). New CI **`deploy`**
+  job (helm lint + template ×4 + kubeconform + air-gap assertion + policy/JSON validation). Resolved
+  two long-open decisions I owned: **ADR-0014** (Envoy Gateway/Gateway API edge) and **ADR-0015**
+  (cosign keyed signing + syft SBOM + grype + Kyverno; SLSA Build L3; signed-commit policy). Verified:
+  helm lint clean, 26 manifests render per profile, kubeconform 19 valid/0 invalid, air-gap assertion
+  passes; ruff/format/mypy clean, **227 pytest**, web build clean, doc-links/naming clean. Closed under
+  §11 (M009 Closure + Phase 09 Completion Review). **GA sign-off is pending operational acceptance**
+  (live multi-profile deploy, external pen test, DR drill — real infra required; GAReadiness.md). The
+  live Postgres backup/restore roundtrip was not run locally (Docker engine unavailable); scripts are
+  syntax-validated. Ready for Phase 10 on go-ahead.

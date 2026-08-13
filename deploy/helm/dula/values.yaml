@@ -1,0 +1,184 @@
+# Default values for the Dula umbrella chart.
+#
+# These defaults describe a hardened production deployment. Profile overlays
+# (values-cloud/onprem/hybrid/airgapped.yaml) change only what differs; the base
+# stays identical (one codebase, profiles via values — ADR-0011, DeploymentArchitecture.md).
+#
+# Security posture (enforced at admission by Kyverno, ADR-0015): every workload runs
+# non-root, read-only root filesystem, all capabilities dropped, seccomp RuntimeDefault,
+# with resource limits. Images should be pinned by digest in production overlays.
+
+global:
+  # Registry that holds the mirrored, signed images. In air-gapped installs this is the
+  # private in-cluster/registry mirror; nothing is pulled from the public internet.
+  imageRegistry: ghcr.io/amanuelfeyissa
+  imageTag: "0.1.0" # overridden by @sha256 digest in production overlays
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+
+# Non-secret configuration, injected into every component via envFrom (a ConfigMap).
+# Pydantic settings match env names case-insensitively by field name.
+config:
+  LOG_LEVEL: "INFO"
+  KEYCLOAK_URL: "http://keycloak.dula-system.svc:8080"
+  KEYCLOAK_REALM: "dula"
+  API_AUDIENCE: "dula-api"
+  OPA_URL: "http://opa.dula-system.svc:8181"
+  PROFILE: "backed"
+  QDRANT_URL: "http://qdrant.dula-data.svc:6333"
+  OPENSEARCH_URL: "http://opensearch.dula-data.svc:9200"
+  KAFKA_BOOTSTRAP_SERVERS: "redpanda.dula-data.svc:9092"
+  EVENTS_ENABLED: "true"
+  PROVIDER: "extractive"
+  # Air-gapped-first: connector egress is disabled unless a profile explicitly enables it.
+  PLUGINS_EGRESS_ENABLED: "false"
+
+# Secrets are never inlined in the chart. Reference an externally-managed Secret
+# (Vault CSI / SOPS-decrypted) that carries DATABASE_URL, OPENAI_API_KEY, etc. (ADR-0015).
+existingSecret: dula-secrets
+
+serviceAccount:
+  create: true
+  name: "dula"
+  annotations: {}
+
+# Hardened defaults applied to every pod/container unless a component overrides them.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop: ["ALL"]
+
+# Prometheus ServiceMonitor (Phase 09 observability). Requires the Prometheus operator CRDs.
+metrics:
+  enabled: true
+  path: /metrics
+  interval: 30s
+
+# NetworkPolicies segment planes with default-deny egress + explicit allowlists (ADR-0014).
+networkPolicy:
+  enabled: true
+  # Extra egress CIDRs allowed cluster-wide (e.g. an on-prem SIEM). Air-gapped keeps this empty.
+  allowedEgressCIDRs: []
+
+# North-south edge via Envoy Gateway / Kubernetes Gateway API (ADR-0014).
+gateway:
+  enabled: true
+  className: envoy-gateway
+  hostname: dula.example.com
+  tls:
+    enabled: true
+    secretName: dula-tls
+
+# Components. Each renders a Deployment (+ Service/HPA/PDB where applicable).
+components:
+  web:
+    enabled: true
+    image: dula/web
+    replicas: 2
+    port: 3000
+    service:
+      enabled: true
+      port: 80
+    route:
+      enabled: true
+      path: /
+    probes:
+      enabled: true
+      path: /
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 70
+    pdb:
+      enabled: true
+      minAvailable: 1
+    resources:
+      requests: { cpu: 100m, memory: 192Mi }
+      limits: { cpu: "1", memory: 512Mi }
+
+  platform-api:
+    enabled: true
+    image: dula/platform-api
+    replicas: 2
+    port: 8000
+    service:
+      enabled: true
+      port: 8000
+    route:
+      enabled: true
+      path: /api/v1
+    probes:
+      enabled: true
+      livenessPath: /healthz
+      readinessPath: /readyz
+    migrations:
+      enabled: true # runs Alembic as a pre-upgrade Job (forward-only)
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+    pdb:
+      enabled: true
+      minAvailable: 1
+    resources:
+      requests: { cpu: 150m, memory: 256Mi }
+      limits: { cpu: "1", memory: 768Mi }
+
+  ai-gateway:
+    enabled: true
+    image: dula/ai-gateway
+    replicas: 2
+    port: 8100
+    service:
+      enabled: true
+      port: 8100
+    route:
+      enabled: true
+      path: /api/v1/ai
+    probes:
+      enabled: true
+      livenessPath: /healthz
+      readinessPath: /readyz
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+    pdb:
+      enabled: true
+      minAvailable: 1
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+      limits: { cpu: "2", memory: "1.5Gi" }
+
+  worker:
+    enabled: true
+    image: dula/worker
+    replicas: 2
+    command: ["python", "-m", "dula_worker.main"]
+    service:
+      enabled: false
+    route:
+      enabled: false
+    probes:
+      enabled: false # background consumer, no HTTP surface
+    hpa:
+      enabled: false
+    pdb:
+      enabled: true
+      minAvailable: 1
+    resources:
+      requests: { cpu: 100m, memory: 192Mi }
+      limits: { cpu: "1", memory: 512Mi }

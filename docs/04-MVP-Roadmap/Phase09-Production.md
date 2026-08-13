@@ -14,6 +14,14 @@ related:
 
 # Phase 09 — Production (GA)  ⭐ Production-Ready
 
+> **Status: COMPLETE (buildable scope, M009); GA sign-off pending operational acceptance.**
+> Delivered: the umbrella Helm chart + four profile overlays, hardened Dockerfiles, the
+> supply-chain release pipeline + Kyverno admission (ADR-0015), Envoy Gateway edge (ADR-0014),
+> air-gap bundle tooling + a CI no-egress assertion, observability + backup/DR, and a CI `deploy`
+> job. Live multi-profile deploy, external pen test, and the DR drill are **operational** — see
+> [closure/M009-Production-Closure.md](./closure/M009-Production-Closure.md) and
+> [../11-Deployment/GAReadiness.md](../11-Deployment/GAReadiness.md).
+
 > **Purpose.** Harden the platform to production quality across **all** deployment profiles,
 > including a validated **air-gapped** path — this is GA.
 

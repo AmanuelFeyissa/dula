@@ -1,0 +1,57 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dula-require-pod-security
+  annotations:
+    policies.kyverno.io/title: Dula Pod Security Baseline
+    policies.kyverno.io/category: Pod Security, Supply Chain (ADR-0015)
+    policies.kyverno.io/description: >-
+      Enforces the hardened runtime posture the Helm chart ships with: non-root, read-only
+      root filesystem, all capabilities dropped, seccomp RuntimeDefault, no privilege
+      escalation, and required resource limits. Applies to Dula workloads.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/part-of
+                    operator: In
+                    values: [dula]
+      validate:
+        message: "Containers must run as non-root with seccomp RuntimeDefault."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+    - name: harden-containers
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/part-of
+                    operator: In
+                    values: [dula]
+      validate:
+        message: "Containers must drop ALL caps, be read-only rootfs, no privilege escalation, with limits."
+        foreach:
+          - list: request.object.spec.containers
+            pattern:
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                limits:
+                  memory: "?*"
+                  cpu: "?*"

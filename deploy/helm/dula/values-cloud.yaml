@@ -1,0 +1,27 @@
+# Cloud profile: managed data services, public ingress via Envoy Gateway + cert-manager,
+# HPA on, egress allowed only to the managed data-plane endpoints (set per environment).
+global:
+  imageRegistry: ghcr.io/amanuelfeyissa
+  # Production pins by digest; replace with the signed release digest at deploy time.
+  imageTag: "0.1.0"
+
+config:
+  PROFILE: "backed"
+  EVENTS_ENABLED: "true"
+  PLUGINS_EGRESS_ENABLED: "false"
+
+gateway:
+  enabled: true
+  className: envoy-gateway
+  hostname: dula.example.com
+  tls:
+    enabled: true
+    secretName: dula-tls
+
+networkPolicy:
+  enabled: true
+  # Managed Postgres/OpenSearch/etc. live outside the cluster → allowlist their egress CIDRs.
+  allowedEgressCIDRs: []
+
+metrics:
+  enabled: true

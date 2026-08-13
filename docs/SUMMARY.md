@@ -37,6 +37,8 @@ phase: Documentation Bootstrap (M000)
 - [ADR-0011 — Repository Model (Monorepo)](./adr/ADR-0011-monorepo.md)
 - [ADR-0012 — Dula AI Training Compute & Artifact Hosting](./adr/ADR-0012-training-and-hosting.md)
 - [ADR-0013 — Plugin Sandbox Mechanism](./adr/ADR-0013-plugin-sandbox.md)
+- [ADR-0014 — Edge / API Gateway Technology](./adr/ADR-0014-edge-gateway.md)
+- [ADR-0015 — Supply-Chain & Release Integrity](./adr/ADR-0015-supply-chain-release-integrity.md)
 
 ## 00 — Governance
 - [Documentation Standards](./00-Governance/DocumentationStandards.md)
@@ -106,6 +108,8 @@ phase: Documentation Bootstrap (M000)
   - [Phase 07 — Integrations Completion Review](./04-MVP-Roadmap/closure/Phase07-Integrations-Completion-Review.md)
   - [M008 — Automation Closure](./04-MVP-Roadmap/closure/M008-Automation-Closure.md)
   - [Phase 08 — Automation Completion Review](./04-MVP-Roadmap/closure/Phase08-Automation-Completion-Review.md)
+  - [M009 — Production Closure](./04-MVP-Roadmap/closure/M009-Production-Closure.md)
+  - [Phase 09 — Production Completion Review](./04-MVP-Roadmap/closure/Phase09-Production-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
@@ -171,6 +175,7 @@ phase: Documentation Bootstrap (M000)
 - [On-Prem Deployment](./11-Deployment/OnPremDeployment.md)
 - [Air-Gapped Deployment](./11-Deployment/AirGappedDeployment.md)
 - [Disaster Recovery](./11-Deployment/DisasterRecovery.md)
+- [GA Readiness Checklist](./11-Deployment/GAReadiness.md)
 
 ## 12 — API
 - [Overview](./12-API/README.md)
@@ -232,3 +237,4 @@ phase: Documentation Bootstrap (M000)
 - [Investigation Agent User Guide](./17-User-Documentation/AgentsUserGuide.md)
 - [Integrations User Guide](./17-User-Documentation/IntegrationsUserGuide.md)
 - [Automation Playbooks User Guide](./17-User-Documentation/PlaybooksUserGuide.md)
+- [Installation & Operations Guide](./17-User-Documentation/InstallationGuide.md)

@@ -28,6 +28,12 @@ related:
 | Air-gapped | [AirGappedDeployment.md](./AirGappedDeployment.md) | Offline bundle, no egress |
 | Hybrid | see CloudDeployment/OnPrem | Split control/data planes |
 | DR | [DisasterRecovery.md](./DisasterRecovery.md) | Backup/restore, failover |
+| GA readiness | [GAReadiness.md](./GAReadiness.md) | Honest production/GA status (Phase 09) |
+
+> **Delivered (Phase 09):** the umbrella Helm chart (`deploy/helm/dula`) + per-profile overlays,
+> admission policies (`deploy/kyverno`), air-gap bundle tooling (`deploy/airgap`), observability
+> (`deploy/observability`), and backup/DR (`deploy/backup`). Edge = Envoy Gateway (ADR-0014);
+> supply chain = ADR-0015. Operator how-to: [../17-User-Documentation/InstallationGuide.md](../17-User-Documentation/InstallationGuide.md).
 
 ## Profile Differences at a Glance
 

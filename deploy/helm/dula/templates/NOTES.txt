@@ -1,0 +1,19 @@
+Dula {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Profile config:
+  registry : {{ .Values.global.imageRegistry }}
+  image tag: {{ .Values.global.imageTag }}
+  edge     : {{ if .Values.gateway.enabled }}Envoy Gateway ({{ .Values.gateway.hostname }}){{ else }}disabled{{ end }}
+  egress   : {{ if .Values.networkPolicy.enabled }}default-deny{{ if .Values.networkPolicy.allowedEgressCIDRs }} + {{ len .Values.networkPolicy.allowedEgressCIDRs }} allowlisted CIDR(s){{ else }} (no external egress — air-gapped-safe){{ end }}{{ else }}NetworkPolicies disabled{{ end }}
+
+Components:
+{{- range $name, $c := .Values.components }}
+{{- if $c.enabled }}
+  - {{ $name }} (replicas: {{ $c.replicas | default "hpa" }})
+{{- end }}
+{{- end }}
+
+Reminders (ADR-0015):
+  * Images must be signed (cosign) and admitted by Kyverno; production overlays pin by @sha256 digest.
+  * Secrets come from "{{ .Values.existingSecret }}" (Vault CSI / SOPS) — never inline in values.
+  * Verify air-gapped installs add no external endpoints: tools/verify-airgap.sh (deploy/airgap).

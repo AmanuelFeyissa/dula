@@ -159,5 +159,20 @@ unchanged. The built-in `triage-enrich-ticket` playbook runs read steps automati
 a consequential **approval checkpoint**; reports are grounded strictly in the run trace (no action
 claimed that did not execute; tool output labelled untrusted). Exposed via `/api/v1/automation/*`
 and an `apps/web` Automation page; high-volume telemetry ingestion is guarded by an offline
-throughput benchmark (cluster-scale load testing documented as FUTURE). Subsequent phases proceed
-per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+throughput benchmark (cluster-scale load testing documented as FUTURE). **Phase 09 (Production) is
+complete for its buildable scope:** a signed, reproducible, **profile-portable release + hardening
+substrate** — an umbrella **Helm chart** (`deploy/helm/dula`) that deploys all four services with
+hardened pods (non-root, read-only rootfs, dropped caps, seccomp, resource limits), probes, rolling
+updates, HPA, PDB, default-deny **NetworkPolicies**, a **Gateway API** edge (Envoy Gateway,
+**ADR-0014**), and a forward-only pre-upgrade migration Job, differentiated across
+**cloud/on-prem/hybrid/air-gapped** by values overlays only. Supply-chain integrity (**ADR-0015**):
+**Kyverno** admission verifies cosign (keyed, offline-verifiable) signatures and the pod-security
+baseline; a gated release pipeline produces SBOMs (syft) + a vulnerability gate (grype) + signatures,
+targeting **SLSA Build L3**. The **air-gap** promise is mechanically enforced — offline bundle tooling
+plus a CI **no-egress assertion** that fails if the air-gapped profile would reach outside the
+enclave. Observability (SLOs + Prometheus rules + Grafana dashboard) and Postgres backup/DR scripts
+round it out, all validated by a CI `deploy` job. Crucially, **GA is not declared**: the live
+multi-profile deploy, external penetration test, and DR restore drill require real infrastructure and
+remain **operational** items (`docs/11-Deployment/GAReadiness.md`) owned by the deploying team.
+Subsequent phases proceed per the roadmap and the §11 closure lifecycle; a phase begins only when
+directed.

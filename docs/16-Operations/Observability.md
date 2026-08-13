@@ -16,6 +16,11 @@ related:
 
 > **Purpose.** Define the three pillars — logs, metrics, traces — and how they're collected
 > and correlated.
+>
+> **Delivered (Phase 09):** SLO targets (availability ≥ 99.5%, p95 < 800 ms), Prometheus
+> alert/recording rules, and a Grafana dashboard at `deploy/observability/`; the Helm chart ships
+> `ServiceMonitor` scaffolding. The application **`/metrics` exporter** is **FUTURE** — telemetry
+> is currently an OTel stub, so request-level SLI rules attach once it emits real metrics.
 
 ## 1. Stack
 

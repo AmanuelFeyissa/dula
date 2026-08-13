@@ -16,6 +16,11 @@ related:
 
 > **Purpose.** Define what is backed up, how, and how restores are verified. Complements
 > DR ([../11-Deployment/DisasterRecovery.md](../11-Deployment/DisasterRecovery.md)).
+>
+> **Delivered (Phase 09):** Postgres backup/restore scripts with checksum verification at
+> `deploy/backup/` (`pg-backup.sh`, `pg-restore.sh`); the other stateful tiers (Qdrant, OpenSearch,
+> MinIO, Redpanda) use their native snapshot/replication mechanisms. Scripts are syntax-checked in
+> CI; the **live restore drill** meeting RPO/RTO is operational ([../11-Deployment/GAReadiness.md](../11-Deployment/GAReadiness.md)).
 
 ## 1. Backup Scope
 

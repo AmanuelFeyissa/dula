@@ -17,6 +17,12 @@ related:
 
 > **Purpose.** Define the production baseline: Helm-packaged deployment on Kubernetes,
 > portable across cloud/on-prem/air-gapped via values overlays.
+>
+> **Delivered (Phase 09, CURRENT):** the umbrella chart lives at `deploy/helm/dula/` with
+> per-profile overlays (`values-{cloud,onprem,hybrid,airgapped}.yaml`); admission policies at
+> `deploy/kyverno/`. Validate: `helm lint deploy/helm/dula` and
+> `helm template dula deploy/helm/dula -f deploy/helm/dula/values-<profile>.yaml`. Live cluster
+> deploy + acceptance is operational — see [GAReadiness.md](./GAReadiness.md).
 
 ## 1. Packaging
 
@@ -31,9 +37,12 @@ GPU-aware model serving pools.
 
 ## 3. Networking & Security
 
-- Ingress/gateway terminates TLS; internal mTLS; **NetworkPolicies** segment planes;
-  **default-deny egress** with explicit allowlists per profile.
-- Admission control verifies image signatures/provenance (**REQUIRES DECISION** on tool).
+- **Envoy Gateway (Kubernetes Gateway API)** terminates TLS at the edge (ADR-0014); internal
+  mTLS; **NetworkPolicies** segment planes; **default-deny egress** with explicit allowlists
+  per profile.
+- Admission control verifies image signatures/provenance via **Kyverno** (ADR-0015): only
+  cosign-signed, attested images (verified against a mirrored public key) run, and the
+  pod-security baseline is enforced (non-root, read-only rootfs, dropped caps, resource limits).
 
 ## 4. Configuration & Secrets
 

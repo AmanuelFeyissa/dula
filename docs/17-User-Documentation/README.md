@@ -40,8 +40,8 @@ Guides are created **only when the corresponding capability is actually usable**
 | [Investigation Agent User Guide](./AgentsUserGuide.md) | MVP | Run the investigation agent; approve/reject consequential actions (Phase 06) |
 | [Integrations User Guide](./IntegrationsUserGuide.md) | MVP | View connectors; run read lookups; admin enable/disable (Phase 07) |
 | [Automation Playbooks User Guide](./PlaybooksUserGuide.md) | MVP | Run supervised playbooks; approve safely; read grounded reports (Phase 08) |
+| [Installation & Operations Guide](./InstallationGuide.md) | MVP | Install/upgrade via Helm across profiles; air-gapped install; backup/restore (Phase 09) |
 | Product Overview | FUTURE | User-facing summary; authoritative product scope stays in [../02-Vision/Vision.md](../02-Vision/Vision.md) |
-| Installation Guide | FUTURE | Arrives with a packaged/deployable release (Phase 09) |
 | Getting Started | MVP | Interim: local dev quickstart in the root [README](../../README.md); user-facing version when UI features land |
 | Configuration Guide | FUTURE | When operator-configurable settings exist |
 | User Guide | FUTURE | When end-user features exist (Phase 03+) |
