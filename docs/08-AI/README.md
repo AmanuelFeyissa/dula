@@ -22,6 +22,8 @@ phase: Documentation Bootstrap (M000)
 2. [ModelSelection.md](./ModelSelection.md) — choosing base models.
 3. [DatasetStrategy.md](./DatasetStrategy.md) + [DataPipeline.md](./DataPipeline.md) — data.
 4. [RAGEngineering.md](./RAGEngineering.md) — retrieval grounding.
+   [CyberIntelligence.md](./CyberIntelligence.md) — CTI extraction, vulnerability analysis,
+   detection authoring (Phase 05, CURRENT).
 5. [FineTuningStrategy.md](./FineTuningStrategy.md) + [TrainingStrategy.md](./TrainingStrategy.md)
    — adaptation.
 6. [EvaluationStrategy.md](./EvaluationStrategy.md) + [Benchmarking.md](./Benchmarking.md)

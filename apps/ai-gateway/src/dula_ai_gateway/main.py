@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from dula_ai_gateway.config import Settings, get_settings
-from dula_ai_gateway.routers import ask, health, knowledge, triage
+from dula_ai_gateway.routers import ask, health, intel, knowledge, triage
 from dula_ai_gateway.wiring import build_subsystem
 
 _log = logging.getLogger(__name__)
@@ -91,6 +91,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ask.router)
     app.include_router(triage.router)
     app.include_router(knowledge.router)
+    app.include_router(intel.router)
     return app
 
 

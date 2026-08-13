@@ -2,19 +2,21 @@
 title: AI Gateway API (Grounded Q&A, Triage, Knowledge)
 document_id: API-005
 status: Draft
-version: 0.1.0
-last_updated: 2026-08-12
+version: 0.2.0
+last_updated: 2026-08-13
 owner: AI / Backend
 audience: Developer, API consumer
-phase: Phase 03 — Knowledge & RAG (M003)
+phase: Phase 05 — Cyber Intelligence (M005)
 related:
   - ./Authentication.md
   - ./Authorization.md
   - ../03-Architecture/AIArchitecture.md
   - ../03-Architecture/RAGArchitecture.md
   - ../08-AI/RAGEngineering.md
+  - ../08-AI/CyberIntelligence.md
   - ../16-Operations/RAGRunbook.md
   - ../17-User-Documentation/AskDulaUserGuide.md
+  - ../17-User-Documentation/CyberIntelligenceUserGuide.md
 ---
 
 # AI Gateway API
@@ -46,7 +48,35 @@ related:
 | `POST /api/v1/triage` | `ai.triage` | Grounded triage of an alert (title/severity/details) |
 | `POST /api/v1/knowledge/documents` | `knowledge.ingest` | Ingest a **tenant-private** document |
 | `DELETE /api/v1/knowledge/sources/{source}` | `knowledge.purge` | Purge all chunks from a source (poison response) |
+| `POST /api/v1/intel/extract` | `ai.cti` | CTI: extract IOCs/TTPs + STIX bundle (+ optional summary) |
+| `POST /api/v1/intel/vulnerability` | `ai.vuln` | Vulnerability: CVSS score + P1–P4 prioritization |
+| `POST /api/v1/intel/detections/sigma` | `ai.detect` | Author a validated Sigma rule from an advisory |
+| `POST /api/v1/intel/detections/yara` | `ai.detect` | Author a validated YARA rule from an advisory |
+| `POST /api/v1/intel/detections/validate` | `ai.detect` | Validate an external Sigma/YARA rule |
+| `POST /api/v1/intel/detections/coverage` | `ai.detect` | ATT&CK coverage of a detection set vs a target |
 | `GET /healthz`, `GET /readyz` | — | Probes |
+
+## Cyber-intelligence endpoints (Phase 05)
+
+The `/api/v1/intel/*` endpoints deliver CTI extraction (UC-05), vulnerability analysis
+(UC-07), and detection authoring (UC-04). The heavy lifting is **deterministic and offline**;
+only the optional CTI summary uses the LLM Gateway. All authored rules are **validated before
+return**. Full capability reference:
+[../08-AI/CyberIntelligence.md](../08-AI/CyberIntelligence.md).
+
+- `POST /intel/extract` — body `{"advisory": "...", "summarize": true}` → `{indicators[],
+  techniques[], stix_bundle, summary, input_flags[]}`. Indicators are **defanged**; the STIX
+  bundle is a deterministic STIX 2.1 document. Empty/oversized advisory → **400**.
+- `POST /intel/vulnerability` — body `{"cvss_vector": "CVSS:3.1/AV:N/...", "known_exploited":
+  true, "internet_facing": true, "asset_criticality": "high", "patch_available": false}` →
+  `{base_score, severity, priority, risk_score, rationale[], metrics}`. Malformed vector → **400**.
+- `POST /intel/detections/sigma` and `.../yara` — body includes `advisory` (+ Sigma
+  `category`/`product`/`service`, `attack_tags`, `level`; YARA `name`, `tags`) → `{rule, valid,
+  errors[], warnings[]}`. No usable indicators → **422**.
+- `POST /intel/detections/validate` — body `{"format": "sigma"|"yara", "rule": "..."}` →
+  `{valid, errors[]}` for an externally-supplied (e.g. model-drafted) rule.
+- `POST /intel/detections/coverage` — body `{"rule_tag_sets": [["attack.t1071"], ...], "target":
+  ["T1071", ...]}` → `{covered_techniques[], covered_tactics[], gaps[], coverage_ratio}`.
 
 ## Answer shape
 

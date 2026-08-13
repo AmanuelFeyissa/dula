@@ -108,8 +108,8 @@ Done. Closure artifacts (Milestone Closure Reports, Phase Completion Reviews) li
 
 ## 10. Boundary
 
-Implementation is underway: **Phases 01 (M001), 02 (M002), and 03 (M003) are complete and
-closed** (see [PROJECT_STATE.md](./PROJECT_STATE.md) and
+Implementation is underway: **Phases 01 (M001) through 05 (M005) are complete and closed**
+(see [PROJECT_STATE.md](./PROJECT_STATE.md) and
 [04-MVP-Roadmap/closure/](./04-MVP-Roadmap/closure/README.md)). Phase 02 delivered the core
 domain (assets/alerts/incidents + audit), the Redpanda event backbone + worker, service-layer
 OPA authorization, tenant-isolation baseline, and an authenticated UI shell. Phase 03 delivered
@@ -121,5 +121,13 @@ pipeline delivered and CI-green (torch-free `packages/dula-ml` + standalone `ml/
 OpenAI-compatible serving + ADR-0012). **Phase 04 is complete:** a real QLoRA candidate
 (Qwen2.5-0.5B on Primus) was trained + evaluated vs the general model on free compute and
 **retired** by the gate (didn't beat quality, regressed safety) — so the platform stays on the
-general model + RAG (acceptance met on the retire outcome; a worse model never ships). Subsequent
-phases proceed per the roadmap and the §11 closure lifecycle; a phase begins only when directed.
+general model + RAG (acceptance met on the retire outcome; a worse model never ships).
+**Phase 05 (Cyber Intelligence) is complete:** a deterministic, offline-first intelligence
+core (`dula_ai.intel`) delivers CTI extraction (IOC/TTP + STIX 2.1), CVSS v3.1 scoring with
+explainable P1–P4 prioritization, and Sigma/YARA authoring with always-validated output plus
+ATT&CK coverage mapping — exposed via `apps/ai-gateway` `/api/v1/intel/*` and an `apps/web`
+Intel workbench page, gated by domain benchmark and red-team/dual-use safety suites. The
+extraction and rule-authoring are deliberately **deterministic, not model-dependent**, so
+their outputs are explainable, reproducible, and air-gapped by default; a model is used only
+for the optional, guardrailed CTI summary. Subsequent phases proceed per the roadmap and the
+§11 closure lifecycle; a phase begins only when directed.

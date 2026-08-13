@@ -114,3 +114,35 @@ test_admin_can_purge_knowledge if {
 		"resource": {"tenant_id": "t1"},
 	}
 }
+
+test_analyst_can_extract_cti if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "ai.cti",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_engineer_can_author_detections if {
+	allow with input as {
+		"subject": {"roles": ["engineer"], "tenant_id": "t1"},
+		"action": "ai.detect",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_hunter_can_analyze_vulnerability if {
+	allow with input as {
+		"subject": {"roles": ["hunter"], "tenant_id": "t1"},
+		"action": "ai.vuln",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_cti_denied_cross_tenant if {
+	not allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "ai.cti",
+		"resource": {"tenant_id": "t2"},
+	}
+}

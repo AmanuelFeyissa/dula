@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 04 — Dula AI (COMPLETE; first candidate **retired**) |
-| **CURRENT MILESTONE** | M004 ✅ complete |
-| **STATUS** | Phase 04 done & **closed under CLAUDE.md §11** (M004 Closure + Phase 04 Completion Review). Pipeline on `main`; a **real QLoRA run executed** on free-credit Modal (Qwen2.5-0.5B on Primus → eval vs baseline on MMLU security) → **RETIRE** (0.36 vs 0.37 accuracy; safety 0.25 vs 0.50). Nothing shipped; platform stays on the general model + RAG. Record in `ml/registry/`. |
-| **LAST COMPLETED TASK** | Phase 04 real run + decision + closure: [M004 Closure](./04-MVP-Roadmap/closure/M004-DulaAI-Closure.md) + [Phase 04 Completion Review](./04-MVP-Roadmap/closure/Phase04-DulaAI-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 04 complete; awaiting go-ahead for Phase 05) |
-| **NEXT TASK** | Phase 05 — Cyber Intelligence (NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the same pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Phase 05 — Cyber Intelligence (COMPLETE) |
+| **CURRENT MILESTONE** | M005 ✅ complete |
+| **STATUS** | Phase 05 done & **closed under CLAUDE.md §11** (M005 Closure + Phase 05 Completion Review). Delivered on `main`: a **deterministic, offline-first intelligence core** (`dula_ai.intel`) — CTI extraction (IOC/TTP + STIX 2.1), CVSS v3.1 scoring + P1–P4 prioritization, and Sigma/YARA authoring with validators + ATT&CK coverage — exposed via `apps/ai-gateway` `/api/v1/intel/*` (OPA `ai.cti`/`ai.vuln`/`ai.detect`), gated by domain benchmark + red-team suites. Ruff/format/mypy clean; **129 pytest**. |
+| **LAST COMPLETED TASK** | Phase 05 build + closure: [M005 Closure](./04-MVP-Roadmap/closure/M005-CyberIntelligence-Closure.md) + [Phase 05 Completion Review](./04-MVP-Roadmap/closure/Phase05-CyberIntelligence-Completion-Review.md) |
+| **CURRENT TASK** | — (Phase 05 complete; awaiting go-ahead for Phase 06) |
+| **NEXT TASK** | Phase 06 — Agents (LangGraph, ADR-0008; NOT started; do not begin without direction). Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -32,26 +32,33 @@ phase: Documentation Bootstrap (M000)
 - **Monorepo `dula`** on private GitHub with CI (docs/python/web/security gates green).
 - `packages/common-py` (config, JSON logging, OIDC verifier, OPA client, event publisher);
   **`packages/dula-ai`** (LLM Gateway + RAG: chunking, embeddings, Qdrant/OpenSearch stores,
-  hybrid retrieval, guardrails, providers, knowledge ingestion, offline factory + benchmark);
+  hybrid retrieval, guardrails, providers, knowledge ingestion, offline factory + benchmark;
+  **`dula_ai.intel`**: deterministic CTI/vuln/detection engineering — see below);
   `apps/platform-api` (CRUD for assets/incidents/alerts, OPA authz, audit, RLS);
   `apps/worker` (idempotent Redpanda consumer); **`apps/ai-gateway`** (grounded Q&A, triage,
-  knowledge ingest; SSE streaming); `apps/web` (app shell + alerts/incidents/assets +
-  **Ask/triage UI**); Keycloak realm; OPA `dula.authz` policy; Docker Compose dev stack
-  (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
+  knowledge ingest, **cyber-intelligence `/intel/*`**; SSE streaming); `apps/web` (app shell +
+  alerts/incidents/assets + **Ask/triage UI** + **Intel workbench UI**); Keycloak realm; OPA
+  `dula.authz` policy; Docker Compose dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres,
+  Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
 - **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
   QLoRA train, eval, decide; Kaggle/Lightning/Modal runners; DVC + Argo) + OpenAI-compatible
   serving provider. Datasets: **Primus** (ODC-BY/MIT); base **Qwen2.5/Mistral** (ADR-0007);
   compute on free GPU + HF Hub (ADR-0012). No trained Dula AI checkpoint exists yet.
+- **Phase 05 cyber intelligence:** `dula_ai.intel` — deterministic, offline-first IOC/ATT&CK
+  extraction with STIX 2.1 mapping (UC-05), CVSS v3.1 scoring + explainable P1–P4
+  prioritization (UC-07), and Sigma/YARA authoring with always-validated output + ATT&CK
+  coverage mapping (UC-04). A grounded CTI summary layers the LLM Gateway on top. Domain
+  benchmark (extraction precision/recall, 100% rule validity) and red-team/dual-use safety
+  suites gate it in CI.
 
 ## What Is Next
 
-**Phase 04 pipeline is delivered and CI-green**, but M004 is **not COMPLETE**: the acceptance
-criterion needs a real QLoRA run + a recorded **ship/retire decision**, which executes on the
-user's **free GPU accounts** (Kaggle/Lightning/Modal + Hugging Face — ADR-0012). Next: the user
-provides tokens; run training → eval vs the general model → record ship or retire → complete M004
-and write the Phase 04 Completion Review. Then Phase 05 on go-ahead. Remaining non-blocking open
-items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, hardware sizing.
+**Phase 05 (M005) is complete and closed under §11.** Phase 06 — Agents (LangGraph, ADR-0008)
+is next, on explicit go-ahead. Dula AI iterations (a larger base model) continue on the Phase
+04 pipeline, shipping only if a future candidate clears the evaluation gate. Remaining
+non-blocking open items: API gateway tech, plugin sandbox mechanism, embedding/reranker model,
+hardware sizing.
 
 ## Milestone Ledger
 
@@ -62,7 +69,8 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
 | M002 | Phase 02 — Core Platform | ✅ Complete (domain spine + events + OPA + UI; isolation/OPA/events verified live) |
 | M003 | Phase 03 — Knowledge & RAG | ✅ Complete (LLM Gateway + RAG + AI Gateway + Ask UI; benchmark + red-team; Qdrant verified live) |
 | M004 | Phase 04 — Dula AI | ✅ Complete (pipeline + real QLoRA run; first candidate **retired** by the gate; platform stays on general model) |
-| M005+ | Phases 05–11 | ⏳ Not started |
+| M005 | Phase 05 — Cyber Intelligence | ✅ Complete (CTI extraction + STIX, CVSS/prioritization, Sigma/YARA authoring + validation, ATT&CK coverage; intel API; benchmark + red-team gates) |
+| M006+ | Phases 06–11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -158,3 +166,18 @@ items: API gateway tech, plugin sandbox mechanism, embedding/reranker model, har
   execute on the user's free GPU accounts (no local GPU); M004 closes after that decision. Also
   did housekeeping: freed ~4.7 GB of Docker images (compaction needs an elevated diskpart run) and
   saved environment/platform decisions to memory.
+- 2026-08-13 — **Phase 05 (M005) build + closure — Cyber Intelligence.** Delivered
+  `dula_ai.intel`, a deterministic, offline-first intelligence core: IOC extraction (defang/
+  refang-aware, 9 indicator kinds) + a curated ATT&CK technique catalog with keyword/ID
+  extraction, mapped to a deterministic **STIX 2.1** bundle; **CVSS v3.1** base-score
+  computation (spec-accurate Roundup) blended with contextual signals (KEV, exposure,
+  criticality, patch status) into an explainable **P1–P4** priority; and **Sigma/YARA**
+  authoring with dependency-free structural validators (every generated rule is checked before
+  return) plus ATT&CK coverage-gap reporting. A grounded, non-speculative CTI summary layers
+  the existing LLM Gateway on top (advisory treated as untrusted evidence). Exposed via six new
+  `apps/ai-gateway` `/api/v1/intel/*` endpoints behind new OPA actions (`ai.cti`/`ai.vuln`/
+  `ai.detect`), and a new **Intel workbench** page in `apps/web`. Added a domain benchmark
+  (IOC/TTP precision-recall, 100% rule-validity) and red-team/dual-use safety tests (injected
+  advisories don't leak the system prompt; secrets are redacted). Verified: ruff/format/mypy
+  strict clean, **129 pytest** (up from 86), web lint/typecheck/build clean. Closed under §11
+  (M005 Closure + Phase 05 Completion Review). Ready for Phase 06 on go-ahead.

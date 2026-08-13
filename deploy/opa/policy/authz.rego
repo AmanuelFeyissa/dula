@@ -22,7 +22,9 @@ operational_roles := {"analyst", "hunter", "responder", "engineer", "admin"}
 read_actions := {"me.read", "assets.read", "alerts.read", "incidents.read"}
 
 # AI actions (grounded Q&A / triage) — available to every operational persona (Phase 03).
-ai_actions := {"ai.ask", "ai.triage"}
+# Cyber-intelligence actions (Phase 05): CTI extraction, vulnerability analysis, and detection
+# authoring — grounded/deterministic, defensive-only, available to every operational persona.
+ai_actions := {"ai.ask", "ai.triage", "ai.cti", "ai.vuln", "ai.detect"}
 
 # Role -> additional (write) actions. `admin` is unrestricted; others follow least privilege.
 role_actions := {
