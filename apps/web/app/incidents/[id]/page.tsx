@@ -19,16 +19,16 @@ export default async function IncidentDetail({ params }: { params: Promise<{ id:
     if (err instanceof ApiError && err.status === 404) {
       notFound();
     }
-    return <p>Failed to load incident.</p>;
+    return <div className="notice notice--danger">Couldn&apos;t load this incident.</div>;
   }
 
   return (
-    <main>
+    <>
       <p>
         <Link href="/incidents">← Incidents</Link>
       </p>
       <h1>{incident.title}</h1>
-      <dl>
+      <dl className="dl">
         <dt>Severity</dt>
         <dd>{incident.severity}</dd>
         <dt>Status</dt>
@@ -40,6 +40,6 @@ export default async function IncidentDetail({ params }: { params: Promise<{ id:
         <dt>Created</dt>
         <dd>{incident.created_at}</dd>
       </dl>
-    </main>
+    </>
   );
 }

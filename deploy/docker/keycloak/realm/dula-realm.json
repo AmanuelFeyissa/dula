@@ -8,6 +8,9 @@
   "roles": {
     "realm": [
       { "name": "analyst", "description": "SOC analyst (see docs/02-Vision/TargetUsers.md)" },
+      { "name": "hunter", "description": "Threat hunter" },
+      { "name": "responder", "description": "Incident responder (may approve containment)" },
+      { "name": "engineer", "description": "Detection / platform engineer" },
       { "name": "admin", "description": "Platform administrator" }
     ]
   },
@@ -71,6 +74,71 @@
       "attributes": { "tenant_id": ["11111111-1111-1111-1111-111111111111"] },
       "credentials": [
         { "type": "password", "value": "maya", "temporary": false }
+      ],
+      "realmRoles": ["analyst"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.test",
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "emailVerified": true,
+      "attributes": { "tenant_id": ["11111111-1111-1111-1111-111111111111"] },
+      "credentials": [
+        { "type": "password", "value": "admin", "temporary": false }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "raj",
+      "enabled": true,
+      "email": "raj@example.test",
+      "firstName": "Raj",
+      "lastName": "Responder",
+      "emailVerified": true,
+      "attributes": { "tenant_id": ["11111111-1111-1111-1111-111111111111"] },
+      "credentials": [
+        { "type": "password", "value": "raj", "temporary": false }
+      ],
+      "realmRoles": ["responder"]
+    },
+    {
+      "username": "hana",
+      "enabled": true,
+      "email": "hana@example.test",
+      "firstName": "Hana",
+      "lastName": "Hunter",
+      "emailVerified": true,
+      "attributes": { "tenant_id": ["11111111-1111-1111-1111-111111111111"] },
+      "credentials": [
+        { "type": "password", "value": "hana", "temporary": false }
+      ],
+      "realmRoles": ["hunter"]
+    },
+    {
+      "username": "sam",
+      "enabled": true,
+      "email": "sam@example.test",
+      "firstName": "Sam",
+      "lastName": "Engineer",
+      "emailVerified": true,
+      "attributes": { "tenant_id": ["11111111-1111-1111-1111-111111111111"] },
+      "credentials": [
+        { "type": "password", "value": "sam", "temporary": false }
+      ],
+      "realmRoles": ["engineer"]
+    },
+    {
+      "username": "tariq",
+      "enabled": true,
+      "email": "tariq@other.test",
+      "firstName": "Tariq",
+      "lastName": "Othertenant",
+      "emailVerified": true,
+      "attributes": { "tenant_id": ["22222222-2222-2222-2222-222222222222"] },
+      "credentials": [
+        { "type": "password", "value": "tariq", "temporary": false }
       ],
       "realmRoles": ["analyst"]
     }

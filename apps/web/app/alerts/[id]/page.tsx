@@ -19,16 +19,16 @@ export default async function AlertDetail({ params }: { params: Promise<{ id: st
     if (err instanceof ApiError && err.status === 404) {
       notFound();
     }
-    return <p>Failed to load alert.</p>;
+    return <div className="notice notice--danger">Couldn&apos;t load this alert.</div>;
   }
 
   return (
-    <main>
+    <>
       <p>
         <Link href="/alerts">← Alerts</Link>
       </p>
       <h1>{alert.title}</h1>
-      <dl>
+      <dl className="dl">
         <dt>Severity</dt>
         <dd>{alert.severity}</dd>
         <dt>Status</dt>
@@ -56,6 +56,6 @@ export default async function AlertDetail({ params }: { params: Promise<{ id: st
         <dt>Created</dt>
         <dd>{alert.created_at}</dd>
       </dl>
-    </main>
+    </>
   );
 }

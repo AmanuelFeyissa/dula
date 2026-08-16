@@ -1,10 +1,18 @@
 import Link from "next/link";
 
-import { apiFetch, getAccessToken } from "@/lib/api";
+import { ApiError, apiFetch, getAccessToken } from "@/lib/api";
 import { SignIn } from "@/components/SignIn";
+import {
+  EmptyState,
+  LoadError,
+  PageHeader,
+  SeverityChip,
+  humanize,
+  spineClass,
+} from "@/components/ui";
 import type { Asset, Page } from "@/lib/types";
 
-const cell = { padding: "0.4rem 0.6rem", borderBottom: "1px solid #eee", textAlign: "left" } as const;
+const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 export default async function AssetsPage() {
   const token = await getAccessToken();
@@ -15,43 +23,58 @@ export default async function AssetsPage() {
   let page: Page<Asset>;
   try {
     page = await apiFetch<Page<Asset>>("/api/v1/assets", token);
-  } catch {
-    return <p>Failed to load assets. Ensure the Platform API is reachable.</p>;
+  } catch (err) {
+    return (
+      <>
+        <PageHeader title="Assets" description="Monitored hosts, accounts, and resources." />
+        <LoadError entity="assets" status={err instanceof ApiError ? err.status : undefined} />
+      </>
+    );
   }
 
+  // Criticality drives blast radius, so the most critical assets lead.
+  const assets = [...page.items].sort(
+    (a, b) => (RANK[a.criticality] ?? 9) - (RANK[b.criticality] ?? 9),
+  );
+
   return (
-    <main>
-      <h1>Assets</h1>
-      <p>{page.total} total</p>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead>
-          <tr>
-            <th style={cell}>Name</th>
-            <th style={cell}>Type</th>
-            <th style={cell}>Criticality</th>
-            <th style={cell}>Identifier</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.items.map((asset) => (
-            <tr key={asset.id}>
-              <td style={cell}>
-                <Link href={`/assets/${asset.id}`}>{asset.name}</Link>
-              </td>
-              <td style={cell}>{asset.asset_type}</td>
-              <td style={cell}>{asset.criticality}</td>
-              <td style={cell}>{asset.identifier ?? "—"}</td>
-            </tr>
-          ))}
-          {page.items.length === 0 ? (
-            <tr>
-              <td style={cell} colSpan={4}>
-                No assets yet.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
-    </main>
+    <>
+      <PageHeader
+        title="Assets"
+        description="Monitored hosts, accounts, and resources, most critical first."
+        aside={<span className="count">{page.total} total</span>}
+      />
+
+      <div className="panel">
+        {assets.length === 0 ? (
+          <EmptyState title="No assets" hint="Assets appear as your inventory sources sync." />
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: "28%" }}>Asset</th>
+                <th>Type</th>
+                <th>Criticality</th>
+                <th>Identifier</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assets.map((asset) => (
+                <tr key={asset.id}>
+                  <td className={spineClass(asset.criticality)}>
+                    <Link href={`/assets/${asset.id}`}>{asset.name}</Link>
+                  </td>
+                  <td className="muted">{humanize(asset.asset_type)}</td>
+                  <td>
+                    <SeverityChip value={asset.criticality} />
+                  </td>
+                  <td className="mono muted">{asset.identifier ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   );
 }

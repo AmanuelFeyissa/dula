@@ -27,19 +27,40 @@ Health checks: http://localhost:8000/healthz · http://localhost:8100/healthz
 
 ## 2. Credentials (local dev only)
 
+### Web app personas
+
+All six are seeded in the `dula` realm. Password = username in every case (dev only). The first
+five share tenant **Acme**; `tariq` is in a **second tenant**, which is how you can see tenant
+isolation with your own eyes.
+
+| Sign in as | Password | Role | What it demonstrates |
+|-----------|----------|------|----------------------|
+| `maya` | `maya` | analyst | The default SOC analyst view; can create tickets |
+| `admin` | `admin` | admin | Unrestricted — every action allowed |
+| `raj` | `raj` | responder | Can approve containment (`isolate_host`) |
+| `hana` | `hana` | hunter | Threat hunting; no asset management |
+| `sam` | `sam` | engineer | Detection engineering; can manage assets |
+| `tariq` | `tariq` | analyst (**other tenant**) | Sees only its own data — proves isolation |
+
+### Infrastructure
+
 | Where | Username | Password | Notes |
 |-------|----------|----------|-------|
-| **Web app login** (Keycloak) | `maya` | `maya` | Seeded analyst; tenant `11111111-…-111111111111` |
-| Keycloak admin console | `admin` | `admin` | Realm to manage: **`dula`** |
+| Keycloak admin console | `admin` | `admin` | Realm to manage: **`dula`** (this is the *master*-realm admin) |
 | PostgreSQL | `dula` | `dula_dev_password` | db `dula`, `localhost:5432` |
 | OpenSearch (full stack only) | `admin` | `Dula_dev_Admin123!` | only if you start `opensearch` |
 | MinIO (full stack only) | `dula` | `dula_dev_password` | console http://localhost:9001 |
 
-**To log in to the web app:** open http://localhost:3000 → **Sign in** → you are redirected to
-Keycloak → enter **`maya` / `maya`** → you land back in the app authenticated.
+**To log in:** open http://localhost:3000 → **Continue with Keycloak** → enter one of the personas
+above → you land back in the app authenticated.
 
-Add more users in the Keycloak admin console (realm `dula` → Users), or edit
-`deploy/docker/keycloak/realm/dula-realm.json` and restart Keycloak.
+> **Switching personas.** Keycloak keeps its own SSO session, so signing out of Dula alone signs you
+> straight back in as the same user. To switch, recreate Keycloak (fastest reliable reset):
+> `docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env rm -sf keycloak && docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env up -d keycloak`
+
+Add more users by editing `deploy/docker/keycloak/realm/dula-realm.json`, then **recreating** the
+Keycloak container — a plain restart won't re-import, because Keycloak skips import when the realm
+already exists.
 
 ---
 
@@ -64,6 +85,15 @@ docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env up -d pos
 ```bash
 cd apps/platform-api && uv run alembic upgrade head && cd ../..
 ```
+
+### 3b-2. Demo data (recommended)
+Without this the app is empty and there is nothing to look at. Idempotent — safe to re-run:
+
+```bash
+docker exec -i dula-dev-postgres-1 psql -U dula -d dula < tools/seed-demo-data.sql
+```
+
+Seeds two tenants, 6 assets, 4 incidents, and 11 alerts across the severity range.
 
 ### 3c. The two API services (each in its own terminal)
 ```bash
