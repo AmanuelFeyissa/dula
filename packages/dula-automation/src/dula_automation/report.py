@@ -137,12 +137,14 @@ def _consequential_summary(record: RunRecord) -> str:
         if step.side_effect is not SideEffect.CONSEQUENTIAL:
             continue
         if _executed_ok(step):
-            approver = step.approval.approver if step.approval else "unknown"
+            # Name the human, not their opaque subject — a report is read by people. The
+            # subject remains the audit anchor (see ApprovalDecision).
+            approver = step.approval.approver_label if step.approval else "unknown"
             out = _output(step)
             what = out.get("ticket_id") if isinstance(out, dict) else step.tool
             done.append(f"`{step.tool}` (approved by {approver}) → {what}")
         elif step.approval is not None and not step.approval.approved:
-            done.append(f"`{step.tool}` was **rejected** by {step.approval.approver}")
+            done.append(f"`{step.tool}` was **rejected** by {step.approval.approver_label}")
         else:
             done.append(f"`{step.tool}` proposed and **awaiting approval**")
     if not done:
@@ -174,7 +176,8 @@ def generate_report(record: RunRecord, *, title: str | None = None) -> Report:
             if step.approval is None:
                 approval = "pending"
             else:
-                approval = f"{'approved' if step.approval.approved else 'rejected'}"
+                verdict = "approved" if step.approval.approved else "rejected"
+                approval = f"{verdict} by {step.approval.approver_label}"
         else:
             approval = "n/a"
         if step.result is None:

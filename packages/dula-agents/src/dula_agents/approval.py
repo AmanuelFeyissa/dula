@@ -48,6 +48,12 @@ class AutoApprovalBroker:
     approve: bool = False
     approver: str = "auto-policy"
     reason: str = "scenario policy"
+    approver_username: str | None = None
 
     async def request(self, req: ApprovalRequest) -> ApprovalDecision | None:
-        return ApprovalDecision(approved=self.approve, approver=self.approver, reason=self.reason)
+        return ApprovalDecision(
+            approved=self.approve,
+            approver=self.approver,
+            reason=self.reason,
+            approver_username=self.approver_username,
+        )

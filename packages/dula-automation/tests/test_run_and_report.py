@@ -95,6 +95,40 @@ async def test_report_is_grounded_in_the_completed_run(
     assert "untrusted evidence" in md
 
 
+async def test_report_names_the_human_not_the_opaque_subject(
+    backends: ToolBackends,
+    full_checker: AllowSetChecker,
+    tenant: str,
+    runtime_factory: Callable[..., AgentRuntime],
+) -> None:
+    """A report is read by people, so it must name one.
+
+    The approver subject is a Keycloak UUID; printing it verbatim told the reader nothing.
+    The subject stays the audit anchor, but the prose and the step table show the username.
+    """
+    _pb, agent = _compiled()
+    subject = "92d9fb35-e8e5-47dd-b92e-60cffb4bdb4e"
+    runtime = runtime_factory(
+        backends,
+        full_checker,
+        AutoApprovalBroker(approve=True, approver=subject, approver_username="raj"),
+    )
+    record = await runtime.start(
+        agent=agent, goal="Investigate HOST-7", tenant=tenant, subject="maya", roles=["analyst"]
+    )
+    assert record.state is RunState.COMPLETED
+
+    report = generate_report(record)
+    md = report.to_markdown()
+    assert "approved by raj" in report.executive_summary
+    assert "approved by raj" in report.technical_detail
+    assert subject not in md
+
+    # The audit identity itself is untouched — only the rendering changed.
+    approvals = [s.approval for s in record.steps if s.approval is not None]
+    assert approvals and all(a.approver == subject for a in approvals)
+
+
 async def test_report_does_not_claim_a_ticket_when_rejected(
     backends: ToolBackends,
     full_checker: AllowSetChecker,

@@ -26,6 +26,8 @@ interface RunStep {
   side_effect: string;
   permitted: boolean | null;
   approved: boolean | null;
+  /** Who decided. Optional: null until a decision exists. */
+  approved_by: string | null;
   executed_ok: boolean | null;
 }
 
@@ -246,6 +248,15 @@ export function AutomationConsole() {
                       </span>
                     ) : null}
                     <div className="trace__thought">{s.thought}</div>
+                    {/* Attribution belongs next to the action: a consequential step is only
+                        accountable if the trace says who let it through. */}
+                    {s.approved !== null && s.approved_by ? (
+                      <div
+                        style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 2 }}
+                      >
+                        {s.approved ? "Approved" : "Rejected"} by {s.approved_by}
+                      </div>
+                    ) : null}
                   </span>
                   <span
                     className={`chip ${

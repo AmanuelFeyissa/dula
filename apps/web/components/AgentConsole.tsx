@@ -10,6 +10,8 @@ interface Step {
   permitted: boolean | null;
   permission_reason: string;
   approved: boolean | null;
+  /** Who decided. Optional: null until a decision exists. */
+  approved_by: string | null;
   executed_ok: boolean | null;
 }
 
@@ -68,6 +70,13 @@ function StepRow({ s }: { s: Step }) {
         {s.permitted === false && s.permission_reason ? (
           <div style={{ color: "var(--sev-critical)", fontSize: 12.5, marginTop: 2 }}>
             {s.permission_reason}
+          </div>
+        ) : null}
+        {/* Attribution belongs next to the action, not buried in the report: a consequential
+            step is only accountable if the trace says who let it through. */}
+        {s.approved !== null && s.approved_by ? (
+          <div style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 2 }}>
+            {s.approved ? "Approved" : "Rejected"} by {s.approved_by}
           </div>
         ) : null}
       </span>
