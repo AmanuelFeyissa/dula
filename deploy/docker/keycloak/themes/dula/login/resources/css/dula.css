@@ -1,0 +1,298 @@
+/* Dula overrides for the Keycloak login page.
+ *
+ * The parent theme (keycloak.v2) is built on PatternFly v5, so everything here targets
+ * .pf-v5-c-* classes. Colour/type values come from css/tokens.css, which is generated from
+ * apps/web/app/design-tokens.css — so this page and the app cannot drift apart.
+ *
+ * Intent: an operator arriving here should see Dula's sign-in, not a vendor's. The card
+ * geometry deliberately matches .signin__card in the app's globals.css, so the transition
+ * from this page into the product is continuous.
+ *
+ * No webfonts and no external requests — the platform must deploy air-gapped
+ * (docs/02-Vision/GuidingPrinciples.md §6).
+ */
+
+/* ---- Ground ----------------------------------------------------------------------------- */
+
+body#keycloak-bg,
+body {
+  background: var(--bg);
+  /* A single soft wash off the top-left rather than a hero image: keeps the page weightless
+     to serve offline and keeps contrast predictable. */
+  background-image: radial-gradient(
+    60rem 40rem at 12% -10%,
+    rgba(53, 208, 186, 0.09),
+    transparent 60%
+  );
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.pf-v5-c-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.pf-v5-c-login__container {
+  width: 100%;
+  max-width: 380px;
+  margin: 0;
+  display: block;
+  grid-template-columns: none;
+}
+
+/* ---- Brand -----------------------------------------------------------------------------
+
+   The header renders the realm name as bare text ("dula"). Rather than override login.ftl
+   just for a logo, the text is suppressed and replaced with the same mark + wordmark the app
+   sidebar uses. Kept in CSS so the template stays on the upstream upgrade path. */
+
+#kc-header {
+  padding: 0 0 18px;
+  text-align: center;
+}
+
+#kc-header-wrapper.pf-v5-c-brand,
+#kc-header-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* Hides the inherited realm-name text node without hiding the pseudo-elements. */
+  font-size: 0;
+  line-height: 1;
+  padding: 0;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+#kc-header-wrapper::before {
+  content: "D";
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(150deg, var(--accent), #1d8f9e);
+  color: var(--accent-ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+#kc-header-wrapper::after {
+  content: "Dula";
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* ---- Card ------------------------------------------------------------------------------- */
+
+.pf-v5-c-login__main {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 30px;
+}
+
+/* PatternFly lays this out as a two-column grid (title | utilities), which would push the
+   strapline below into a narrow second column. Block stacking is what we want. */
+.pf-v5-c-login__main-header {
+  display: block;
+  padding: 0 0 4px;
+}
+
+#kc-page-title,
+.pf-v5-c-login__main-header .pf-v5-c-title {
+  font-size: 21px;
+  font-weight: 640;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+}
+
+/* Sets expectations before the operator has any product UI to read. Mirrors the strapline the
+   app previously showed on its own interstitial, which this page replaces. */
+.pf-v5-c-login__main-header::after {
+  content: "Security operations, intelligence, and supervised automation.";
+  display: block;
+  width: 100%;
+  margin: 10px auto 0;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pf-v5-c-login__main-body {
+  padding: 22px 0 0;
+}
+
+.pf-v5-c-login__main-footer {
+  padding: 0;
+}
+
+/* ---- Form ------------------------------------------------------------------------------- */
+
+.pf-v5-c-form {
+  --pf-v5-c-form--GridGap: 16px;
+  gap: 16px;
+}
+
+.pf-v5-c-form__label,
+.pf-v5-c-form__label-text {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pf-v5-c-form-control {
+  background: var(--bg-inset);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  /* PatternFly draws the input underline with a generated element; suppress it so the border
+     above is the only frame. */
+  --pf-v5-c-form-control--after--BorderBottomWidth: 0;
+  --pf-v5-c-form-control--after--BorderBottomColor: transparent;
+}
+
+.pf-v5-c-form-control::after {
+  border: 0;
+}
+
+.pf-v5-c-form-control > input,
+.pf-v5-c-form-control input {
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding: 11px 12px;
+}
+
+.pf-v5-c-form-control > input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Focus indicator. The ring lives on the wrapper, not the input, because PatternFly wraps every
+   field in a <span> — putting it on both draws two rings of different radii. It has to be
+   strong enough to stand alone as the only focus signal, so this is --focus at full strength
+   rather than the faint accent tint. */
+.pf-v5-c-form-control:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(127, 216, 255, 0.35);
+}
+
+.pf-v5-c-form-control > input:focus,
+.pf-v5-c-form-control > input:focus-visible {
+  outline: none;
+}
+
+/* Buttons and links keep a conventional outline — they have no wrapper to carry the ring. */
+.pf-v5-c-button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---- Buttons ---------------------------------------------------------------------------- */
+
+.pf-v5-c-button.pf-m-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 650;
+  padding: 11px 16px;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  background: #2fbfab;
+}
+
+/* The show/hide password toggle sits inside the input group; make it read as part of the
+   field rather than as a second, competing button. */
+.pf-v5-c-button.pf-m-control {
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  border: 1px solid var(--line-strong);
+  border-left: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.pf-v5-c-button.pf-m-control:hover {
+  color: var(--text);
+}
+
+.pf-v5-c-input-group__item.pf-m-fill .pf-v5-c-form-control {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.pf-v5-c-button.pf-m-link {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+/* ---- Checkbox (remember me) -------------------------------------------------------------- */
+
+.pf-v5-c-check__label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.pf-v5-c-check__input {
+  accent-color: var(--accent);
+}
+
+/* ---- Errors ------------------------------------------------------------------------------
+
+   A failed sign-in is the one moment on this page where the message has to be unmissable, so
+   it gets the severity-critical colour used everywhere else in the product for the same
+   meaning — and a border, so colour is never the only signal. */
+
+.pf-v5-c-alert.pf-m-danger,
+.pf-v5-c-alert.pf-m-error {
+  background: rgba(242, 84, 91, 0.1);
+  border: 1px solid var(--sev-critical);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+
+.pf-v5-c-alert__title,
+.pf-v5-c-alert__description {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.pf-v5-c-alert.pf-m-danger .pf-v5-c-alert__icon,
+.pf-v5-c-alert.pf-m-error .pf-v5-c-alert__icon {
+  color: var(--sev-critical);
+}
+
+.pf-v5-c-helper-text__item-text.pf-m-error,
+.kc-feedback-text {
+  color: var(--sev-critical);
+  font-size: 12.5px;
+}
+
+/* ---- Reduced motion ---------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

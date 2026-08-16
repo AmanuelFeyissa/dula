@@ -133,6 +133,10 @@ services:
       - "8080:8080"
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import:ro
+      # The Dula login theme (realm `loginTheme: dula`). start-dev disables theme caching, so
+      # edits under themes/ show up on the next page load. Production images bake the theme in
+      # rather than bind-mounting it.
+      - ./keycloak/themes:/opt/keycloak/themes:ro
 
 volumes:
   pgdata:

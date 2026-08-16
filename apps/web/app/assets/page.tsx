@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { ApiError, apiFetch, getAccessToken } from "@/lib/api";
-import { SignIn } from "@/components/SignIn";
+import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
   LoadError,
@@ -15,10 +14,7 @@ import type { Asset, Page } from "@/lib/types";
 const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 export default async function AssetsPage() {
-  const token = await getAccessToken();
-  if (!token) {
-    return <SignIn />;
-  }
+  const token = await requireAccessToken();
 
   let page: Page<Asset>;
   try {

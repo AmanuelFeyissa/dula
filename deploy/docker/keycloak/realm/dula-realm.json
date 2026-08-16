@@ -5,6 +5,8 @@
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "accessTokenLifespan": 300,
+  "displayName": "Dula",
+  "loginTheme": "dula",
   "roles": {
     "realm": [
       { "name": "analyst", "description": "SOC analyst (see docs/02-Vision/TargetUsers.md)" },

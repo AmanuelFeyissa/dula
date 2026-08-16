@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { auth, signOut } from "@/auth";
 import { NavLink } from "@/components/NavLink";
@@ -78,7 +79,30 @@ export async function Nav() {
           <form
             action={async () => {
               "use server";
-              await signOut({ redirectTo: "/" });
+              // Clearing only Dula's own cookie leaves the Keycloak SSO session alive, so the
+              // next sign-in silently re-authenticates the same person — which is why switching
+              // accounts previously meant recreating the Keycloak container. RP-initiated
+              // logout (OpenID Connect RP-Initiated Logout 1.0) ends both sessions.
+              const current = await auth();
+              const idToken = current?.idToken;
+              await signOut({ redirect: false });
+
+              const issuer =
+                process.env.KEYCLOAK_ISSUER ?? "http://localhost:8080/realms/dula";
+              const logout = new URL(`${issuer}/protocol/openid-connect/logout`);
+              logout.searchParams.set(
+                "client_id",
+                process.env.KEYCLOAK_CLIENT_ID ?? "dula-web",
+              );
+              logout.searchParams.set(
+                "post_logout_redirect_uri",
+                process.env.AUTH_URL ?? "http://localhost:3000",
+              );
+              // Without the hint Keycloak interrupts with its own "are you sure?" page.
+              if (idToken) {
+                logout.searchParams.set("id_token_hint", idToken);
+              }
+              redirect(logout.toString());
             }}
           >
             <button type="submit" className="btn btn--ghost" style={{ width: "100%" }}>

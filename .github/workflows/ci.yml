@@ -64,6 +64,11 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install --frozen-lockfile
+      # The Keycloak login theme carries a generated copy of the app's design tokens (it is
+      # served by a different process and cannot import the app's CSS). Fail fast if the two
+      # have drifted, so the sign-in page can never quietly stop matching the product.
+      - name: Design tokens in sync with the Keycloak login theme
+        run: node tools/sync-design-tokens.mjs --check
       - name: Build web (runs lint + type-check via next build)
         env:
           AUTH_SECRET: ci-dummy-secret-not-used-at-runtime

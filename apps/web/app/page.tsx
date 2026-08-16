@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { apiFetch, getAccessToken } from "@/lib/api";
-import { SignIn } from "@/components/SignIn";
+import { apiFetch, requireAccessToken } from "@/lib/api";
 import { PageHeader, RelativeTime, SeverityChip, spineClass } from "@/components/ui";
 import type { Alert, Asset, Incident, Page } from "@/lib/types";
 
@@ -34,10 +33,7 @@ function Metric({ label, value, href }: { label: string; value: string; href: st
 }
 
 export default async function Home() {
-  const token = await getAccessToken();
-  if (!token) {
-    return <SignIn />;
-  }
+  const token = await requireAccessToken();
 
   const [alerts, incidents, assets] = await Promise.all([
     safePage<Alert>("/api/v1/alerts", token),

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 
 // Server-side typed client for the Platform API. The caller's Keycloak access token is
@@ -14,9 +16,23 @@ export class ApiError extends Error {
   }
 }
 
-export async function getAccessToken(): Promise<string | null> {
+/**
+ * The token for a server component, or a redirect into the sign-in flow.
+ *
+ * Pages use this rather than null-checking a session themselves: middleware.ts already blocks
+ * unauthenticated requests, so reaching here without a token means the session went stale
+ * mid-render, and the only useful response is to re-authenticate. Keycloak re-issues silently
+ * when the SSO session is still alive, so the operator usually sees nothing at all.
+ *
+ * Route handlers under app/api/ deliberately do NOT use this — they must answer with a 401,
+ * not a redirect, so they read `auth()` directly.
+ */
+export async function requireAccessToken(): Promise<string> {
   const session = await auth();
-  return session?.accessToken ?? null;
+  if (!session?.accessToken || session.error) {
+    redirect("/signin");
+  }
+  return session.accessToken;
 }
 
 export async function apiFetch<T>(

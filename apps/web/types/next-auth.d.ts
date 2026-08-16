@@ -7,6 +7,9 @@ import "next-auth/jwt";
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
+    // Needed as `id_token_hint` for RP-initiated logout. Note the refresh token is absent by
+    // design: the session is readable by the browser via /api/auth/session.
+    idToken?: string;
     error?: "RefreshTokenError";
   }
 }
@@ -15,6 +18,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string;
     refreshToken?: string;
+    idToken?: string;
     expiresAt?: number;
     error?: "RefreshTokenError";
   }
