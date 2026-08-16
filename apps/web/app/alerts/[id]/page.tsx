@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ApiError, apiFetch, getAccessToken } from "@/lib/api";
-import { SignIn } from "@/components/SignIn";
+import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
 import type { Alert } from "@/lib/types";
 
 export default async function AlertDetail({ params }: { params: Promise<{ id: string }> }) {
-  const token = await getAccessToken();
-  if (!token) {
-    return <SignIn />;
-  }
+  const token = await requireAccessToken();
   const { id } = await params;
 
   let alert: Alert;

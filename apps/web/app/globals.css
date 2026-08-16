@@ -12,48 +12,9 @@
  * data (hashes, IPs, hostnames, IDs), which is the vernacular of this subject's world.
  */
 
-:root {
-  /* Ground: deep slate-navy rather than black — less glare on long shifts, and it keeps the
-     severity ramp readable. */
-  --bg: #0f1620;
-  --bg-raised: #16202d;
-  --bg-inset: #111a25;
-  --line: #243040;
-  --line-strong: #33435a;
-
-  --text: #e6edf6;
-  --text-muted: #93a3b8;
-  --text-faint: #6b7c93;
-
-  /* Interactive/brand: a defensive teal — technical, but not the acid-green cliché. */
-  --accent: #35d0ba;
-  --accent-ink: #06231f;
-  --accent-dim: rgba(53, 208, 186, 0.12);
-  --focus: #7fd8ff;
-
-  /* Severity ramp: ordered by hue AND luminance so it survives colour-blindness and
-     greyscale. Never the only signal — always paired with a text label. */
-  --sev-critical: #f2545b;
-  --sev-high: #ff8a3d;
-  --sev-medium: #f2c14e;
-  --sev-low: #58a6ff;
-  --sev-info: #7d8ca3;
-
-  --ok: #3fb950;
-  --warn: #d29922;
-  --danger: #f2545b;
-
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
-
-  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo, Consolas,
-    monospace;
-
-  --sidebar-w: 232px;
-}
+/* Tokens live in their own file so the Keycloak login theme can be generated from the same
+   source (tools/sync-design-tokens.mjs). Must stay first — @import precedes all rules. */
+@import "./design-tokens.css";
 
 * {
   box-sizing: border-box;
@@ -395,8 +356,13 @@ h3 {
 
 /* ---- Controls ------------------------------------------------------------------------ */
 
+/* Applies to <button> and to <a class="btn"> alike. The explicit display matters: an anchor is
+   inline by default, which leaves it underlined and makes width declarations do nothing. */
 .btn {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--line-strong);
   background: var(--bg-raised);
   color: var(--text);
@@ -405,6 +371,7 @@ h3 {
   font: inherit;
   font-size: 14px;
   font-weight: 550;
+  text-decoration: none;
   cursor: pointer;
   line-height: 1.3;
 }

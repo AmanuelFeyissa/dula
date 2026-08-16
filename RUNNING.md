@@ -51,16 +51,32 @@ isolation with your own eyes.
 | OpenSearch (full stack only) | `admin` | `Dula_dev_Admin123!` | only if you start `opensearch` |
 | MinIO (full stack only) | `dula` | `dula_dev_password` | console http://localhost:9001 |
 
-**To log in:** open http://localhost:3000 → **Continue with Keycloak** → enter one of the personas
-above → you land back in the app authenticated.
+**To log in:** open http://localhost:3000 → you land directly on the Dula sign-in page → enter one
+of the personas above → you are back in the app, authenticated. There is no provider-chooser step:
+Keycloak is the only identity provider, so the app starts the OIDC flow immediately and Keycloak
+serves the page using the Dula theme in `deploy/docker/keycloak/themes/dula/`.
 
-> **Switching personas.** Keycloak keeps its own SSO session, so signing out of Dula alone signs you
-> straight back in as the same user. To switch, recreate Keycloak (fastest reliable reset):
-> `docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env rm -sf keycloak && docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env up -d keycloak`
+**Switching personas** is just Sign out → sign in as someone else. Signing out performs an
+RP-initiated logout, which ends the Keycloak SSO session as well as Dula's own, so the next sign-in
+really does prompt. No container restarts are needed.
 
 Add more users by editing `deploy/docker/keycloak/realm/dula-realm.json`, then **recreating** the
 Keycloak container — a plain restart won't re-import, because Keycloak skips import when the realm
-already exists.
+already exists:
+
+```bash
+docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env rm -sf keycloak
+docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env up -d keycloak
+```
+
+The same applies after editing the login theme's `theme.properties` or the realm's `loginTheme`.
+Theme **CSS** edits need no restart (`start-dev` disables theme caching) — but if you change the
+palette, regenerate the theme's copy of the design tokens first, or CI will fail the drift check:
+
+```bash
+node tools/sync-design-tokens.mjs          # regenerate
+node tools/sync-design-tokens.mjs --check  # what CI runs
+```
 
 ---
 
