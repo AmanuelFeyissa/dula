@@ -74,9 +74,27 @@ class ApprovalRequest:
 
 @dataclass(frozen=True, slots=True)
 class ApprovalDecision:
+    """Who approved a consequential step, and on what grounds.
+
+    Two identities are recorded on purpose. ``approver`` is the OIDC ``sub`` — opaque, stable,
+    and never reassigned, so it is what the audit trail is anchored to. ``approver_username``
+    is a snapshot of the human-readable name at the moment of approval, kept only so reports
+    and the UI can say "approved by raj" instead of quoting a UUID at the reader.
+
+    The username is a snapshot rather than a lookup because Keycloak allows a username to be
+    reassigned to a different person later; resolving it at read time would silently rewrite
+    history.
+    """
+
     approved: bool
     approver: str
     reason: str = ""
+    approver_username: str | None = None
+
+    @property
+    def approver_label(self) -> str:
+        """The name to show a human. Falls back to the subject when no username was captured."""
+        return self.approver_username or self.approver
 
 
 @dataclass(slots=True)

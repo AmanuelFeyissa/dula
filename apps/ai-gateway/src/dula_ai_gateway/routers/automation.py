@@ -33,7 +33,10 @@ class StepOut(BaseModel):
     side_effect: str
     permitted: bool | None
     approved: bool | None
-    executed_ok: bool | None
+    #: Display name of whoever decided. Null until a decision is made. Never used for
+    #: authorization — that is `roles` on the token.
+    approved_by: str | None = None
+    executed_ok: bool | None = None
 
 
 class PendingApprovalOut(BaseModel):
@@ -128,6 +131,7 @@ def _run_out(record: RunRecord, playbook: str) -> RunOut:
                 side_effect=s.side_effect.value,
                 permitted=s.permitted,
                 approved=(s.approval.approved if s.approval is not None else None),
+                approved_by=(s.approval.approver_label if s.approval is not None else None),
                 executed_ok=(s.result.ok if s.result is not None else None),
             )
             for s in record.steps
@@ -222,7 +226,12 @@ async def approve_run(
     record = await automation.runtime.resume(
         stored.record,
         agent,
-        decision=ApprovalDecision(approved=data.approved, approver=ctx.subject, reason=data.reason),
+        decision=ApprovalDecision(
+            approved=data.approved,
+            approver=ctx.subject,
+            reason=data.reason,
+            approver_username=ctx.username,
+        ),
         approver=ctx.subject,
         approver_roles=list(ctx.roles),
         roles=list(stored.roles),

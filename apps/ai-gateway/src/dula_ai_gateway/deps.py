@@ -57,9 +57,13 @@ def get_current_user(
 
 @dataclass(frozen=True, slots=True)
 class RequestContext:
+    #: OIDC ``sub``. Opaque and stable — the identity every audit record is anchored to.
     subject: str
     tenant: str
     roles: tuple[str, ...]
+    #: ``preferred_username``, for display only. Optional because a token is not obliged to
+    #: carry it; nothing may depend on it for a security decision.
+    username: str | None = None
 
 
 def get_request_context(
@@ -69,7 +73,12 @@ def get_request_context(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Token is missing a tenant_id claim"
         )
-    return RequestContext(subject=user.subject, tenant=user.tenant_id, roles=tuple(user.roles))
+    return RequestContext(
+        subject=user.subject,
+        tenant=user.tenant_id,
+        roles=tuple(user.roles),
+        username=user.username,
+    )
 
 
 Context = Annotated[RequestContext, Depends(get_request_context)]

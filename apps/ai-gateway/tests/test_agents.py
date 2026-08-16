@@ -31,7 +31,9 @@ def env() -> Iterator[tuple[TestClient, Holder]]:
     settings = Settings(profile="offline", events_enabled=False, seed_demo_corpus=False)
     app = create_app(settings)
     holder: Holder = {
-        "ctx": RequestContext(subject="analyst-1", tenant="tenant-x", roles=("analyst",))
+        "ctx": RequestContext(
+            subject="analyst-1", tenant="tenant-x", roles=("analyst",), username="maya"
+        )
     }
     app.dependency_overrides[get_request_context] = lambda: holder["ctx"]
     with TestClient(app) as client:
@@ -79,6 +81,31 @@ def test_approve_completes_and_creates_ticket(env: tuple[TestClient, Holder]) ->
     body = resp.json()
     assert body["state"] == "completed"
     assert body["steps"][-1]["approved"] is True and body["steps"][-1]["executed_ok"] is True
+
+
+def test_approval_is_attributed_to_the_username(env: tuple[TestClient, Holder]) -> None:
+    """The trace names the human. A UUID in the UI tells a reader nothing about who acted."""
+    client, _ = env
+    run_id = client.post("/api/v1/agents/runs", json={"goal": "Investigate"}).json()["run_id"]
+    body = client.post(f"/api/v1/agents/runs/{run_id}/approval", json={"approved": True}).json()
+    assert body["steps"][-1]["approved_by"] == "maya"
+
+
+def test_approval_falls_back_to_subject_without_a_username(
+    env: tuple[TestClient, Holder],
+) -> None:
+    """A token need not carry preferred_username; attribution must degrade, not disappear."""
+    client, holder = env
+    holder["ctx"] = RequestContext(subject="analyst-1", tenant="tenant-x", roles=("analyst",))
+    run_id = client.post("/api/v1/agents/runs", json={"goal": "Investigate"}).json()["run_id"]
+    body = client.post(f"/api/v1/agents/runs/{run_id}/approval", json={"approved": True}).json()
+    assert body["steps"][-1]["approved_by"] == "analyst-1"
+
+
+def test_steps_without_a_decision_have_no_approver(env: tuple[TestClient, Holder]) -> None:
+    client, _ = env
+    body = client.post("/api/v1/agents/runs", json={"goal": "Investigate"}).json()
+    assert all(s["approved_by"] is None for s in body["steps"])
 
 
 def test_reject_halts_without_action(env: tuple[TestClient, Holder]) -> None:
