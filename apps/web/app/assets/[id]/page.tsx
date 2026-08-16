@@ -19,16 +19,16 @@ export default async function AssetDetail({ params }: { params: Promise<{ id: st
     if (err instanceof ApiError && err.status === 404) {
       notFound();
     }
-    return <p>Failed to load asset.</p>;
+    return <div className="notice notice--danger">Couldn&apos;t load this asset.</div>;
   }
 
   return (
-    <main>
+    <>
       <p>
         <Link href="/assets">← Assets</Link>
       </p>
       <h1>{asset.name}</h1>
-      <dl>
+      <dl className="dl">
         <dt>Type</dt>
         <dd>{asset.asset_type}</dd>
         <dt>Criticality</dt>
@@ -40,6 +40,6 @@ export default async function AssetDetail({ params }: { params: Promise<{ id: st
         <dt>Created</dt>
         <dd>{asset.created_at}</dd>
       </dl>
-    </main>
+    </>
   );
 }

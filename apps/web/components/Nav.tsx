@@ -1,60 +1,91 @@
 import Link from "next/link";
 
 import { auth, signOut } from "@/auth";
+import { NavLink } from "@/components/NavLink";
 
-const linkStyle = { marginRight: "1rem" } as const;
+// Grouping mirrors how the product is actually built: the operational spine, the intelligence
+// layer on top of it, and the autonomy layer that acts through both.
+const GROUPS: { label: string; items: { href: string; label: string }[] }[] = [
+  {
+    label: "Operations",
+    items: [
+      { href: "/alerts", label: "Alerts" },
+      { href: "/incidents", label: "Incidents" },
+      { href: "/assets", label: "Assets" },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      { href: "/ask", label: "Ask Dula" },
+      { href: "/intel", label: "Cyber Intel" },
+    ],
+  },
+  {
+    label: "Autonomy",
+    items: [
+      { href: "/agents", label: "Agents" },
+      { href: "/automation", label: "Playbooks" },
+      { href: "/integrations", label: "Integrations" },
+    ],
+  },
+];
 
-// Top navigation for the authenticated app shell.
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export async function Nav() {
   const session = await auth();
+  const name = session?.user?.name ?? session?.user?.email ?? "Signed in";
+
   return (
-    <nav
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        borderBottom: "1px solid #ddd",
-        paddingBottom: "0.75rem",
-        marginBottom: "1.5rem",
-      }}
-    >
-      <Link href="/" style={{ ...linkStyle, fontWeight: 700 }}>
-        Dula
+    <nav className="sidebar" aria-label="Main">
+      <Link className="brand" href="/">
+        <span className="brand__mark" aria-hidden="true">
+          D
+        </span>
+        <span>
+          <span className="brand__name">Dula</span>
+          <span className="brand__sub">Security AI</span>
+        </span>
       </Link>
-      <Link href="/alerts" style={linkStyle}>
-        Alerts
-      </Link>
-      <Link href="/incidents" style={linkStyle}>
-        Incidents
-      </Link>
-      <Link href="/assets" style={linkStyle}>
-        Assets
-      </Link>
-      <Link href="/ask" style={linkStyle}>
-        Ask
-      </Link>
-      <Link href="/intel" style={linkStyle}>
-        Intel
-      </Link>
-      <Link href="/agents" style={linkStyle}>
-        Agents
-      </Link>
-      <Link href="/integrations" style={linkStyle}>
-        Integrations
-      </Link>
-      <Link href="/automation" style={linkStyle}>
-        Automation
-      </Link>
-      <span style={{ flex: 1 }} />
+
+      {GROUPS.map((group) => (
+        <div className="navgroup" key={group.label}>
+          <div className="navgroup__label">{group.label}</div>
+          {group.items.map((item) => (
+            <NavLink key={item.href} href={item.href}>
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      ))}
+
       {session?.user ? (
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button type="submit">Sign out ({session.user.name ?? session.user.email})</button>
-        </form>
+        <div className="sidebar__foot">
+          <div className="who">
+            <span className="who__avatar" aria-hidden="true">
+              {initials(name)}
+            </span>
+            <span className="who__name">{name}</span>
+          </div>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button type="submit" className="btn btn--ghost" style={{ width: "100%" }}>
+              Sign out
+            </button>
+          </form>
+        </div>
       ) : null}
     </nav>
   );

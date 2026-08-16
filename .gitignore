@@ -35,6 +35,9 @@ out/
 .pnpm-store/
 coverage/
 playwright-report/
+# Playwright MCP review artifacts (screenshots / console logs) — regenerable, keep out of git.
+.playwright-mcp/
+/*.png
 test-results/
 
 # ---- Editors / OS ----

@@ -18,15 +18,6 @@ interface AnswerPayload {
 
 type Mode = "question" | "triage";
 
-const preStyle = {
-  background: "#0b0b0b",
-  color: "#e6e6e6",
-  padding: "1rem",
-  borderRadius: 8,
-  whiteSpace: "pre-wrap" as const,
-  minHeight: "3rem",
-};
-
 function parseSse(chunk: string, onToken: (t: string) => void, onDone: (p: AnswerPayload) => void) {
   for (const block of chunk.split("\n\n")) {
     if (!block.trim()) continue;
@@ -54,12 +45,20 @@ export function AskConsole() {
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
   const [grounded, setGrounded] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   function reset() {
     setAnswer("");
     setCitations([]);
     setGrounded(null);
+    setError(null);
+  }
+
+  function failure(status: number): string {
+    return status === 401
+      ? "Your session expired — sign in again."
+      : `The AI Gateway returned ${status}.`;
   }
 
   async function askStreaming() {
@@ -69,7 +68,7 @@ export function AskConsole() {
       body: JSON.stringify({ question }),
     });
     if (!res.ok || !res.body) {
-      setAnswer(`Error: ${res.status}`);
+      setError(failure(res.status));
       return;
     }
     const reader = res.body.getReader();
@@ -100,7 +99,7 @@ export function AskConsole() {
       body: JSON.stringify({ title, severity, description: description || null }),
     });
     if (!res.ok) {
-      setAnswer(`Error: ${res.status}`);
+      setError(failure(res.status));
       return;
     }
     const payload = (await res.json()) as AnswerPayload;
@@ -116,83 +115,124 @@ export function AskConsole() {
     try {
       if (mode === "question") await askStreaming();
       else await triage();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
   }
 
+  const canSubmit = mode === "question" ? question.trim().length > 0 : title.trim().length > 0;
+
   return (
-    <main>
-      <h1>Ask Dula</h1>
-      <p>Grounded, cited answers over your security knowledge (Phase 03 — general model).</p>
+    <>
+      <header className="page__head">
+        <h1>Ask Dula</h1>
+        <p className="page__desc">
+          Answers grounded in your security knowledge base, with the evidence they came from.
+        </p>
+      </header>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <label style={{ marginRight: "1rem" }}>
-          <input
-            type="radio"
-            checked={mode === "question"}
-            onChange={() => setMode("question")}
-          />{" "}
-          Question
-        </label>
-        <label>
-          <input type="radio" checked={mode === "triage"} onChange={() => setMode("triage")} />{" "}
-          Triage alert
-        </label>
-      </div>
+      <form onSubmit={onSubmit} className="card" style={{ marginBottom: 18 }}>
+        <div className="seg" style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            aria-pressed={mode === "question"}
+            onClick={() => setMode("question")}
+          >
+            Ask a question
+          </button>
+          <button type="button" aria-pressed={mode === "triage"} onClick={() => setMode("triage")}>
+            Triage an alert
+          </button>
+        </div>
 
-      <form onSubmit={onSubmit}>
         {mode === "question" ? (
           <textarea
+            className="textarea"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             rows={3}
             placeholder="e.g. How do I defend against brute force attacks?"
-            style={{ width: "100%", padding: "0.5rem" }}
           />
         ) : (
-          <div style={{ display: "grid", gap: "0.5rem" }}>
+          <div className="stack" style={{ gap: 10 }}>
             <input
+              className="input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Alert title"
-              style={{ padding: "0.5rem" }}
             />
-            <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
-              <option value="low">low</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
-              <option value="critical">critical</option>
+            <select
+              className="select"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              aria-label="Severity"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
             </select>
             <textarea
+              className="textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Alert details (optional)"
-              style={{ padding: "0.5rem" }}
             />
           </div>
         )}
-        <button type="submit" disabled={busy} style={{ marginTop: "0.75rem" }}>
-          {busy ? "Thinking…" : "Ask"}
+
+        <button
+          type="submit"
+          className="btn btn--primary"
+          disabled={busy || !canSubmit}
+          style={{ marginTop: 12 }}
+        >
+          {busy ? "Thinking…" : mode === "question" ? "Ask" : "Triage"}
         </button>
       </form>
 
-      <h2>Answer {grounded === false ? "(ungrounded)" : grounded ? "(grounded)" : ""}</h2>
-      <pre style={preStyle}>{answer || "—"}</pre>
-
-      {citations.length > 0 ? (
-        <>
-          <h3>Evidence</h3>
-          <ol>
-            {citations.map((c) => (
-              <li key={c.marker}>
-                <strong>[{c.marker}]</strong> <em>{c.source}</em> — {c.snippet}
-              </li>
-            ))}
-          </ol>
-        </>
+      {error ? (
+        <div className="notice notice--danger" style={{ marginBottom: 18 }}>
+          <div className="notice__title">Couldn&apos;t get an answer</div>
+          <div className="muted">{error}</div>
+        </div>
       ) : null}
-    </main>
+
+      {answer || busy ? (
+        <section className="stack">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2 style={{ margin: 0 }}>Answer</h2>
+            {grounded !== null ? (
+              <span className={`chip ${grounded ? "chip--ok" : "chip--medium"}`}>
+                {grounded ? "Grounded in evidence" : "No supporting evidence"}
+              </span>
+            ) : null}
+          </div>
+          <div className="output output--prose">
+            {answer || <span className="faint">Thinking…</span>}
+          </div>
+
+          {citations.length > 0 ? (
+            <div>
+              <h3>Evidence</h3>
+              <ul className="evidence">
+                {citations.map((c) => (
+                  <li key={c.marker}>
+                    <span className="cite">[{c.marker}]</span>
+                    <span>
+                      <strong>{c.source}</strong>
+                      <div className="muted">{c.snippet}</div>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+    </>
   );
 }

@@ -31,32 +31,47 @@ interface Run {
   pending_approval: PendingApproval | null;
 }
 
-const preStyle = {
-  background: "#0b0b0b",
-  color: "#e6e6e6",
-  padding: "0.75rem",
-  borderRadius: 8,
-  whiteSpace: "pre-wrap" as const,
-  fontSize: "0.8rem",
-};
-
-const stateColor: Record<string, string> = {
-  completed: "#137333",
-  halted: "#b00020",
-  failed: "#b00020",
-  awaiting_approval: "#a15c00",
+const STATE_TONE: Record<string, string> = {
+  completed: "chip--ok",
+  halted: "chip--critical",
+  failed: "chip--critical",
+  awaiting_approval: "chip--medium",
+  executing: "chip--accent",
+  planning: "chip--accent",
 };
 
 function StepRow({ s }: { s: Step }) {
-  const status = s.executed_ok === true ? "✓ ran" : s.permitted === false ? "✗ denied" : "…";
+  const outcome =
+    s.executed_ok === true
+      ? { label: "Ran", cls: "chip--ok" }
+      : s.permitted === false
+        ? { label: "Refused", cls: "chip--critical" }
+        : s.approved === false
+          ? { label: "Rejected", cls: "chip--critical" }
+          : { label: "Waiting", cls: "chip--medium" };
+
   return (
-    <li>
-      <code>{s.tool || "(finish)"}</code>{" "}
-      <span style={{ color: "#666" }}>[{s.side_effect}]</span> — {s.thought}{" "}
-      <strong>{status}</strong>
-      {s.permitted === false ? (
-        <div style={{ color: "#b00020", fontSize: "0.8rem" }}>{s.permission_reason}</div>
-      ) : null}
+    <li className="trace__item">
+      <span className="trace__idx">{s.index + 1}</span>
+      <span>
+        <span className="trace__tool">{s.tool || "(finish)"}</span>{" "}
+        {s.side_effect === "consequential" ? (
+          <span className="chip chip--medium" style={{ fontSize: 11 }}>
+            Consequential
+          </span>
+        ) : (
+          <span className="chip chip--info" style={{ fontSize: 11 }}>
+            Read-only
+          </span>
+        )}
+        <div className="trace__thought">{s.thought}</div>
+        {s.permitted === false && s.permission_reason ? (
+          <div style={{ color: "var(--sev-critical)", fontSize: 12.5, marginTop: 2 }}>
+            {s.permission_reason}
+          </div>
+        ) : null}
+      </span>
+      <span className={`chip ${outcome.cls}`}>{outcome.label}</span>
     </li>
   );
 }
@@ -78,7 +93,7 @@ export function AgentConsole() {
       });
       const data = (await res.json()) as Run & { detail?: string };
       if (!res.ok) {
-        throw new Error(data.detail ?? `request failed (${res.status})`);
+        throw new Error(data.detail ?? `Request failed (${res.status})`);
       }
       setRun(data);
     } catch (err) {
@@ -93,71 +108,97 @@ export function AgentConsole() {
     run ? call(`/api/agents/runs/${run.run_id}/approval`, { approved }) : undefined;
 
   return (
-    <main>
-      <h1>Investigation Agent</h1>
-      <p>
-        A read-first SOC agent (Phase 06). It triages, enriches, and corroborates with read-only
-        tools; any consequential action pauses for your approval.
-      </p>
+    <>
+      <header className="page__head">
+        <h1>Investigation agent</h1>
+        <p className="page__desc">
+          A read-first SOC agent. It triages, enriches, and corroborates on its own; anything
+          consequential stops and waits for you.
+        </p>
+      </header>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-        <input
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          style={{ flex: 1, padding: "0.5rem" }}
-          placeholder="Investigation goal"
-        />
-        <button onClick={start} disabled={busy || !goal.trim()}>
-          {busy ? "Running…" : "Start investigation"}
-        </button>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <label
+          htmlFor="goal"
+          className="faint"
+          style={{ fontSize: 12, display: "block", marginBottom: 6 }}
+        >
+          What should it investigate?
+        </label>
+        <div className="field">
+          <input
+            id="goal"
+            className="input"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            placeholder="e.g. Investigate the outbound beacon alert"
+          />
+          <button className="btn btn--primary" onClick={start} disabled={busy || !goal.trim()}>
+            {busy ? "Working…" : "Start investigation"}
+          </button>
+        </div>
       </div>
 
-      {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
+      {error ? (
+        <div className="notice notice--danger" style={{ marginBottom: 18 }}>
+          <div className="notice__title">That didn&apos;t work</div>
+          <div className="muted">{error}</div>
+        </div>
+      ) : null}
 
       {run ? (
-        <>
-          <h2>
-            Run <code>{run.run_id.slice(0, 8)}</code> —{" "}
-            <span style={{ color: stateColor[run.state] ?? "#333" }}>{run.state}</span>
-          </h2>
+        <div className="stack">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2 style={{ margin: 0 }}>Run</h2>
+            <span className="row" style={{ gap: 8 }}>
+              <span className={`chip ${STATE_TONE[run.state] ?? "chip--info"}`}>
+                {run.state.replace(/_/g, " ")}
+              </span>
+              <code className="mono faint">{run.run_id.slice(0, 8)}</code>
+            </span>
+          </div>
 
           {run.pending_approval ? (
-            <div
-              style={{
-                border: "1px solid #a15c00",
-                borderRadius: 8,
-                padding: "0.75rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <strong>Approval required:</strong> {run.pending_approval.impact}
-              <div style={{ marginTop: "0.5rem" }}>
-                <button onClick={() => decide(true)} disabled={busy}>
-                  Approve
-                </button>{" "}
-                <button onClick={() => decide(false)} disabled={busy}>
+            <div className="gate">
+              <div className="gate__eyebrow">Your approval is required</div>
+              <div className="gate__impact">{run.pending_approval.impact}</div>
+              <div className="row">
+                <button className="btn btn--primary" onClick={() => decide(true)} disabled={busy}>
+                  Approve and continue
+                </button>
+                <button className="btn btn--danger" onClick={() => decide(false)} disabled={busy}>
                   Reject
                 </button>
               </div>
+              <p className="faint" style={{ margin: "10px 0 0", fontSize: 12.5 }}>
+                Nothing happens until you choose. Rejecting halts the run without taking the action.
+              </p>
             </div>
           ) : null}
 
-          <h3>Trace</h3>
-          <ol>
-            {run.steps.map((s) => (
-              <StepRow key={s.index} s={s} />
-            ))}
-          </ol>
+          <div className="panel">
+            <ol className="trace">
+              {run.steps.map((s) => (
+                <StepRow key={s.index} s={s} />
+              ))}
+            </ol>
+          </div>
+
+          {run.error ? (
+            <div className="notice notice--warn">
+              <div className="notice__title">Run halted</div>
+              <div className="muted">{run.error}</div>
+            </div>
+          ) : null}
 
           {run.result ? (
-            <>
+            <div>
               <h3>Result</h3>
-              <pre style={preStyle}>{run.result}</pre>
-            </>
+              <div className="output output--prose">{run.result}</div>
+            </div>
           ) : null}
-          {run.error ? <p style={{ color: "#b00020" }}>Halted: {run.error}</p> : null}
-        </>
+        </div>
       ) : null}
-    </main>
+    </>
   );
 }

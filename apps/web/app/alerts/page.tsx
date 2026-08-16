@@ -1,10 +1,20 @@
 import Link from "next/link";
 
-import { apiFetch, getAccessToken } from "@/lib/api";
+import { ApiError, apiFetch, getAccessToken } from "@/lib/api";
 import { SignIn } from "@/components/SignIn";
+import {
+  EmptyState,
+  LoadError,
+  PageHeader,
+  RelativeTime,
+  SeverityChip,
+  StatusChip,
+  spineClass,
+} from "@/components/ui";
 import type { Alert, Page } from "@/lib/types";
 
-const cell = { padding: "0.4rem 0.6rem", borderBottom: "1px solid #eee", textAlign: "left" } as const;
+// Severity order drives the scan: what is on fire belongs at the top, regardless of arrival time.
+const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
 export default async function AlertsPage() {
   const token = await getAccessToken();
@@ -15,43 +25,71 @@ export default async function AlertsPage() {
   let page: Page<Alert>;
   try {
     page = await apiFetch<Page<Alert>>("/api/v1/alerts", token);
-  } catch {
-    return <p>Failed to load alerts. Ensure the Platform API is reachable.</p>;
+  } catch (err) {
+    return (
+      <>
+        <PageHeader title="Alerts" description="Detection signals to triage." />
+        <LoadError entity="alerts" status={err instanceof ApiError ? err.status : undefined} />
+      </>
+    );
   }
 
+  const alerts = [...page.items].sort(
+    (a, b) => (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9),
+  );
+  const open = alerts.filter((a) => !["closed", "false_positive"].includes(a.status)).length;
+
   return (
-    <main>
-      <h1>Alerts</h1>
-      <p>{page.total} total</p>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead>
-          <tr>
-            <th style={cell}>Title</th>
-            <th style={cell}>Severity</th>
-            <th style={cell}>Status</th>
-            <th style={cell}>Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.items.map((alert) => (
-            <tr key={alert.id}>
-              <td style={cell}>
-                <Link href={`/alerts/${alert.id}`}>{alert.title}</Link>
-              </td>
-              <td style={cell}>{alert.severity}</td>
-              <td style={cell}>{alert.status}</td>
-              <td style={cell}>{alert.source ?? "—"}</td>
-            </tr>
-          ))}
-          {page.items.length === 0 ? (
-            <tr>
-              <td style={cell} colSpan={4}>
-                No alerts yet.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
-    </main>
+    <>
+      <PageHeader
+        title="Alerts"
+        description="Detection signals to triage, most severe first."
+        aside={
+          <span className="count">
+            {open} open · {page.total} total
+          </span>
+        }
+      />
+
+      <div className="panel">
+        {alerts.length === 0 ? (
+          <EmptyState
+            title="No alerts"
+            hint="Detections will appear here as your connectors report them."
+          />
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: "44%" }}>Alert</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Source</th>
+                <th>Seen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td className={spineClass(alert.severity)}>
+                    <Link href={`/alerts/${alert.id}`}>{alert.title}</Link>
+                  </td>
+                  <td>
+                    <SeverityChip value={alert.severity} />
+                  </td>
+                  <td>
+                    <StatusChip value={alert.status} />
+                  </td>
+                  <td className="muted">{alert.source ?? "—"}</td>
+                  <td>
+                    <RelativeTime iso={alert.created_at} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { renderMarkdown } from "@/lib/markdown";
+
 interface PlaybookStep {
   id: string;
   tool: string;
@@ -63,32 +65,12 @@ interface Report {
   markdown: string;
 }
 
-const preStyle = {
-  background: "#0b0b0b",
-  color: "#e6e6e6",
-  padding: "0.75rem",
-  borderRadius: 8,
-  whiteSpace: "pre-wrap" as const,
-  fontSize: "0.8rem",
+const STATE_TONE: Record<string, string> = {
+  completed: "chip--ok",
+  halted: "chip--critical",
+  failed: "chip--critical",
+  awaiting_approval: "chip--medium",
 };
-
-const stateColor: Record<string, string> = {
-  completed: "#137333",
-  halted: "#b00020",
-  failed: "#b00020",
-  awaiting_approval: "#a15c00",
-};
-
-function StepRow({ s }: { s: RunStep }) {
-  const status = s.executed_ok === true ? "✓ ran" : s.permitted === false ? "✗ denied" : "…";
-  return (
-    <li>
-      <code>{s.tool || "(finish)"}</code>{" "}
-      <span style={{ color: "#666" }}>[{s.side_effect}]</span> — {s.thought}{" "}
-      <strong>{status}</strong>
-    </li>
-  );
-}
 
 export function AutomationConsole() {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
@@ -102,6 +84,13 @@ export function AutomationConsole() {
     void (async () => {
       try {
         const res = await fetch("/api/automation/playbooks");
+        if (!res.ok) {
+          throw new Error(
+            res.status === 401
+              ? "Your session expired — sign in again."
+              : `Couldn't load playbooks (${res.status})`,
+          );
+        }
         const data = (await res.json()) as Playbook[];
         if (Array.isArray(data)) {
           setPlaybooks(data);
@@ -113,7 +102,7 @@ export function AutomationConsole() {
     })();
   }, []);
 
-  async function call(path: string, body?: unknown): Promise<Run | null> {
+  async function call(path: string, body?: unknown): Promise<void> {
     setBusy(true);
     setError(null);
     try {
@@ -123,12 +112,10 @@ export function AutomationConsole() {
         body: JSON.stringify(body ?? {}),
       });
       const data = (await res.json()) as Run & { detail?: string };
-      if (!res.ok) throw new Error(data.detail ?? `request failed (${res.status})`);
+      if (!res.ok) throw new Error(data.detail ?? `Request failed (${res.status})`);
       setRun(data);
-      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
-      return null;
     } finally {
       setBusy(false);
     }
@@ -144,10 +131,13 @@ export function AutomationConsole() {
   async function loadReport(): Promise<void> {
     if (!run) return;
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/automation/runs/${run.run_id}/report`);
-      const data = (await res.json()) as Report;
-      if (res.ok) setReport(data);
+      if (!res.ok) throw new Error(`Couldn't build the report (${res.status})`);
+      setReport((await res.json()) as Report);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
@@ -156,91 +146,162 @@ export function AutomationConsole() {
   const active = playbooks.find((p) => p.name === selected);
 
   return (
-    <main>
-      <h1>Automation Playbooks</h1>
-      <p>
-        Supervised, declarative security playbooks (Phase 08). Each runs on the agent runtime, so
-        read-only steps run automatically and consequential steps pause for your approval — no
-        action is ever taken without authorization.
-      </p>
+    <>
+      <header className="page__head">
+        <h1>Playbooks</h1>
+        <p className="page__desc">
+          Saved procedures that run on the agent runtime. Read-only steps run automatically;
+          consequential steps stop for your approval.
+        </p>
+      </header>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
-        <select
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          style={{ flex: 1, padding: "0.5rem" }}
+      <div className="card" style={{ marginBottom: 18 }}>
+        <label
+          htmlFor="playbook"
+          className="faint"
+          style={{ fontSize: 12, display: "block", marginBottom: 6 }}
         >
-          {playbooks.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.title}
-            </option>
-          ))}
-        </select>
-        <button onClick={start} disabled={busy || !selected}>
-          {busy ? "Running…" : "Run playbook"}
-        </button>
+          Playbook
+        </label>
+        <div className="field">
+          <select
+            id="playbook"
+            className="select"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            {playbooks.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.title}
+              </option>
+            ))}
+          </select>
+          <button className="btn btn--primary" onClick={start} disabled={busy || !selected}>
+            {busy ? "Running…" : "Run playbook"}
+          </button>
+        </div>
+        {active ? (
+          <>
+            <p className="muted" style={{ margin: "10px 0 8px", fontSize: 13.5 }}>
+              {active.description}
+            </p>
+            <div className="row" style={{ gap: 6 }}>
+              {active.steps.map((s, i) => (
+                <span key={s.id} className="row" style={{ gap: 6 }}>
+                  <span className="chip chip--info mono" style={{ fontSize: 11 }}>
+                    {s.tool}
+                  </span>
+                  {i < active.steps.length - 1 ? <span className="faint">→</span> : null}
+                </span>
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
 
-      {active ? (
-        <p style={{ color: "#555", fontSize: "0.85rem" }}>
-          {active.description} <em>Steps: {active.steps.map((s) => s.tool).join(" → ")}</em>
-        </p>
+      {error ? (
+        <div className="notice notice--danger" style={{ marginBottom: 18 }}>
+          <div className="notice__title">That didn&apos;t work</div>
+          <div className="muted">{error}</div>
+        </div>
       ) : null}
 
-      {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
-
       {run ? (
-        <>
-          <h2>
-            Run <code>{run.run_id.slice(0, 8)}</code> —{" "}
-            <span style={{ color: stateColor[run.state] ?? "#333" }}>{run.state}</span>
-          </h2>
+        <div className="stack">
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2 style={{ margin: 0 }}>Run</h2>
+            <span className="row" style={{ gap: 8 }}>
+              <span className={`chip ${STATE_TONE[run.state] ?? "chip--info"}`}>
+                {run.state.replace(/_/g, " ")}
+              </span>
+              <code className="mono faint">{run.run_id.slice(0, 8)}</code>
+            </span>
+          </div>
 
           {run.pending_approval ? (
-            <div
-              style={{
-                border: "1px solid #a15c00",
-                borderRadius: 8,
-                padding: "0.75rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <strong>Approval required:</strong> {run.pending_approval.impact}
-              <div style={{ marginTop: "0.5rem" }}>
-                <button onClick={() => decide(true)} disabled={busy}>
-                  Approve
-                </button>{" "}
-                <button onClick={() => decide(false)} disabled={busy}>
+            <div className="gate">
+              <div className="gate__eyebrow">Your approval is required</div>
+              <div className="gate__impact">{run.pending_approval.impact}</div>
+              <div className="row">
+                <button className="btn btn--primary" onClick={() => decide(true)} disabled={busy}>
+                  Approve and continue
+                </button>
+                <button className="btn btn--danger" onClick={() => decide(false)} disabled={busy}>
                   Reject
                 </button>
               </div>
             </div>
           ) : null}
 
-          <h3>Trace</h3>
-          <ol>
-            {run.steps.map((s) => (
-              <StepRow key={s.index} s={s} />
-            ))}
-          </ol>
+          <div className="panel">
+            <ol className="trace">
+              {run.steps.map((s) => (
+                <li key={s.index} className="trace__item">
+                  <span className="trace__idx">{s.index + 1}</span>
+                  <span>
+                    <span className="trace__tool">{s.tool || "(finish)"}</span>{" "}
+                    {s.side_effect === "consequential" ? (
+                      <span className="chip chip--medium" style={{ fontSize: 11 }}>
+                        Consequential
+                      </span>
+                    ) : null}
+                    <div className="trace__thought">{s.thought}</div>
+                  </span>
+                  <span
+                    className={`chip ${
+                      s.executed_ok
+                        ? "chip--ok"
+                        : s.permitted === false
+                          ? "chip--critical"
+                          : "chip--medium"
+                    }`}
+                  >
+                    {s.executed_ok ? "Ran" : s.permitted === false ? "Refused" : "Waiting"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-          {run.error ? <p style={{ color: "#b00020" }}>Halted: {run.error}</p> : null}
+          {run.error ? (
+            <div className="notice notice--warn">
+              <div className="notice__title">Run halted</div>
+              <div className="muted">{run.error}</div>
+            </div>
+          ) : null}
 
-          <button onClick={loadReport} disabled={busy}>
-            Generate report
-          </button>
+          {run.state === "completed" || run.state === "halted" ? (
+            <div>
+              <button className="btn" onClick={loadReport} disabled={busy}>
+                {report ? "Refresh report" : "Generate report"}
+              </button>
+            </div>
+          ) : null}
 
           {report ? (
-            <>
-              <h3>{report.title}</h3>
-              <p>
-                <strong>Outcome:</strong> {report.outcome}
-              </p>
-              <pre style={preStyle}>{report.markdown}</pre>
-            </>
+            <div className="card">
+              <div className="row" style={{ justifyContent: "space-between", marginBottom: 10 }}>
+                <h2 style={{ margin: 0 }}>{report.title}</h2>
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => void navigator.clipboard?.writeText(report.markdown)}
+                >
+                  Copy Markdown
+                </button>
+              </div>
+              {/* Rendered from Markdown; the renderer escapes HTML first because report bodies
+                  embed untrusted tool output. The leading `# title` is dropped — the card
+                  header already carries it, and repeating it reads like a bug. */}
+              <div
+                className="report"
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(report.markdown.replace(/^#\s+.*\n/, "")),
+                }}
+              />
+            </div>
           ) : null}
-        </>
+        </div>
       ) : null}
-    </main>
+    </>
   );
 }
