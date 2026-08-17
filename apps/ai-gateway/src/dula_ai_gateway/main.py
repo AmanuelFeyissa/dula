@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dula_ai_gateway.agents_wiring import build_agent_subsystem
 from dula_ai_gateway.automation_wiring import build_automation_subsystem
 from dula_ai_gateway.config import Settings, get_settings
+from dula_ai_gateway.db import make_engine, make_sessionmaker
 from dula_ai_gateway.plugins_wiring import build_plugins_subsystem
 from dula_ai_gateway.routers import (
     agents,
@@ -28,6 +29,7 @@ from dula_ai_gateway.routers import (
     plugins,
     triage,
 )
+from dula_ai_gateway.run_store_postgres import PostgresRunStore
 from dula_ai_gateway.wiring import build_subsystem
 
 _log = logging.getLogger(__name__)
@@ -82,12 +84,29 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.plugins = build_plugins_subsystem(
         app.state.opa, egress_enabled=settings.plugins_egress_enabled
     )
-    app.state.agents = build_agent_subsystem(app.state.opa, app.state.plugins)
-    app.state.automation = build_automation_subsystem(app.state.agents)
+
+    # Agent/playbook run persistence (ADR-0016). "memory" (the default) needs no Postgres at
+    # all — the offline/air-gapped path is unchanged. "postgres" makes runs and their
+    # approvals survive a restart, using the same database as platform-api with its own
+    # migration chain and tables (agent_runs, agent_run_steps).
+    engine = None
+    agent_store = None
+    automation_store = None
+    if settings.run_store == "postgres":
+        engine = make_engine(settings.database_url)
+        sessionmaker = make_sessionmaker(engine)
+        agent_store = PostgresRunStore(sessionmaker, kind="agent")
+        automation_store = PostgresRunStore(sessionmaker, kind="automation")
+    app.state.db_engine = engine
+
+    app.state.agents = build_agent_subsystem(app.state.opa, app.state.plugins, store=agent_store)
+    app.state.automation = build_automation_subsystem(app.state.agents, store=automation_store)
     try:
         yield
     finally:
         await publisher.stop()
+        if engine is not None:
+            await engine.dispose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

@@ -1,10 +1,11 @@
-"""Run persistence (docs/13-Agents/AgentLifecycle.md §2).
+"""Run persistence (docs/13-Agents/AgentLifecycle.md §2, ADR-0016).
 
 Agent runs pause for approval and resume across requests, so the run record outlives a single
-call and must be stored. The in-memory store here is tenant-scoped (a run is only ever returned
-to its owning tenant — never cross-tenant, ADR-0006) and retains the invoker's roles so a
-resumed run keeps acting as the original user. Production swaps this for a durable store behind
-the same interface.
+call and must be stored. ``RunStore`` is async so a durable (Postgres) implementation can sit
+behind the same interface as the in-memory one — see ``PostgresRunStore`` in the AI Gateway
+(ADR-0016). The in-memory store here is tenant-scoped (a run is only ever returned to its
+owning tenant — never cross-tenant, ADR-0006) and retains the invoker's roles so a resumed run
+keeps acting as the original user.
 """
 
 from __future__ import annotations
@@ -22,19 +23,19 @@ class StoredRun:
 
 
 class RunStore(Protocol):
-    def save(self, record: RunRecord, roles: tuple[str, ...]) -> None: ...
+    async def save(self, record: RunRecord, roles: tuple[str, ...]) -> None: ...
 
-    def get(self, tenant: str, run_id: str) -> StoredRun | None: ...
+    async def get(self, tenant: str, run_id: str) -> StoredRun | None: ...
 
 
 @dataclass
 class InMemoryRunStore:
     _runs: dict[str, StoredRun] = field(default_factory=dict)
 
-    def save(self, record: RunRecord, roles: tuple[str, ...]) -> None:
+    async def save(self, record: RunRecord, roles: tuple[str, ...]) -> None:
         self._runs[record.run_id] = StoredRun(record=record, roles=roles)
 
-    def get(self, tenant: str, run_id: str) -> StoredRun | None:
+    async def get(self, tenant: str, run_id: str) -> StoredRun | None:
         stored = self._runs.get(run_id)
         # Tenant isolation: never return a run to a tenant that does not own it.
         if stored is None or stored.record.tenant != tenant:

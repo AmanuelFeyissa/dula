@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dula_agents.runtime import AgentRuntime
-from dula_agents.store import InMemoryRunStore
+from dula_agents.store import InMemoryRunStore, RunStore
 from dula_automation.catalog import PlaybookLibrary, default_library
 
 from dula_ai_gateway.agents_wiring import AgentSubsystem
@@ -21,14 +21,20 @@ from dula_ai_gateway.agents_wiring import AgentSubsystem
 @dataclass
 class AutomationSubsystem:
     runtime: AgentRuntime
-    store: InMemoryRunStore
+    store: RunStore
     library: PlaybookLibrary
 
 
-def build_automation_subsystem(agents: AgentSubsystem) -> AutomationSubsystem:
-    """Build automation on top of the already-wired agent runtime (shared executor + controls)."""
+def build_automation_subsystem(
+    agents: AgentSubsystem, *, store: RunStore | None = None
+) -> AutomationSubsystem:
+    """Build automation on top of the already-wired agent runtime (shared executor + controls).
+
+    ``store`` defaults to ``InMemoryRunStore`` (ADR-0016), a *separate* instance from the agent
+    subsystem's own store — playbook runs and agent runs stay in distinct pools even when both
+    are durable (see ``kind`` on ``PostgresRunStore``)."""
     return AutomationSubsystem(
         runtime=agents.runtime,
-        store=InMemoryRunStore(),
+        store=store if store is not None else InMemoryRunStore(),
         library=default_library(),
     )

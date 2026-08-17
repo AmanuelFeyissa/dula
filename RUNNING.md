@@ -102,6 +102,17 @@ docker compose -f deploy/docker/docker-compose.dev.yml --env-file .env up -d pos
 cd apps/platform-api && uv run alembic upgrade head && cd ../..
 ```
 
+The AI Gateway needs **no** migration by default — agent/playbook runs live in memory
+(`RUN_STORE=memory`, the default) unless you opt into durable persistence (ADR-0016):
+
+```bash
+cd apps/ai-gateway && uv run alembic upgrade head && cd ../..
+```
+
+It runs its own independent migration chain against the same Postgres instance (own tables,
+own `alembic_version`-equivalent bookkeeping table — see ADR-0016) — running it or not is
+independent of platform-api's migration above.
+
 ### 3b-2. Demo data (recommended)
 Without this the app is empty and there is nothing to look at. Idempotent — safe to re-run:
 
@@ -116,8 +127,11 @@ Seeds two tenants, 6 assets, 4 incidents, and 11 alerts across the severity rang
 # Platform API — http://localhost:8000
 uv run --directory apps/platform-api uvicorn dula_platform_api.main:app --host 0.0.0.0 --port 8000
 
-# AI Gateway — http://localhost:8100  (offline: extractive provider, in-memory stores)
-DULA_EVENTS_ENABLED=false uv run --directory apps/ai-gateway uvicorn dula_ai_gateway.main:app --host 0.0.0.0 --port 8100
+# AI Gateway — http://localhost:8100  (offline: extractive provider, in-memory run store)
+EVENTS_ENABLED=false uv run --directory apps/ai-gateway uvicorn dula_ai_gateway.main:app --host 0.0.0.0 --port 8100
+
+# ...or with durable agent/playbook runs (ADR-0016; needs the ai-gateway migration from 3b):
+EVENTS_ENABLED=false RUN_STORE=postgres uv run --directory apps/ai-gateway uvicorn dula_ai_gateway.main:app --host 0.0.0.0 --port 8100
 ```
 
 ### 3d. The web app

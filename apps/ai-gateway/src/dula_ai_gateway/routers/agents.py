@@ -117,13 +117,13 @@ async def start_run(data: StartRunRequest, ctx: Context, agents: Agents) -> RunO
     record = await agents.runtime.start(
         agent=agent, goal=data.goal, tenant=ctx.tenant, subject=ctx.subject, roles=list(ctx.roles)
     )
-    agents.store.save(record, tuple(ctx.roles))
+    await agents.store.save(record, tuple(ctx.roles))
     return _to_out(record)
 
 
 @router.get("/runs/{run_id}", response_model=RunOut, dependencies=[Depends(require("agents.read"))])
 async def get_run(run_id: str, ctx: Context, agents: Agents) -> RunOut:
-    stored = agents.store.get(ctx.tenant, run_id)
+    stored = await agents.store.get(ctx.tenant, run_id)
     if stored is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
     return _to_out(stored.record)
@@ -137,7 +137,7 @@ async def get_run(run_id: str, ctx: Context, agents: Agents) -> RunOut:
 async def approve_run(
     run_id: str, data: ApprovalRequestBody, ctx: Context, agents: Agents
 ) -> RunOut:
-    stored = agents.store.get(ctx.tenant, run_id)
+    stored = await agents.store.get(ctx.tenant, run_id)
     if stored is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
     if stored.record.state is not RunState.AWAITING_APPROVAL:
@@ -160,5 +160,5 @@ async def approve_run(
         approver_roles=list(ctx.roles),
         roles=list(stored.roles),
     )
-    agents.store.save(record, stored.roles)
+    await agents.store.save(record, stored.roles)
     return _to_out(record)

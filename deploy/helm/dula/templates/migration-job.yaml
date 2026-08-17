@@ -1,12 +1,16 @@
 {{- $root := . -}}
-{{- with (index .Values.components "platform-api") }}
-{{- if and .enabled .migrations .migrations.enabled }}
-# Forward-only schema migration, run as a Helm pre-install/pre-upgrade hook before the new
-# platform-api pods roll out (zero-downtime upgrades require backward-compatible migrations).
+{{- range $name, $c := .Values.components }}
+{{- if and $c.enabled $c.migrations $c.migrations.enabled }}
+---
+# Forward-only schema migration, run as a Helm pre-install/pre-upgrade hook before this
+# component's pods roll out (zero-downtime upgrades require backward-compatible migrations).
+# Each migrating component owns an independent Alembic chain (its own alembic_version-style
+# table where it isn't Alembic's default name — see ADR-0016 for why ai-gateway's chain uses
+# a non-default version table when it shares a database with another component's chain).
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ $root.Release.Name }}-migrate
+  name: {{ $root.Release.Name }}-migrate-{{ $name }}
   labels:
     {{- include "dula.labels" $root | nindent 4 }}
     app.kubernetes.io/component: migrate
@@ -20,7 +24,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "dula.selectorLabels" (dict "root" $root "name" "migrate") | nindent 8 }}
+        {{- include "dula.selectorLabels" (dict "root" $root "name" (printf "migrate-%s" $name)) | nindent 8 }}
     spec:
       restartPolicy: Never
       serviceAccountName: {{ include "dula.serviceAccountName" $root }}
@@ -29,8 +33,11 @@ spec:
         {{- toYaml $root.Values.podSecurityContext | nindent 8 }}
       containers:
         - name: migrate
-          image: {{ include "dula.image" (dict "root" $root "c" .) }}
+          image: {{ include "dula.image" (dict "root" $root "c" $c) }}
           imagePullPolicy: {{ $root.Values.global.imagePullPolicy }}
+          # alembic.ini's `script_location = alembic` is relative to this component's own
+          # source directory, not the image's /app WORKDIR — see apps/{name}/alembic.ini.
+          workingDir: /app/apps/{{ $name }}
           command: ["alembic", "upgrade", "head"]
           securityContext:
             {{- toYaml $root.Values.containerSecurityContext | nindent 12 }}

@@ -32,5 +32,6 @@ These ten ADRs were accepted during the M000 review
 | [ADR-0013](./ADR-0013-plugin-sandbox.md) | Plugin Sandbox Mechanism | Accepted |
 | [ADR-0014](./ADR-0014-edge-gateway.md) | Edge / API Gateway Technology | Accepted |
 | [ADR-0015](./ADR-0015-supply-chain-release-integrity.md) | Supply-Chain & Release Integrity | Accepted |
+| [ADR-0016](./ADR-0016-agent-run-persistence.md) | Agent & Playbook Run Persistence | Accepted |
 
-New ADRs continue the sequence (ADR-0016+). Superseded ADRs keep their number and status.
+New ADRs continue the sequence (ADR-0017+). Superseded ADRs keep their number and status.

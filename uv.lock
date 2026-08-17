@@ -332,6 +332,8 @@ name = "dula-ai-gateway"
 version = "0.1.0"
 source = { editable = "apps/ai-gateway" }
 dependencies = [
+    { name = "alembic" },
+    { name = "asyncpg" },
     { name = "dula-agents" },
     { name = "dula-ai" },
     { name = "dula-automation" },
@@ -339,6 +341,7 @@ dependencies = [
     { name = "dula-plugins" },
     { name = "fastapi" },
     { name = "pydantic-settings" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -352,6 +355,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", specifier = ">=1.13" },
+    { name = "asyncpg", specifier = ">=0.29" },
     { name = "dula-agents", editable = "packages/dula-agents" },
     { name = "dula-ai", editable = "packages/dula-ai" },
     { name = "dula-automation", editable = "packages/dula-automation" },
@@ -359,6 +364,7 @@ requires-dist = [
     { name = "dula-plugins", editable = "packages/dula-plugins" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "pydantic-settings", specifier = ">=2.5" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
 
