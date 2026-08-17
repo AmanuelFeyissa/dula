@@ -35,6 +35,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Baseline for any plain <a> that isn't covered by a more specific rule (.table a, .btn, …) —
+   without this, an unstyled Link falls back to the browser default hyperlink blue, which both
+   clashes with the theme and fails contrast against the dark background (1.93:1 vs the 4.5:1
+   WCAG AA minimum; caught by apps/web/e2e/accessibility.spec.ts on the "Linked incident" /
+   "Linked asset" references in a detail page's <dl>). */
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  text-decoration-color: var(--accent);
+}
+
 /* ---- App shell ---------------------------------------------------------------------- */
 
 .shell {
@@ -346,11 +359,16 @@ h3 {
   flex: none;
 }
 
-.chip--critical { --chip-fg: var(--sev-critical); --chip-line: rgba(242, 84, 91, 0.4);  --chip-bg: rgba(242, 84, 91, 0.1); }
+/* chip-bg at 0.07 rather than the other variants' 0.1: at 0.1 the critical red text over its
+   own translucent red background composited on --bg-raised comes out to 4.36:1 (axe-caught),
+   just under the 4.5:1 WCAG AA minimum — the other severities clear it at 0.1 already. */
+.chip--critical { --chip-fg: var(--sev-critical); --chip-line: rgba(242, 84, 91, 0.4);  --chip-bg: rgba(242, 84, 91, 0.07); }
 .chip--high     { --chip-fg: var(--sev-high);     --chip-line: rgba(255, 138, 61, 0.4); --chip-bg: rgba(255, 138, 61, 0.1); }
 .chip--medium   { --chip-fg: var(--sev-medium);   --chip-line: rgba(242, 193, 78, 0.4); --chip-bg: rgba(242, 193, 78, 0.1); }
 .chip--low      { --chip-fg: var(--sev-low);      --chip-line: rgba(88, 166, 255, 0.4); --chip-bg: rgba(88, 166, 255, 0.1); }
-.chip--info     { --chip-fg: var(--sev-info);     --chip-line: rgba(125, 140, 163, 0.4);--chip-bg: rgba(125, 140, 163, 0.1); }
+/* Same reasoning as .chip--critical above: 0.1 composited to 4.19:1 (axe-caught) for this
+   fg/bg pair specifically. */
+.chip--info     { --chip-fg: var(--sev-info);     --chip-line: rgba(125, 140, 163, 0.4);--chip-bg: rgba(125, 140, 163, 0.045); }
 .chip--ok       { --chip-fg: var(--ok);           --chip-line: rgba(63, 185, 80, 0.4);  --chip-bg: rgba(63, 185, 80, 0.1); }
 .chip--accent   { --chip-fg: var(--accent);       --chip-line: rgba(53, 208, 186, 0.4); --chip-bg: var(--accent-dim); }
 

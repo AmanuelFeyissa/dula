@@ -30,6 +30,11 @@ related:
 
 - Cover key use-case flows (e.g. UC-01 triage) end-to-end via the API; UI E2E via
   Playwright ([../02-Vision/UseCases.md](../02-Vision/UseCases.md)).
+- **CURRENT**: `apps/web/e2e/` — per-persona specs (analyst triage, responder approval, admin
+  integrations, second-tenant isolation) plus an axe accessibility sweep, run manually against
+  the local dev stack (`pnpm --filter web e2e`; not wired into CI — `playwright.config.ts`
+  explains why). Not run automatically yet; a future phase may add a CI lane that stands up the
+  full stack first.
 
 ## 4. Tenant Isolation Tests
 

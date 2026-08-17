@@ -41,6 +41,13 @@ type Tab = "extract" | "vuln" | "detect";
 // Presentation comes from the design system (app/globals.css) so the workbench matches the
 // rest of the console; only layout-specific spacing stays inline.
 
+function stixObjectCount(bundle: unknown): number {
+  if (bundle && typeof bundle === "object" && Array.isArray((bundle as { objects?: unknown }).objects)) {
+    return (bundle as { objects: unknown[] }).objects.length;
+  }
+  return 0;
+}
+
 async function post<T>(path: string, payload: unknown): Promise<T> {
   const res = await fetch(path, {
     method: "POST",
@@ -118,8 +125,24 @@ function ExtractPanel() {
               <div className="output output--prose">{result.summary}</div>
             </>
           ) : null}
-          <h3>STIX 2.1 Bundle</h3>
-          <pre className="output output--code">{JSON.stringify(result.stix_bundle, null, 2)}</pre>
+          <details className="disclose">
+            <summary>
+              <h3 style={{ display: "inline" }}>STIX 2.1 Bundle</h3>{" "}
+              <span className="faint">({stixObjectCount(result.stix_bundle)} objects)</span>
+            </summary>
+            <div className="row" style={{ justifyContent: "flex-end", margin: "8px 0" }}>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() =>
+                  void navigator.clipboard?.writeText(JSON.stringify(result.stix_bundle, null, 2))
+                }
+              >
+                Copy JSON
+              </button>
+            </div>
+            <pre className="output output--code">{JSON.stringify(result.stix_bundle, null, 2)}</pre>
+          </details>
         </>
       ) : null}
     </>
