@@ -62,6 +62,12 @@ class Settings(BaseSettings):
     kafka_bootstrap_servers: str = "localhost:19092"
     events_topic: str = "dula.domain.events"
 
+    # Agent/playbook run persistence (ADR-0016). "memory" is the offline/air-gapped default —
+    # no Postgres required to run the gateway at all; "postgres" makes runs (and their
+    # approvals) survive a restart. Same default database as platform-api, different tables.
+    run_store: Literal["memory", "postgres"] = "memory"
+    database_url: str = "postgresql+asyncpg://dula:dula_dev_password@localhost:5432/dula"
+
     @property
     def issuer(self) -> str:
         return f"{self.keycloak_url.rstrip('/')}/realms/{self.keycloak_realm}"

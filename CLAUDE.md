@@ -233,6 +233,7 @@ Repository model: **monorepo `dula`** (ADR-0011, Accepted).
 - **ADR-0013** — Plugin sandbox: **out-of-process worker with host-brokered capabilities** (no ambient network) as the portable baseline + rootless container (gVisor/Kata) per orchestrated profile, behind a pluggable sandbox-runner; WASM a future runner. The policy controls hold regardless of runner.
 - **ADR-0014** — Edge / API gateway: **Envoy Gateway (Kubernetes Gateway API)** at the north-south edge (TLS, routing, rate limiting); FastAPI services behind it; authz/authn stay first-party (OPA/Keycloak). Air-gappable, no phone-home.
 - **ADR-0015** — Supply-chain & release integrity: cosign **keyed** signing (offline-verifiable) + **syft** SBOM + **grype** scan gate + **Kyverno** admission (verify signatures + pod-security baseline); **SLSA Build L3**; signed commits recommended, enforced on protected branches at GA.
+- **ADR-0016** — Agent & playbook run persistence: AI Gateway gains an **optional** Postgres dependency (`run_store: memory|postgres`, default `memory`) — `PostgresRunStore` behind the same async `RunStore` interface as `InMemoryRunStore`, own migration chain sharing platform-api's database but not its tables (no cross-service FK), RLS-scoped by tenant.
 
 Still open (non-blocking, not yet ADRs): empirical items only — embedding/reranker model and training/inference hardware sizing (measured when the relevant phase arrives).
 

@@ -17,7 +17,7 @@ from dula_agents.agents import build_offline_runtime
 from dula_agents.approval import PendingApprovalBroker
 from dula_agents.audit import AuditEvent, Auditor
 from dula_agents.runtime import AgentRuntime
-from dula_agents.store import InMemoryRunStore
+from dula_agents.store import InMemoryRunStore, RunStore
 from dula_agents.tools import (
     InMemoryAlertSource,
     InMemoryContainmentSink,
@@ -141,15 +141,19 @@ class LoggingAuditor(Auditor):
 @dataclass
 class AgentSubsystem:
     runtime: AgentRuntime
-    store: InMemoryRunStore
+    store: RunStore
 
 
 def build_agent_subsystem(
-    opa: OPAClient, plugins: PluginsSubsystem | None = None
+    opa: OPAClient, plugins: PluginsSubsystem | None = None, *, store: RunStore | None = None
 ) -> AgentSubsystem:
     """Build the agent subsystem. When a plugins subsystem is provided (Phase 07), the agent's
     ``search_logs`` and ``create_ticket`` tools are backed by **connectors** (agent→connector);
-    otherwise they use the in-memory demo backends."""
+    otherwise they use the in-memory demo backends.
+
+    ``store`` defaults to ``InMemoryRunStore`` (ADR-0016) — the offline/air-gapped default and
+    what every existing test still gets; ``main.py`` passes a ``PostgresRunStore`` when
+    ``settings.run_store == "postgres"``."""
     if plugins is not None:
         logs: Any = _ConnectorLogSource(plugins.host)
         tickets: Any = _ConnectorTicketSink(plugins.host)
@@ -168,4 +172,4 @@ def build_agent_subsystem(
         broker=PendingApprovalBroker(),
         auditor=LoggingAuditor(),
     )
-    return AgentSubsystem(runtime=runtime, store=InMemoryRunStore())
+    return AgentSubsystem(runtime=runtime, store=store if store is not None else InMemoryRunStore())

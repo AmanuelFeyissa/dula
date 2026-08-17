@@ -151,6 +151,8 @@ components:
       enabled: true
       livenessPath: /healthz
       readinessPath: /readyz
+    migrations:
+      enabled: true # ADR-0016: agent_runs/agent_run_steps, own migration chain
     hpa:
       enabled: true
       minReplicas: 2

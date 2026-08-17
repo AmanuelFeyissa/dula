@@ -118,6 +118,7 @@ The ten bootstrap decisions were **resolved during the M000 review** (see
 | [0013](../adr/ADR-0013-plugin-sandbox.md) | Plugin sandbox mechanism | Out-of-process worker + host-brokered capabilities (baseline) + container per profile; pluggable runner | Accepted |
 | [0014](../adr/ADR-0014-edge-gateway.md) | Edge / API gateway | **Envoy Gateway (Kubernetes Gateway API)** at the edge; FastAPI services behind it | Accepted |
 | [0015](../adr/ADR-0015-supply-chain-release-integrity.md) | Supply-chain & release integrity | cosign **keyed** signing + syft SBOM + grype gate + **Kyverno** admission; **SLSA Build L3** | Accepted |
+| [0016](../adr/ADR-0016-agent-run-persistence.md) | Agent & playbook run persistence | AI Gateway gains an optional Postgres dependency (`PostgresRunStore`); in-memory stays the default | Accepted |
 
 ### Still open (tracked, not yet ADRs)
 

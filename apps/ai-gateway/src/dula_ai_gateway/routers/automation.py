@@ -183,12 +183,12 @@ async def run_playbook(
     record = await automation.runtime.start(
         agent=agent, goal=goal, tenant=ctx.tenant, subject=ctx.subject, roles=list(ctx.roles)
     )
-    automation.store.save(record, tuple(ctx.roles))
+    await automation.store.save(record, tuple(ctx.roles))
     return _run_out(record, playbook.name)
 
 
-def _stored_or_404(automation: Automation, tenant: str, run_id: str) -> Any:
-    stored = automation.store.get(tenant, run_id)
+async def _stored_or_404(automation: Automation, tenant: str, run_id: str) -> Any:
+    stored = await automation.store.get(tenant, run_id)
     if stored is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
     return stored
@@ -200,7 +200,7 @@ def _stored_or_404(automation: Automation, tenant: str, run_id: str) -> Any:
     dependencies=[Depends(require("automation.read"))],
 )
 async def get_run(run_id: str, ctx: Context, automation: Automation) -> RunOut:
-    stored = _stored_or_404(automation, ctx.tenant, run_id)
+    stored = await _stored_or_404(automation, ctx.tenant, run_id)
     return _run_out(stored.record, stored.record.agent)
 
 
@@ -212,7 +212,7 @@ async def get_run(run_id: str, ctx: Context, automation: Automation) -> RunOut:
 async def approve_run(
     run_id: str, data: ApprovalRequestBody, ctx: Context, automation: Automation
 ) -> RunOut:
-    stored = _stored_or_404(automation, ctx.tenant, run_id)
+    stored = await _stored_or_404(automation, ctx.tenant, run_id)
     if stored.record.state is not RunState.AWAITING_APPROVAL:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="run is not awaiting approval"
@@ -236,7 +236,7 @@ async def approve_run(
         approver_roles=list(ctx.roles),
         roles=list(stored.roles),
     )
-    automation.store.save(record, stored.roles)
+    await automation.store.save(record, stored.roles)
     return _run_out(record, playbook.name)
 
 
@@ -246,7 +246,7 @@ async def approve_run(
     dependencies=[Depends(require("reports.read"))],
 )
 async def get_report(run_id: str, ctx: Context, automation: Automation) -> ReportOut:
-    stored = _stored_or_404(automation, ctx.tenant, run_id)
+    stored = await _stored_or_404(automation, ctx.tenant, run_id)
     report = generate_report(stored.record)
     return ReportOut(
         run_id=report.run_id,

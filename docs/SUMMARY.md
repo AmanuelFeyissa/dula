@@ -39,6 +39,7 @@ phase: Documentation Bootstrap (M000)
 - [ADR-0013 — Plugin Sandbox Mechanism](./adr/ADR-0013-plugin-sandbox.md)
 - [ADR-0014 — Edge / API Gateway Technology](./adr/ADR-0014-edge-gateway.md)
 - [ADR-0015 — Supply-Chain & Release Integrity](./adr/ADR-0015-supply-chain-release-integrity.md)
+- [ADR-0016 — Agent & Playbook Run Persistence](./adr/ADR-0016-agent-run-persistence.md)
 
 ## 00 — Governance
 - [Documentation Standards](./00-Governance/DocumentationStandards.md)
