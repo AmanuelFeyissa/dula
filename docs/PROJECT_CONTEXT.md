@@ -71,6 +71,8 @@ revised during M000 to their permanent form.
 **Also decided:** repository model = **monorepo `dula`** (ADR-0011). **Dula AI training compute &
 artifact hosting** = free GPU (Kaggle/Lightning/Modal) + Hugging Face Hub for datasets/models,
 keeping GitHub for code/CI (ADR-0012); Primus (ODC-BY/MIT) datasets; QLoRA on Qwen/Mistral.
+**Agent/playbook run persistence** (M010) = the AI Gateway gains an **optional** Postgres
+dependency, `InMemoryRunStore` remaining the offline/air-gapped default (ADR-0016).
 
 **Still open:** API gateway tech · embedding/reranker model · hardware sizing · SLSA level.
 (Plugin sandbox mechanism is now **DECIDED — ADR-0013**.)

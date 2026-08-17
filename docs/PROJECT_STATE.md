@@ -18,33 +18,38 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 09 — Production (COMPLETE, buildable scope; GA sign-off operational) |
-| **CURRENT MILESTONE** | M009 ✅ complete (GA sign-off pending operational acceptance) |
-| **STATUS** | Phase 09 done & **closed under CLAUDE.md §11** (M009 Closure + Phase 09 Completion Review). Delivered on `main`: a **signed, reproducible, profile-portable release + hardening substrate** — an umbrella **Helm chart** (`deploy/helm/dula`) with **cloud/on-prem/hybrid/air-gapped** overlays (hardened non-root/read-only/limited workloads, HPA, PDB, default-deny NetworkPolicies, **Gateway API** edge, forward-only pre-upgrade migration Job), fixed/added production **Dockerfiles**, **Kyverno** admission (signature verify + pod-security) + a gated **release pipeline** (SBOM/scan/cosign sign), **air-gap** bundle tooling + a CI **no-egress assertion**, **observability** (SLOs/rules/dashboard) and **backup/DR** scripts, and a CI **`deploy`** job. Two ADRs resolved long-open items: **ADR-0014** (Envoy Gateway/Gateway API edge) + **ADR-0015** (cosign keyed + syft + grype + Kyverno; SLSA L3). Validated: helm lint + template (all 4 profiles) + kubeconform + air-gap assertion; **227 pytest**, web build, doc-links/naming clean. **GA is not declared** — live multi-profile deploy, external pen test, and DR drill are operational (see GAReadiness.md). |
-| **LAST COMPLETED TASK** | Phase 09 build + closure: [M009 Closure](./04-MVP-Roadmap/closure/M009-Production-Closure.md) + [Phase 09 Completion Review](./04-MVP-Roadmap/closure/Phase09-Production-Completion-Review.md) |
-| **CURRENT TASK** | — (Phase 09 complete for buildable scope; awaiting go-ahead for Phase 10) |
-| **NEXT TASK** | Phase 10 — MLOps at scale (Argo Workflows/MLflow/DVC + GPU serving pools; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) is owned by the deploying team. Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **CURRENT PHASE** | Between Phase 09 (Production, COMPLETE) and Phase 10 (MLOps at scale, not started) |
+| **CURRENT MILESTONE** | M010 ✅ complete — Usability & Durability Hardening |
+| **STATUS** | M010 done & **closed under CLAUDE.md §11** ([M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md)). A hands-on review of Phase 09's product found the backend solid but the UI read-only, unsearchable, showing approvers as raw UUIDs, storing agent/playbook runs only in memory, and bouncing visibly through Keycloak with no way to switch test personas short of recreating a container. Six PRs (A–F, `main` #17–#22) fixed all five: **A** Dula-themed Keycloak login (no interstitial) + real RP-Initiated Logout; **B** approvals attributed to real usernames + a token-leak fix; **C** filter/search/sort/pagination on alerts/incidents/assets (server-side severity ranking, URL-state-driven UI); **D** triage-edit and create Server Actions, role-aware and OPA-backed; **E** durable agent/playbook run persistence — **ADR-0016**, AI Gateway gains an *optional* Postgres dependency (`RUN_STORE=memory|postgres`, default memory), verified by tearing a FastAPI app down and confirming a run + its approval survive against a fresh instance; **F** replaced a stale, CI-unwired smoke spec with a 16-test per-persona E2E suite (analyst/responder/admin/second-tenant) plus a real axe accessibility sweep that found and fixed a missing `<main>` landmark, browser-default link-color contrast, and two chip color contrasts — all confirmed via re-running axe, not assumed fixed. 262 pytest passing; full E2E suite green 5 consecutive runs; doc-links/naming clean. |
+| **LAST COMPLETED TASK** | M010 build + closure: [M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md) |
+| **CURRENT TASK** | — (M010 complete; awaiting go-ahead for Phase 10 / M011) |
+| **NEXT TASK** | Phase 10 / M011 — MLOps at scale (Argo Workflows/MLflow/DVC + GPU serving pools; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
 
-- `docs/` — full engineering handbook (reviewed in M000); `docs/adr/` — ADR-0001…0011 (Accepted).
+- `docs/` — full engineering handbook (reviewed in M000); `docs/adr/` — ADR-0001…0016 (Accepted).
 - **Monorepo `dula`** on private GitHub with CI (docs/python/web/security gates green).
 - `packages/common-py` (config, JSON logging, OIDC verifier, OPA client, event publisher);
   **`packages/dula-ai`** (LLM Gateway + RAG: chunking, embeddings, Qdrant/OpenSearch stores,
   hybrid retrieval, guardrails, providers, knowledge ingestion, offline factory + benchmark;
   **`dula_ai.intel`**: deterministic CTI/vuln/detection engineering — see below);
-  `apps/platform-api` (CRUD for assets/incidents/alerts, OPA authz, audit, RLS);
+  `apps/platform-api` (CRUD for assets/incidents/alerts + **filter/search/sort/pagination**, OPA
+  authz, audit, RLS);
   `apps/worker` (idempotent Redpanda consumer); **`apps/ai-gateway`** (grounded Q&A, triage,
   knowledge ingest, **cyber-intelligence `/intel/*`**, **agents `/agents/*`**, **integrations
-  `/plugins` + `/connectors/*`**; SSE streaming); **`packages/dula-agents`** (agent runtime:
-  tools, permissions, approval, limits, audit, planner, store); **`packages/dula-plugins`**
+  `/plugins` + `/connectors/*`**; SSE streaming; **optional Postgres-backed agent/playbook run
+  persistence, ADR-0016**); **`packages/dula-agents`** (agent runtime: tools, permissions,
+  approval, limits, audit, planner, async `RunStore`); **`packages/dula-plugins`**
   (plugin/connector framework: Ed25519 signing, egress+SSRF, host lifecycle, connectors);
   **`packages/dula-automation`** (playbook framework: declarative steps + planner + grounded
   reporting + library);
-  `apps/web` (app shell + alerts/incidents/assets + **Ask/triage UI** + **Intel workbench** +
-  **Agents** + **Integrations** + **Automation** UI); Keycloak realm; OPA `dula.authz` policy; Docker Compose
-  dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres, Redis, MinIO, optional Ollama).
+  `apps/web` (app shell + alerts/incidents/assets with **filter/search/sort/pagination and
+  triage-edit/create Server Actions** + **Ask/triage UI** + **Intel workbench** + **Agents** +
+  **Integrations** + **Automation** UI; **Dula-themed Keycloak sign-in, no interstitial**; a
+  **16-spec per-persona E2E suite** at `apps/web/e2e/`); Keycloak realm + Dula login theme; OPA
+  `dula.authz` policy; Docker Compose dev stack (Qdrant, OpenSearch, Redpanda, OPA, Postgres,
+  Redis, MinIO, optional Ollama).
 - Grounded Q&A/triage run on a **general model** (offline extractive default; Ollama optional).
 - **Phase 04 pipeline:** `packages/dula-ml` (torch-free logic) + `ml/` (standalone GPU project:
   QLoRA train, eval, decide; Kaggle/Lightning/Modal runners; DVC + Argo) + OpenAI-compatible

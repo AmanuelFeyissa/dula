@@ -111,6 +111,7 @@ phase: Documentation Bootstrap (M000)
   - [Phase 08 — Automation Completion Review](./04-MVP-Roadmap/closure/Phase08-Automation-Completion-Review.md)
   - [M009 — Production Closure](./04-MVP-Roadmap/closure/M009-Production-Closure.md)
   - [Phase 09 — Production Completion Review](./04-MVP-Roadmap/closure/Phase09-Production-Completion-Review.md)
+  - [M010 — Usability & Durability Hardening Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)
