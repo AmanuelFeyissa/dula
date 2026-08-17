@@ -274,6 +274,18 @@ export function Pagination({
   );
 }
 
+/** Renders a `?error=` search param left by a server action redirect (see each resource's
+ *  actions.ts) — the no-JS-friendly way to surface a failed write without client form state. */
+export function FormError({ message }: { message: string | undefined }) {
+  if (!message) return null;
+  return (
+    <div className="notice notice--danger" style={{ marginBottom: 16 }}>
+      <div className="notice__title">Couldn&apos;t save</div>
+      <div className="muted">{message}</div>
+    </div>
+  );
+}
+
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="empty">

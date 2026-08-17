@@ -455,6 +455,20 @@ h3 {
   flex: 1;
 }
 
+/* Stacked label-above-control, for triage edit and create forms. */
+.formfield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formfield > label {
+  color: var(--text-faint);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .seg {
   display: inline-flex;
   border: 1px solid var(--line-strong);
