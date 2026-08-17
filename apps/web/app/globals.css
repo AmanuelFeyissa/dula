@@ -484,6 +484,84 @@ h3 {
   font-weight: 600;
 }
 
+/* ---- Filter bar, sortable headers, pagination ---------------------------------------- */
+/*
+ * Filter state lives in the URL (?severity=critical&status=new&q=…), not component state —
+ * a filtered SOC view has to be linkable in a handoff. That is also why this is a plain GET
+ * <form> rather than a client component: it works with JS disabled, and the browser's own
+ * back/forward history does the right thing for free.
+ */
+
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-inset);
+}
+
+.filterbar__search {
+  flex: 1 1 220px;
+  min-width: 160px;
+}
+
+.filterbar select.select {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+/* Sortable column header: the whole header cell is a link, not just an icon, so the target
+   is large enough to hit without precision aiming. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.th-sort:hover {
+  color: var(--text);
+}
+
+.th-sort--active {
+  color: var(--accent);
+}
+
+.th-sort__arrow {
+  font-size: 10px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.pagination [aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Visually hidden but reachable by screen readers — sort direction is otherwise carried by
+   an arrow glyph alone, which a screen reader announces as nothing. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- Notices ------------------------------------------------------------------------- */
 
 .notice {

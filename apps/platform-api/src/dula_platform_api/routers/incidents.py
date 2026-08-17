@@ -11,6 +11,7 @@ from dula_platform_api.authz import require
 from dula_platform_api.db import TenantSession
 from dula_platform_api.deps import Context
 from dula_platform_api.events import Publisher
+from dula_platform_api.models import IncidentStatus, Severity
 from dula_platform_api.schemas import IncidentCreate, IncidentOut, IncidentUpdate, Page
 from dula_platform_api.services import IncidentService
 
@@ -41,8 +42,17 @@ async def list_incidents(
     publisher: Publisher,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    severity: Severity | None = None,
+    status: IncidentStatus | None = None,
+    sort: Annotated[str | None, Query(max_length=32)] = None,
 ) -> Page[IncidentOut]:
-    items, total = await IncidentService(session, ctx, publisher).list(limit=limit, offset=offset)
+    equals = {
+        k: v.value for k, v in {"severity": severity, "status": status}.items() if v is not None
+    }
+    items, total = await IncidentService(session, ctx, publisher).list(
+        limit=limit, offset=offset, q=q, sort=sort, equals=equals or None
+    )
     return Page[IncidentOut](
         items=[IncidentOut.model_validate(i) for i in items],
         total=total,

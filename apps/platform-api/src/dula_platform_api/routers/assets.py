@@ -11,6 +11,7 @@ from dula_platform_api.authz import require
 from dula_platform_api.db import TenantSession
 from dula_platform_api.deps import Context
 from dula_platform_api.events import Publisher
+from dula_platform_api.models import Criticality
 from dula_platform_api.schemas import AssetCreate, AssetOut, AssetUpdate, Page
 from dula_platform_api.services import AssetService
 
@@ -39,8 +40,14 @@ async def list_assets(
     publisher: Publisher,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    criticality: Criticality | None = None,
+    sort: Annotated[str | None, Query(max_length=32)] = None,
 ) -> Page[AssetOut]:
-    items, total = await AssetService(session, ctx, publisher).list(limit=limit, offset=offset)
+    equals = {"criticality": criticality.value} if criticality is not None else None
+    items, total = await AssetService(session, ctx, publisher).list(
+        limit=limit, offset=offset, q=q, sort=sort, equals=equals
+    )
     return Page[AssetOut](
         items=[AssetOut.model_validate(a) for a in items], total=total, limit=limit, offset=offset
     )

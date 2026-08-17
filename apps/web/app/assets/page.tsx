@@ -3,22 +3,41 @@ import Link from "next/link";
 import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
+  FilterBar,
   LoadError,
   PageHeader,
+  Pagination,
+  SearchParams,
   SeverityChip,
+  SortableHeader,
   humanize,
   spineClass,
 } from "@/components/ui";
 import type { Asset, Page } from "@/lib/types";
 
-const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+const CRITICALITIES = ["critical", "high", "medium", "low"] as const;
+const DEFAULT_LIMIT = 50;
 
-export default async function AssetsPage() {
+export default async function AssetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const token = await requireAccessToken();
+  const params = await searchParams;
+
+  const query = new URLSearchParams();
+  for (const key of ["q", "criticality", "sort"]) {
+    const value = params[key];
+    if (typeof value === "string" && value !== "") query.set(key, value);
+  }
+  const offset = Number(params.offset) || 0;
+  query.set("limit", String(DEFAULT_LIMIT));
+  query.set("offset", String(offset));
 
   let page: Page<Asset>;
   try {
-    page = await apiFetch<Page<Asset>>("/api/v1/assets", token);
+    page = await apiFetch<Page<Asset>>(`/api/v1/assets?${query}`, token);
   } catch (err) {
     return (
       <>
@@ -27,11 +46,6 @@ export default async function AssetsPage() {
       </>
     );
   }
-
-  // Criticality drives blast radius, so the most critical assets lead.
-  const assets = [...page.items].sort(
-    (a, b) => (RANK[a.criticality] ?? 9) - (RANK[b.criticality] ?? 9),
-  );
 
   return (
     <>
@@ -42,20 +56,37 @@ export default async function AssetsPage() {
       />
 
       <div className="panel">
-        {assets.length === 0 ? (
-          <EmptyState title="No assets" hint="Assets appear as your inventory sources sync." />
+        <FilterBar
+          basePath="/assets"
+          searchParams={params}
+          filters={[{ name: "criticality", label: "Criticality", options: CRITICALITIES }]}
+        />
+        {page.items.length === 0 ? (
+          <EmptyState
+            title="No assets match"
+            hint={
+              params.q || params.criticality
+                ? "Try clearing a filter."
+                : "Assets appear as your inventory sources sync."
+            }
+          />
         ) : (
           <table className="table">
             <thead>
               <tr>
                 <th style={{ width: "28%" }}>Asset</th>
                 <th>Type</th>
-                <th>Criticality</th>
+                <SortableHeader
+                  basePath="/assets"
+                  searchParams={params}
+                  field="criticality"
+                  label="Criticality"
+                />
                 <th>Identifier</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => (
+              {page.items.map((asset) => (
                 <tr key={asset.id}>
                   <td className={spineClass(asset.criticality)}>
                     <Link href={`/assets/${asset.id}`}>{asset.name}</Link>
@@ -70,6 +101,13 @@ export default async function AssetsPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          basePath="/assets"
+          searchParams={params}
+          limit={DEFAULT_LIMIT}
+          offset={offset}
+          total={page.total}
+        />
       </div>
     </>
   );

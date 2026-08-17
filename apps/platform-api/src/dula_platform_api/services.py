@@ -22,6 +22,7 @@ from dula_platform_api.repositories import (
     AssetRepository,
     IncidentRepository,
     TenantRepository,
+    UnknownSortField,
 )
 from dula_platform_api.schemas import (
     AlertCreate,
@@ -59,8 +60,34 @@ class BaseService[ModelT: TenantEntity]:
             )
         return obj
 
-    async def list(self, *, limit: int, offset: int) -> tuple[list[ModelT], int]:
-        return await self._repo.list(limit=limit, offset=offset)
+    async def list(
+        self,
+        *,
+        limit: int,
+        offset: int,
+        q: str | None = None,
+        sort: str | None = None,
+        equals: dict[str, str] | None = None,
+    ) -> tuple[list[ModelT], int]:
+        """List with optional search/filter/sort. ``equals`` maps field name -> value.
+
+        Field names (not columns) cross this boundary so routers stay free of SQLAlchemy —
+        the repository resolves them against its own model.
+        """
+        columns_equals = None
+        if equals:
+            columns_equals = {
+                getattr(self._repo.model, field): value for field, value in equals.items()
+            }
+        try:
+            return await self._repo.list(
+                limit=limit, offset=offset, q=q, equals=columns_equals, sort=sort
+            )
+        except UnknownSortField as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"unknown sort field: {exc}",
+            ) from exc
 
     async def delete(self, entity_id: uuid.UUID) -> None:
         obj = await self.get(entity_id)
