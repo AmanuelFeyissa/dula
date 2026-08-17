@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
+import { ApiError, apiFetch, getCurrentUser, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
   FilterBar,
@@ -14,10 +14,11 @@ import {
   StatusChip,
   spineClass,
 } from "@/components/ui";
+import { can } from "@/lib/permissions";
 import type { Alert, Page } from "@/lib/types";
 
-const SEVERITIES = ["critical", "high", "medium", "low", "info"] as const;
-const STATUSES = ["new", "triaged", "in_progress", "closed", "false_positive"] as const;
+import { SEVERITIES, STATUSES } from "./constants";
+
 const DEFAULT_LIMIT = 50;
 
 // Server-rendered: filters, sort and page number all live in the URL, so a caller reads
@@ -41,8 +42,14 @@ export default async function AlertsPage({
   query.set("offset", String(offset));
 
   let page: Page<Alert>;
+  let canCreate: boolean;
   try {
-    page = await apiFetch<Page<Alert>>(`/api/v1/alerts?${query}`, token);
+    const [alertsPage, me] = await Promise.all([
+      apiFetch<Page<Alert>>(`/api/v1/alerts?${query}`, token),
+      getCurrentUser(token),
+    ]);
+    page = alertsPage;
+    canCreate = can(me.roles, "alerts.create");
   } catch (err) {
     return (
       <>
@@ -60,8 +67,15 @@ export default async function AlertsPage({
         title="Alerts"
         description="Detection signals to triage, most severe first."
         aside={
-          <span className="count">
-            {open} open on this page · {page.total} total
+          <span className="row" style={{ gap: 14 }}>
+            <span className="count">
+              {open} open on this page · {page.total} total
+            </span>
+            {canCreate ? (
+              <Link href="/alerts/new" className="btn btn--primary">
+                + New alert
+              </Link>
+            ) : null}
           </span>
         }
       />

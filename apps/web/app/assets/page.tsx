@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
+import { ApiError, apiFetch, getCurrentUser, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
   FilterBar,
@@ -13,9 +13,11 @@ import {
   humanize,
   spineClass,
 } from "@/components/ui";
+import { can } from "@/lib/permissions";
 import type { Asset, Page } from "@/lib/types";
 
-const CRITICALITIES = ["critical", "high", "medium", "low"] as const;
+import { CRITICALITIES } from "./constants";
+
 const DEFAULT_LIMIT = 50;
 
 export default async function AssetsPage({
@@ -36,8 +38,14 @@ export default async function AssetsPage({
   query.set("offset", String(offset));
 
   let page: Page<Asset>;
+  let canCreate: boolean;
   try {
-    page = await apiFetch<Page<Asset>>(`/api/v1/assets?${query}`, token);
+    const [assetsPage, me] = await Promise.all([
+      apiFetch<Page<Asset>>(`/api/v1/assets?${query}`, token),
+      getCurrentUser(token),
+    ]);
+    page = assetsPage;
+    canCreate = can(me.roles, "assets.create");
   } catch (err) {
     return (
       <>
@@ -52,7 +60,16 @@ export default async function AssetsPage({
       <PageHeader
         title="Assets"
         description="Monitored hosts, accounts, and resources, most critical first."
-        aside={<span className="count">{page.total} total</span>}
+        aside={
+          <span className="row" style={{ gap: 14 }}>
+            <span className="count">{page.total} total</span>
+            {canCreate ? (
+              <Link href="/assets/new" className="btn btn--primary">
+                + New asset
+              </Link>
+            ) : null}
+          </span>
+        }
       />
 
       <div className="panel">

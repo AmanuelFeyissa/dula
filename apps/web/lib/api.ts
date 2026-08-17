@@ -35,6 +35,20 @@ export async function requireAccessToken(): Promise<string> {
   return session.accessToken;
 }
 
+export interface CurrentUser {
+  subject: string;
+  username: string | null;
+  email: string | null;
+  tenant_id: string | null;
+  roles: string[];
+}
+
+/** The caller's identity and roles, for role-aware UI (`lib/permissions.ts`). OPA re-checks
+ *  every write server-side regardless — this only decides what the UI offers to try. */
+export async function getCurrentUser(token: string): Promise<CurrentUser> {
+  return apiFetch<CurrentUser>("/api/v1/me", token);
+}
+
 export async function apiFetch<T>(
   path: string,
   token: string,

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
+import { ApiError, apiFetch, getCurrentUser, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
   FilterBar,
@@ -14,10 +14,11 @@ import {
   StatusChip,
   spineClass,
 } from "@/components/ui";
+import { can } from "@/lib/permissions";
 import type { Incident, Page } from "@/lib/types";
 
-const SEVERITIES = ["critical", "high", "medium", "low", "info"] as const;
-const STATUSES = ["open", "investigating", "contained", "resolved", "closed"] as const;
+import { SEVERITIES, STATUSES } from "./constants";
+
 const DEFAULT_LIMIT = 50;
 
 export default async function IncidentsPage({
@@ -38,8 +39,14 @@ export default async function IncidentsPage({
   query.set("offset", String(offset));
 
   let page: Page<Incident>;
+  let canCreate: boolean;
   try {
-    page = await apiFetch<Page<Incident>>(`/api/v1/incidents?${query}`, token);
+    const [incidentsPage, me] = await Promise.all([
+      apiFetch<Page<Incident>>(`/api/v1/incidents?${query}`, token),
+      getCurrentUser(token),
+    ]);
+    page = incidentsPage;
+    canCreate = can(me.roles, "incidents.create");
   } catch (err) {
     return (
       <>
@@ -57,8 +64,15 @@ export default async function IncidentsPage({
         title="Incidents"
         description="Cases under investigation, most severe first."
         aside={
-          <span className="count">
-            {active} active on this page · {page.total} total
+          <span className="row" style={{ gap: 14 }}>
+            <span className="count">
+              {active} active on this page · {page.total} total
+            </span>
+            {canCreate ? (
+              <Link href="/incidents/new" className="btn btn--primary">
+                + New incident
+              </Link>
+            ) : null}
           </span>
         }
       />
