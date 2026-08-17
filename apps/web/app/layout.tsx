@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <div className="shell">
           <Nav />
-          <div className="content">{children}</div>
+          <main className="content">{children}</main>
         </div>
       </body>
     </html>

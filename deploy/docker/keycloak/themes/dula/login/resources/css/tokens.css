@@ -17,7 +17,11 @@
 
   --text: #e6edf6;
   --text-muted: #93a3b8;
-  --text-faint: #6b7c93;
+  /* WCAG AA 4.5:1 against both --bg and --bg-raised (verified: apps/web/e2e/accessibility.spec.ts).
+     The original #6b7c93 fell short (3.85:1 / 4.26:1) — axe-core caught it live on the alert
+     detail page's <dl> labels once the missing <main> landmark was fixed and the sweep could
+     actually run. */
+  --text-faint: #7f8fa4;
 
   /* Interactive/brand: a defensive teal — technical, but not the acid-green cliché. */
   --accent: #35d0ba;
