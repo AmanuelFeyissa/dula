@@ -3,23 +3,43 @@ import Link from "next/link";
 import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
+  FilterBar,
   LoadError,
   PageHeader,
+  Pagination,
   RelativeTime,
+  SearchParams,
   SeverityChip,
+  SortableHeader,
   StatusChip,
   spineClass,
 } from "@/components/ui";
 import type { Incident, Page } from "@/lib/types";
 
-const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+const SEVERITIES = ["critical", "high", "medium", "low", "info"] as const;
+const STATUSES = ["open", "investigating", "contained", "resolved", "closed"] as const;
+const DEFAULT_LIMIT = 50;
 
-export default async function IncidentsPage() {
+export default async function IncidentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const token = await requireAccessToken();
+  const params = await searchParams;
+
+  const query = new URLSearchParams();
+  for (const key of ["q", "severity", "status", "sort"]) {
+    const value = params[key];
+    if (typeof value === "string" && value !== "") query.set(key, value);
+  }
+  const offset = Number(params.offset) || 0;
+  query.set("limit", String(DEFAULT_LIMIT));
+  query.set("offset", String(offset));
 
   let page: Page<Incident>;
   try {
-    page = await apiFetch<Page<Incident>>("/api/v1/incidents", token);
+    page = await apiFetch<Page<Incident>>(`/api/v1/incidents?${query}`, token);
   } catch (err) {
     return (
       <>
@@ -29,10 +49,7 @@ export default async function IncidentsPage() {
     );
   }
 
-  const incidents = [...page.items].sort(
-    (a, b) => (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9),
-  );
-  const active = incidents.filter((i) => !["closed", "resolved"].includes(i.status)).length;
+  const active = page.items.filter((i) => !["closed", "resolved"].includes(i.status)).length;
 
   return (
     <>
@@ -41,30 +58,52 @@ export default async function IncidentsPage() {
         description="Cases under investigation, most severe first."
         aside={
           <span className="count">
-            {active} active · {page.total} total
+            {active} active on this page · {page.total} total
           </span>
         }
       />
 
       <div className="panel">
-        {incidents.length === 0 ? (
+        <FilterBar
+          basePath="/incidents"
+          searchParams={params}
+          filters={[
+            { name: "severity", label: "Severity", options: SEVERITIES },
+            { name: "status", label: "Status", options: STATUSES },
+          ]}
+        />
+        {page.items.length === 0 ? (
           <EmptyState
-            title="No incidents"
-            hint="Promote an alert, or let an agent recommend one for your approval."
+            title="No incidents match"
+            hint={
+              params.q || params.severity || params.status
+                ? "Try clearing a filter."
+                : "Promote an alert, or let an agent recommend one for your approval."
+            }
           />
         ) : (
           <table className="table">
             <thead>
               <tr>
                 <th style={{ width: "46%" }}>Incident</th>
-                <th>Severity</th>
+                <SortableHeader
+                  basePath="/incidents"
+                  searchParams={params}
+                  field="severity"
+                  label="Severity"
+                />
                 <th>Status</th>
                 <th>Assignee</th>
-                <th>Opened</th>
+                <SortableHeader
+                  basePath="/incidents"
+                  searchParams={params}
+                  field="created_at"
+                  label="Opened"
+                />
               </tr>
             </thead>
             <tbody>
-              {incidents.map((incident) => (
+              {page.items.map((incident) => (
                 <tr key={incident.id}>
                   <td className={spineClass(incident.severity)}>
                     <Link href={`/incidents/${incident.id}`}>{incident.title}</Link>
@@ -84,6 +123,13 @@ export default async function IncidentsPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          basePath="/incidents"
+          searchParams={params}
+          limit={DEFAULT_LIMIT}
+          offset={offset}
+          total={page.total}
+        />
       </div>
     </>
   );

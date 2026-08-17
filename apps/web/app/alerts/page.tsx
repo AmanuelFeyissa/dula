@@ -3,24 +3,46 @@ import Link from "next/link";
 import { ApiError, apiFetch, requireAccessToken } from "@/lib/api";
 import {
   EmptyState,
+  FilterBar,
   LoadError,
   PageHeader,
+  Pagination,
   RelativeTime,
+  SearchParams,
   SeverityChip,
+  SortableHeader,
   StatusChip,
   spineClass,
 } from "@/components/ui";
 import type { Alert, Page } from "@/lib/types";
 
-// Severity order drives the scan: what is on fire belongs at the top, regardless of arrival time.
-const RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+const SEVERITIES = ["critical", "high", "medium", "low", "info"] as const;
+const STATUSES = ["new", "triaged", "in_progress", "closed", "false_positive"] as const;
+const DEFAULT_LIMIT = 50;
 
-export default async function AlertsPage() {
+// Server-rendered: filters, sort and page number all live in the URL, so a caller reads
+// `searchParams` and forwards them to the API verbatim rather than fetching everything and
+// slicing client-side — that was the old approach, and it silently broke down past one page.
+export default async function AlertsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const token = await requireAccessToken();
+  const params = await searchParams;
+
+  const query = new URLSearchParams();
+  for (const key of ["q", "severity", "status", "sort"]) {
+    const value = params[key];
+    if (typeof value === "string" && value !== "") query.set(key, value);
+  }
+  const offset = Number(params.offset) || 0;
+  query.set("limit", String(DEFAULT_LIMIT));
+  query.set("offset", String(offset));
 
   let page: Page<Alert>;
   try {
-    page = await apiFetch<Page<Alert>>("/api/v1/alerts", token);
+    page = await apiFetch<Page<Alert>>(`/api/v1/alerts?${query}`, token);
   } catch (err) {
     return (
       <>
@@ -30,10 +52,7 @@ export default async function AlertsPage() {
     );
   }
 
-  const alerts = [...page.items].sort(
-    (a, b) => (RANK[a.severity] ?? 9) - (RANK[b.severity] ?? 9),
-  );
-  const open = alerts.filter((a) => !["closed", "false_positive"].includes(a.status)).length;
+  const open = page.items.filter((a) => !["closed", "false_positive"].includes(a.status)).length;
 
   return (
     <>
@@ -42,30 +61,52 @@ export default async function AlertsPage() {
         description="Detection signals to triage, most severe first."
         aside={
           <span className="count">
-            {open} open · {page.total} total
+            {open} open on this page · {page.total} total
           </span>
         }
       />
 
       <div className="panel">
-        {alerts.length === 0 ? (
+        <FilterBar
+          basePath="/alerts"
+          searchParams={params}
+          filters={[
+            { name: "severity", label: "Severity", options: SEVERITIES },
+            { name: "status", label: "Status", options: STATUSES },
+          ]}
+        />
+        {page.items.length === 0 ? (
           <EmptyState
-            title="No alerts"
-            hint="Detections will appear here as your connectors report them."
+            title="No alerts match"
+            hint={
+              params.q || params.severity || params.status
+                ? "Try clearing a filter."
+                : "Detections will appear here as your connectors report them."
+            }
           />
         ) : (
           <table className="table">
             <thead>
               <tr>
                 <th style={{ width: "44%" }}>Alert</th>
-                <th>Severity</th>
+                <SortableHeader
+                  basePath="/alerts"
+                  searchParams={params}
+                  field="severity"
+                  label="Severity"
+                />
                 <th>Status</th>
                 <th>Source</th>
-                <th>Seen</th>
+                <SortableHeader
+                  basePath="/alerts"
+                  searchParams={params}
+                  field="created_at"
+                  label="Seen"
+                />
               </tr>
             </thead>
             <tbody>
-              {alerts.map((alert) => (
+              {page.items.map((alert) => (
                 <tr key={alert.id}>
                   <td className={spineClass(alert.severity)}>
                     <Link href={`/alerts/${alert.id}`}>{alert.title}</Link>
@@ -85,6 +126,13 @@ export default async function AlertsPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          basePath="/alerts"
+          searchParams={params}
+          limit={DEFAULT_LIMIT}
+          offset={offset}
+          total={page.total}
+        />
       </div>
     </>
   );

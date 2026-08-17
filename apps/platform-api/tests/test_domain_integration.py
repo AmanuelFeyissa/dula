@@ -1,4 +1,4 @@
-"""Integration tests against a real Postgres: tenant isolation + service-layer authZ.
+"""Integration tests against a real Postgres: tenant isolation, service authZ, list queries.
 
 These exercise the full request path (router -> authz -> service -> tenant repository ->
 DB). They are skipped automatically when no Postgres is reachable (e.g. the CI unit lane);
@@ -90,6 +90,31 @@ def _as(holder: dict[str, RequestContext], tenant: uuid.UUID, *roles: str) -> No
     )
 
 
+async def _create_tenant() -> uuid.UUID:
+    tenant_id = uuid.uuid4()
+    engine = create_async_engine(TEST_DB_URL)
+    try:
+        maker = async_sessionmaker(engine, expire_on_commit=False)
+        async with maker() as session:
+            session.add(Tenant(id=tenant_id, name=f"query-test-{tenant_id}"))
+            await session.commit()
+    finally:
+        await engine.dispose()
+    return tenant_id
+
+
+@pytest.fixture
+def fresh_tenant(_schema: None) -> uuid.UUID:
+    """A brand-new, single-use tenant.
+
+    The list-query tests below assert exact row counts and exact ordering. TENANT_A/B live
+    for the whole module (``_schema`` is module-scoped, with no per-test rollback), so
+    reusing either would make one test's seed data silently pollute the next test's counts.
+    A fresh tenant per test sidesteps that without needing a transactional-rollback fixture.
+    """
+    return asyncio.run(_create_tenant())
+
+
 def test_create_and_read_within_tenant(
     env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
 ) -> None:
@@ -153,3 +178,349 @@ def test_soft_delete_hides_row(
     alert_id = client.post("/api/v1/alerts", json={"title": "temp"}).json()["id"]
     assert client.delete(f"/api/v1/alerts/{alert_id}").status_code == 204
     assert client.get(f"/api/v1/alerts/{alert_id}").status_code == 404
+
+
+# --- List query contract: filter, search, sort, paginate ------------------------------
+#
+# Weakness recorded in the M010 plan: the UI had no way to find a specific alert once
+# there were more than a handful, and severity ordering was done client-side (correct
+# only *within* a page, not across the full list). These tests define the contract
+# before repositories.py or the routers implement it.
+
+
+def _seed_alerts_for_query_tests(client: TestClient) -> None:
+    client.post(
+        "/api/v1/alerts",
+        json={"title": "beacon to evil.example.com", "severity": "critical", "status": "new"},
+    )
+    client.post(
+        "/api/v1/alerts",
+        json={"title": "legacy TLS negotiated", "severity": "low", "status": "false_positive"},
+    )
+    client.post(
+        "/api/v1/alerts",
+        json={"title": "impossible travel sign-in", "severity": "high", "status": "triaged"},
+    )
+    client.post(
+        "/api/v1/alerts",
+        json={"title": "brute force against VPN", "severity": "high", "status": "closed"},
+    )
+    client.post(
+        "/api/v1/alerts",
+        json={"title": "anomalous pod exec", "severity": "medium", "status": "new"},
+    )
+
+
+def test_list_alerts_filters_by_severity(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"severity": "high"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 2
+    assert {item["title"] for item in body["items"]} == {
+        "impossible travel sign-in",
+        "brute force against VPN",
+    }
+
+
+def test_list_alerts_filters_by_status(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"status": "new"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 2
+    assert {item["title"] for item in body["items"]} == {
+        "beacon to evil.example.com",
+        "anomalous pod exec",
+    }
+
+
+def test_list_alerts_combines_severity_and_status_filters(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"severity": "high", "status": "closed"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["items"][0]["title"] == "brute force against VPN"
+
+
+def test_list_alerts_searches_title_case_insensitively(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"q": "EVIL"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["items"][0]["title"] == "beacon to evil.example.com"
+
+
+def test_list_alerts_search_matching_nothing_returns_empty(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"q": "does-not-exist-anywhere"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == {"items": [], "total": 0, "limit": 50, "offset": 0}
+
+
+def test_list_alerts_default_order_is_severity_then_recency(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    """What is on fire belongs at the top — regardless of what page you're looking at.
+
+    This is the behaviour that used to live in the web app's client-side RANK sort
+    (apps/web/app/alerts/page.tsx), which only ordered items within a single fetched page.
+    Moving it server-side means page 2 is never less urgent-looking than page 1 by accident.
+    """
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"limit": 5})
+    assert resp.status_code == 200, resp.text
+    severities = [item["severity"] for item in resp.json()["items"]]
+    rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+    assert severities == sorted(severities, key=lambda s: rank[s])
+    assert severities[0] == "critical"
+    assert severities[-1] == "low"
+
+
+def test_list_alerts_pagination_is_stable_under_severity_order(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    """Ordering must hold *across* pages, not just within one (the client-side bug)."""
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    page1 = client.get("/api/v1/alerts", params={"limit": 2, "offset": 0}).json()
+    page2 = client.get("/api/v1/alerts", params={"limit": 2, "offset": 2}).json()
+    page3 = client.get("/api/v1/alerts", params={"limit": 2, "offset": 4}).json()
+    all_items = page1["items"] + page2["items"] + page3["items"]
+    assert len(all_items) == 5
+    assert len({item["id"] for item in all_items}) == 5  # no duplicates, no gaps
+
+    rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+    severities = [item["severity"] for item in all_items]
+    assert severities == sorted(severities, key=lambda s: rank[s])
+
+
+def test_list_alerts_sort_title_overrides_the_severity_default(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"sort": "title", "limit": 5})
+    assert resp.status_code == 200, resp.text
+    titles = [item["title"] for item in resp.json()["items"]]
+    assert titles == sorted(titles)
+
+
+def test_list_alerts_sort_accepts_a_descending_prefix(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"sort": "-title", "limit": 5})
+    assert resp.status_code == 200, resp.text
+    titles = [item["title"] for item in resp.json()["items"]]
+    assert titles == sorted(titles, reverse=True)
+
+
+def test_list_alerts_rejects_unknown_sort_field(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    resp = client.get("/api/v1/alerts", params={"sort": "description"})
+    assert resp.status_code == 422
+
+
+def test_list_alerts_rejects_unknown_severity(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    resp = client.get("/api/v1/alerts", params={"severity": "apocalyptic"})
+    assert resp.status_code == 422
+
+
+def test_list_alerts_filter_cannot_leak_another_tenants_rows(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    """A filter is still a list query: it must never widen what a tenant can see."""
+    client, holder, _ = env
+    _as(holder, TENANT_A, "admin")
+    client.post("/api/v1/alerts", json={"title": "tenant-a-critical-thing", "severity": "critical"})
+
+    _as(holder, fresh_tenant, "admin")
+    _seed_alerts_for_query_tests(client)
+
+    resp = client.get("/api/v1/alerts", params={"severity": "critical"})
+    assert resp.status_code == 200, resp.text
+    titles = {item["title"] for item in resp.json()["items"]}
+    assert "tenant-a-critical-thing" not in titles
+    assert titles == {"beacon to evil.example.com"}
+
+
+# --- Same query contract for incidents and assets --------------------------------------
+#
+# Not the full alert permutation matrix (that already proves the shared TenantRepository
+# machinery works); one filter test, one search test, one default-order test, and one
+# rejection test per resource is enough to prove each router actually wires it up.
+
+
+def test_list_incidents_filters_by_severity_and_status(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post("/api/v1/incidents", json={"title": "ransomware precursor", "severity": "critical"})
+    client.post(
+        "/api/v1/incidents",
+        json={"title": "phishing campaign", "severity": "medium", "status": "resolved"},
+    )
+    client.post("/api/v1/incidents", json={"title": "credential stuffing", "severity": "high"})
+
+    resp = client.get("/api/v1/incidents", params={"severity": "high", "status": "open"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["items"][0]["title"] == "credential stuffing"
+
+
+def test_list_incidents_searches_title(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post("/api/v1/incidents", json={"title": "ransomware precursor activity"})
+    client.post("/api/v1/incidents", json={"title": "phishing campaign"})
+
+    resp = client.get("/api/v1/incidents", params={"q": "ransomware"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["total"] == 1
+
+
+def test_list_incidents_default_order_is_severity_first(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post("/api/v1/incidents", json={"title": "low-sev", "severity": "low"})
+    client.post("/api/v1/incidents", json={"title": "crit-sev", "severity": "critical"})
+    client.post("/api/v1/incidents", json={"title": "med-sev", "severity": "medium"})
+
+    resp = client.get("/api/v1/incidents")
+    assert resp.status_code == 200, resp.text
+    severities = [item["severity"] for item in resp.json()["items"]]
+    assert severities == ["critical", "medium", "low"]
+
+
+def test_list_incidents_rejects_unknown_status(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    resp = client.get("/api/v1/incidents", params={"status": "on-fire"})
+    assert resp.status_code == 422
+
+
+def test_list_assets_filters_by_criticality(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post("/api/v1/assets", json={"name": "payments-api", "criticality": "critical"})
+    client.post("/api/v1/assets", json={"name": "dev-laptop", "criticality": "low"})
+
+    resp = client.get("/api/v1/assets", params={"criticality": "critical"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["items"][0]["name"] == "payments-api"
+
+
+def test_list_assets_searches_name_and_identifier(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post(
+        "/api/v1/assets",
+        json={"name": "prod-s3-audit", "identifier": "arn:aws:s3:::acme-audit-logs"},
+    )
+    client.post("/api/v1/assets", json={"name": "svc-billing"})
+
+    resp = client.get("/api/v1/assets", params={"q": "acme-audit"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["total"] == 1
+
+
+def test_list_assets_default_order_is_criticality_first(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    client.post("/api/v1/assets", json={"name": "low-crit", "criticality": "low"})
+    client.post("/api/v1/assets", json={"name": "crit-crit", "criticality": "critical"})
+
+    resp = client.get("/api/v1/assets")
+    assert resp.status_code == 200, resp.text
+    names = [item["name"] for item in resp.json()["items"]]
+    assert names == ["crit-crit", "low-crit"]
+
+
+def test_list_assets_rejects_unknown_criticality(
+    env: tuple[TestClient, dict[str, RequestContext], _StubOPA],
+    fresh_tenant: uuid.UUID,
+) -> None:
+    client, holder, _ = env
+    _as(holder, fresh_tenant, "admin")
+    resp = client.get("/api/v1/assets", params={"criticality": "meh"})
+    assert resp.status_code == 422
