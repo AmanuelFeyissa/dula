@@ -1,0 +1,94 @@
+# Argo CronWorkflow: scheduled production drift check + auto-rollback trigger
+# (docs/09-MLOps/ModelLifecycle.md #3, M011 PR C). Runs ml/dula_train/monitor.py on a
+# schedule: re-evaluates whatever is currently `production` against its own recorded
+# baseline and, on regression, calls dula_ml.lifecycle.rollback (appends a registry
+# transition -- "propose and record", CLAUDE.md #7; it does not itself redeploy live
+# traffic). Reuses the same step/gpu-step container pattern as
+# dula-ai-training-workflow.yaml's WorkflowTemplate.
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: dula-ai-monitor
+  labels:
+    app.kubernetes.io/part-of: dula
+    app.kubernetes.io/component: mlops
+spec:
+  # Daily; DeploymentPipelines.md doesn't prescribe a cadence -- this is a starting point,
+  # tune once real production traffic/cost data exists.
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  workflowSpec:
+    entrypoint: monitor
+    arguments:
+      parameters:
+        - name: image
+          value: "ghcr.io/amanuelfeyissa/dula-ml:latest" # built from ml/ + packages/dula-ml
+        - name: manifest
+          value: "out/registry.jsonl" # relative, matching dula-ai-training-workflow.yaml's convention
+        # Which model to re-evaluate. Update this alongside each production promotion
+        # (ml/dula_train/promote.py --to-stage production) -- deriving it automatically from
+        # the manifest would need to understand adapter/artifact resolution, which is
+        # eval_runner.py's own concern, not something to hack into workflow YAML.
+        - name: production-model
+          value: "Qwen/Qwen2.5-3B-Instruct"
+    volumeClaimTemplates:
+      - metadata:
+          name: work
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    templates:
+      - name: monitor
+        steps:
+          - - name: reeval-production
+              template: gpu-step
+              arguments:
+                parameters:
+                  - name: cmd
+                    value: >-
+                      python -m dula_train.eval_runner
+                      --model {{workflow.parameters.production-model}}
+                      --label live --out out/live.json
+          - - name: check-and-rollback
+              template: step
+              arguments:
+                parameters:
+                  - name: cmd
+                    value: >-
+                      python -m dula_train.monitor
+                      --manifest {{workflow.parameters.manifest}}
+                      --live-report out/live.json
+                      --actor scheduled-monitor
+
+      - name: step
+        inputs:
+          parameters: [{ name: cmd }]
+        container:
+          image: "{{workflow.parameters.image}}"
+          command: ["bash", "-c"]
+          args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef: { name: huggingface, key: token }
+          volumeMounts:
+            - { name: work, mountPath: /workspace }
+
+      - name: gpu-step
+        inputs:
+          parameters: [{ name: cmd }]
+        container:
+          image: "{{workflow.parameters.image}}"
+          command: ["bash", "-c"]
+          args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef: { name: huggingface, key: token }
+          volumeMounts:
+            - { name: work, mountPath: /workspace }

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from dula_ml.evaluation import EvalReport, GateResult
-from dula_ml.lifecycle import current_production, promote
+from dula_ml.lifecycle import current_production, previous_production, promote, rollback
 from dula_ml.registry import RegistryEntry, append_entry, load_manifest
 
 
@@ -106,3 +106,54 @@ def test_rollback_re_promotes_a_superseded_version_to_production(tmp_path: Path)
 def test_current_production_is_none_when_nothing_has_shipped(tmp_path: Path) -> None:
     manifest = tmp_path / "registry.jsonl"
     assert current_production(manifest) is None
+
+
+def test_previous_production_is_none_before_any_supersede(tmp_path: Path) -> None:
+    manifest = tmp_path / "registry.jsonl"
+    append_entry(_entry("ship", "0.2"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.2", stage)
+
+    assert previous_production(manifest) is None
+
+
+def test_previous_production_finds_the_most_recently_superseded_version(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "registry.jsonl"
+    append_entry(_entry("ship", "0.2"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.2", stage)
+    append_entry(_entry("ship", "0.3"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.3", stage)
+
+    prev = previous_production(manifest)
+    assert prev is not None and prev.version == "0.2"
+
+
+def test_rollback_promotes_the_previous_production_version(tmp_path: Path) -> None:
+    manifest = tmp_path / "registry.jsonl"
+    append_entry(_entry("ship", "0.2"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.2", stage)
+    append_entry(_entry("ship", "0.3"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.3", stage)
+
+    rolled_back = rollback(manifest, actor="auto-monitor", note="0.3 regressed vs baseline")
+
+    assert rolled_back.version == "0.2"
+    assert rolled_back.stage == "production"
+    current = current_production(manifest)
+    assert current is not None and current.version == "0.2"
+
+
+def test_rollback_raises_when_there_is_nothing_to_roll_back_to(tmp_path: Path) -> None:
+    manifest = tmp_path / "registry.jsonl"
+    append_entry(_entry("ship", "0.2"), manifest)
+    for stage in ("staging", "canary", "production"):
+        promote(manifest, "0.2", stage)
+
+    with pytest.raises(ValueError, match="no previous production version"):
+        rollback(manifest)
