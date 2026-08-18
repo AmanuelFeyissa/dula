@@ -86,15 +86,18 @@ def validate() -> dict[str, object]:
     secrets=[modal.Secret.from_name("huggingface")],
 )
 def full(
-    base_model: str = "Qwen/Qwen2.5-0.5B-Instruct",
-    version: str = "0.1",
+    base_model: str = "Qwen/Qwen2.5-3B-Instruct",
+    version: str = "0.2",
     use_reasoning: bool = False,
     hf_repo: str = "AmanuelFeyissa/dula-ai",
 ) -> dict[str, object]:
     """Real run: prepare (Primus) -> QLoRA train -> eval candidate vs baseline -> decide.
 
-    Small base by default (fast + cheap, well within the free credit). Pushes the merged model
-    to HF only if the gate says ship. Returns the eval reports so the caller registers locally.
+    3B base + real 4-bit QLoRA by default (M011 PR E, docs/08-AI/TrainingStrategy.md's actual
+    target -- the 0.5B/fp16 config used for the first, Phase 04 run was deliberately smaller to
+    validate the pipeline cheaply; TrainConfig()'s own defaults are this 3B/QLoRA config).
+    Pushes the merged model to HF only if the gate says ship. Returns the eval reports so the
+    caller registers locally.
     """
     import json
     import sys
@@ -119,8 +122,11 @@ def full(
         val_fraction=ds.val_fraction,
         seed=ds.seed,
     )
-    # fp16 (no 4-bit) so a 0.5B model trains fast and the LoRA can merge for eval.
-    cfg = TrainConfig(base_model=base_model, load_in_4bit=False)
+    # Real 4-bit QLoRA (TrainConfig's own default). If merge_and_unload() fails on the 4-bit
+    # base (train_qlora.py already handles this), the adapter is saved on its own -- eval_runner
+    # loads it fine either way, since transformers' from_pretrained applies a PEFT adapter
+    # automatically when it detects adapter_config.json (peft is in ml/requirements.txt).
+    cfg = TrainConfig(base_model=base_model)
     out_dir = train(cfg)
 
     eval_run(

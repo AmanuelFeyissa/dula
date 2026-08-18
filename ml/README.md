@@ -43,10 +43,14 @@ PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --basel
 - **Lightning AI** (~80 GPU hrs/month) — run the same steps in a Studio.
 - **Modal** ($30/month) — `modal run ml/runners/modal_train.py` for reproducible scripted runs.
 
-`decide.py` prints **ship** or **retire** and writes a model card + registry entry. Per Phase
-04, the milestone completes either way — a candidate that does not beat the general model
-without regressing safety is **retired**, and the platform stays on the general model + RAG.
-**Shipping a worse model is never acceptable.**
+`decide.py` prints **ship** or **retire** and writes a model card + registry entry. A run
+completes either way — a candidate that does not beat the general model without regressing
+safety is **retired**, and the platform stays on the general model + RAG. **Shipping a worse
+model is never acceptable.** (Phase 04's first candidate and Phase 10/M011's second candidate
+were both retired for exactly this reason — see `ml/registry/registry.jsonl`.)
+
+Once a candidate ships, promote it through the lifecycle stages and manage rollback via
+`ml/dula_train/promote.py` (docs/09-MLOps/ModelLifecycle.md, `dula_ml.lifecycle`).
 
 ## Flow check without a GPU
 
