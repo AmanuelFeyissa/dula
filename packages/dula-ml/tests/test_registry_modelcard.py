@@ -38,6 +38,21 @@ def test_manifest_roundtrip_and_latest_shipped(tmp_path: Path) -> None:
     assert latest is not None and latest.version == "0.2"
 
 
+def test_latest_shipped_ignores_lifecycle_transitions(tmp_path: Path) -> None:
+    from dula_ml.lifecycle import promote
+
+    manifest = tmp_path / "registry.jsonl"
+    append_entry(_entry("ship", "0.2"), manifest)
+    promote(manifest, "0.2", "staging")
+    promote(manifest, "0.2", "canary")
+    promote(manifest, "0.2", "rejected")
+
+    latest = latest_shipped(manifest)
+    assert latest is not None
+    assert latest.version == "0.2"
+    assert latest.stage is None
+
+
 def test_model_card_states_decision(tmp_path: Path) -> None:
     ship_card = render_model_card(_entry("ship"))
     assert "SHIP" in ship_card and "Benchmark accuracy" in ship_card

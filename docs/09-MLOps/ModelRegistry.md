@@ -54,9 +54,13 @@ related:
 flowchart LR
     NEW[Candidate version] --> EVAL[Eval gate]
     EVAL -->|pass| STG[staging]
-    STG --> CANARY[Canary via gateway]
+    STG --> CANARY[canary]
     CANARY -->|healthy| PROD[production]
-    PROD --> ARCH[archived on supersede]
+    CANARY -->|regression| REJ[rejected]
+    PROD -->|newer version promoted| SUP[superseded]
+    SUP -->|rollback: re-promote| PROD
+    SUP --> ARCH[archived]
+    REJ --> ARCH
 ```
 
 Promotion requires passing the evaluation gate

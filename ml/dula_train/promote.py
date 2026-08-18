@@ -21,7 +21,7 @@ def main() -> None:
     )
     parser.add_argument("--manifest", default="out/registry.jsonl")
     parser.add_argument("--version", required=True)
-    parser.add_argument("--to-stage", required=True, choices=sorted(STAGES))
+    parser.add_argument("--to-stage", required=True, choices=sorted(s.value for s in STAGES))
     parser.add_argument("--actor", default=None, help="who/what triggered this promotion")
     parser.add_argument("--note", default="", help="free-text reason, e.g. an incident summary")
     args = parser.parse_args()

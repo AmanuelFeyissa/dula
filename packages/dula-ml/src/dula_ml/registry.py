@@ -10,12 +10,28 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from dula_ml.evaluation import EvalReport, GateResult
+
+
+class Stage(StrEnum):
+    """Registry lifecycle stages (docs/09-MLOps/ModelLifecycle.md).
+
+    The single source of truth for valid stage names -- dula_ml.lifecycle derives its
+    transition table and CLI choices from this enum rather than redeclaring the set.
+    """
+
+    STAGING = "staging"
+    CANARY = "canary"
+    PRODUCTION = "production"
+    REJECTED = "rejected"
+    SUPERSEDED = "superseded"
+    ARCHIVED = "archived"
 
 
 class RegistryEntry(BaseModel):
@@ -31,12 +47,10 @@ class RegistryEntry(BaseModel):
     baseline_eval: EvalReport
     gate: GateResult
     decision: Literal["ship", "retire"]
-    # Lifecycle stage (docs/09-MLOps/ModelLifecycle.md): None until promoted past
-    # registration. A stage change is a *new* entry appended by dula_ml.lifecycle.promote,
-    # never a mutation of a past one -- the manifest stays append-only and auditable.
-    stage: (
-        Literal["staging", "canary", "production", "rejected", "superseded", "archived"] | None
-    ) = None
+    # None until promoted past registration. A stage change is a *new* entry appended by
+    # dula_ml.lifecycle.promote, never a mutation of a past one -- the manifest stays
+    # append-only and auditable.
+    stage: Stage | None = None
     created_at: str = Field(default_factory=lambda: dt.datetime.now(dt.UTC).isoformat())
     notes: str = ""
 
@@ -66,7 +80,14 @@ def load_manifest(manifest_path: str | Path) -> list[RegistryEntry]:
 
 
 def latest_shipped(manifest_path: str | Path) -> RegistryEntry | None:
-    shipped = [e for e in load_manifest(manifest_path) if e.decision == "ship"]
+    """The most recently registered candidate that shipped.
+
+    Only considers original registration entries (``stage is None``), not the lifecycle
+    transitions ``dula_ml.lifecycle.promote`` appends afterwards -- a transition entry
+    carries the original ``decision`` forward via ``model_copy`` (see lifecycle.py), so a
+    version later moved to ``rejected``/``archived`` must not be mistaken for a fresh ship.
+    """
+    shipped = [e for e in load_manifest(manifest_path) if e.decision == "ship" and e.stage is None]
     return shipped[-1] if shipped else None
 
 
