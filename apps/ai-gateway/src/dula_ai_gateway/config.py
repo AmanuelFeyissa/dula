@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     openai_model: str = "dula-ai"
     openai_api_key: str = ""
 
+    # Canary rollout (Phase 10/M011, docs/09-MLOps/DeploymentPipelines.md #2). Unset (default)
+    # = no canary: the gateway serves `provider` only, exactly as before. Set both
+    # canary_candidate_model and canary_candidate_base_url to wire a candidate in; the
+    # candidate receives no traffic until canary_weight is raised above 0 -- so a candidate
+    # serving pool can be deployed and its wiring verified before it takes real requests.
+    canary_candidate_model: str = ""
+    canary_candidate_base_url: str = ""
+    canary_candidate_api_key: str = ""
+    canary_weight: float = 0.0
+
     embedding_dim: int = 256
     top_k: int = 5
     max_tokens_per_tenant: int = 200_000

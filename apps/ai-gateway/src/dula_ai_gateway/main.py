@@ -46,6 +46,11 @@ def _make_audit_hook(publisher: EventPublisher):  # type: ignore[no-untyped-def]
                 "subject": rec.subject,
                 "task": rec.task,
                 "model": rec.model,
+                # Set only when a CanaryProvider actually routed this call (M011 PR B); None
+                # for every non-canary provider. Distinct from `model`, which is the outer
+                # (static) provider name -- this is per-call attribution for canary monitoring
+                # (docs/09-MLOps/DeploymentPipelines.md #2).
+                "routed_provider": rec.usage.routed_provider,
                 "tokens": rec.usage.total_tokens,
                 "cached": rec.cached,
                 "input_flags": rec.input_flags,
@@ -58,6 +63,7 @@ def _make_audit_hook(publisher: EventPublisher):  # type: ignore[no-untyped-def]
                 data={
                     "task": rec.task,
                     "model": rec.model,
+                    "routed_provider": rec.usage.routed_provider,
                     "tokens": rec.usage.total_tokens,
                     "cached": rec.cached,
                     "actor": rec.subject,
