@@ -2,8 +2,8 @@
 title: Project State (Current Execution State)
 document_id: STATE-000
 status: Draft
-version: 0.1.0
-last_updated: 2026-08-11
+version: 0.2.0
+last_updated: 2026-08-18
 owner: Engineering leadership
 audience: All contributors (and future context recovery)
 phase: Documentation Bootstrap (M000)
@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Phase 10 — MLOps at Scale (in progress; started on explicit go-ahead) |
-| **CURRENT MILESTONE** | M011 🔄 in progress — MLOps at Scale (PR A merged: registry lifecycle stages) |
-| **STATUS** | M010 done & **closed under CLAUDE.md §11** ([M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md)). A hands-on review of Phase 09's product found the backend solid but the UI read-only, unsearchable, showing approvers as raw UUIDs, storing agent/playbook runs only in memory, and bouncing visibly through Keycloak with no way to switch test personas short of recreating a container. Six PRs (A–F, `main` #17–#22) fixed all five: **A** Dula-themed Keycloak login (no interstitial) + real RP-Initiated Logout; **B** approvals attributed to real usernames + a token-leak fix; **C** filter/search/sort/pagination on alerts/incidents/assets (server-side severity ranking, URL-state-driven UI); **D** triage-edit and create Server Actions, role-aware and OPA-backed; **E** durable agent/playbook run persistence — **ADR-0016**, AI Gateway gains an *optional* Postgres dependency (`RUN_STORE=memory|postgres`, default memory), verified by tearing a FastAPI app down and confirming a run + its approval survive against a fresh instance; **F** replaced a stale, CI-unwired smoke spec with a 16-test per-persona E2E suite (analyst/responder/admin/second-tenant) plus a real axe accessibility sweep that found and fixed a missing `<main>` landmark, browser-default link-color contrast, and two chip color contrasts — all confirmed via re-running axe, not assumed fixed. 262 pytest passing; full E2E suite green 5 consecutive runs; doc-links/naming clean. |
-| **LAST COMPLETED TASK** | M011 PR A: registry lifecycle stages (`dula_ml.lifecycle`, `ml/dula_train/promote.py`) |
-| **CURRENT TASK** | M011 PR B — canary-aware serving + rollback wiring in the LLM Gateway |
-| **NEXT TASK** | M011 PRs C–F: production monitoring/drift/auto-rollback, GPU serving-pool Helm + hardened Argo/DVC pipeline, a second real training candidate on a larger base model, then docs + M011/Phase 10 closure (see `docs/04-MVP-Roadmap/Phase10-MLOps.md`). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. |
+| **CURRENT PHASE** | Phase 10 — MLOps at Scale — ✅ **COMPLETE** |
+| **CURRENT MILESTONE** | M011 ✅ complete — MLOps at Scale |
+| **STATUS** | M011 done & **closed under CLAUDE.md §11** ([M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md)). Five PRs (A–E, `main` #24–#28) delivered the full data→train→eval→register→stage promotion→canary→production→monitor→rollback path: **A** model registry lifecycle stages (`dula_ml.lifecycle`, legal-edge state machine over the append-only manifest); **B** `CanaryProvider` in the LLM Gateway (configurable traffic-fraction routing, per-call attribution via `Usage.routed_provider`, zero behavior change when unconfigured); **C** production drift monitoring + auto-rollback (`ml/dula_train/monitor.py` + a new Argo CronWorkflow, reusing the same gate a new candidate is judged by; manually verified end-to-end against a scratch manifest); **D** a disabled-by-default GPU `serving` Helm component + hardened Argo pipelines (retry/timeout/resource-request discipline for free-tier GPU compute); **E** a real second training candidate (Qwen2.5-3B-Instruct QLoRA on Modal) — **retired** (quality improved 0.62 vs 0.60 but safety regressed 0.75 vs 1.00 refusal rate), registered honestly, same as Phase 04's first candidate. Code review at every PR boundary found and fixed real bugs (a registry semantic break, a promotion race, a hash-collision edge case, an unobservable canary signal, an incorrect PromQL assumption, a probe-timing crash-loop risk, an undocumented egress gap, an incomplete cache-dir redirection, plus several stale doc references) — none deferred. 290 pytest collected / 259 passed / 31 skipped (pre-existing Postgres-dependent) / 0 failed; ruff/mypy-strict clean throughout; CI's Helm/kubeconform battery green on every PR. |
+| **LAST COMPLETED TASK** | M011/Phase 10 build + closure: [M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md) |
+| **CURRENT TASK** | — (M011/Phase 10 complete; awaiting go-ahead for Phase 11) |
+| **NEXT TASK** | Phase 11 (not yet detailed in `docs/04-MVP-Roadmap/Phase11-AdvancedAI.md`; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. Dula AI iterations continue on the now-hardened M011 pipeline, shipping only if a future candidate clears the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -132,7 +132,7 @@ cluster-scale telemetry load test).
 | M008 | Phase 08 — Automation | ✅ Complete (declarative approval-gated playbooks over the agent runtime; grounded reporting; automation API + UI; ingestion throughput benchmark; no-bypass/no-auto-approval safety) |
 | M009 | Phase 09 — Production | ✅ Complete, buildable scope (Helm chart + 4 profile overlays; hardened workloads + Gateway API edge; Kyverno admission + cosign/SBOM release pipeline; air-gap tooling + no-egress assertion; observability + backup/DR; CI deploy job). **GA sign-off operational** (live deploy/pen-test/DR-drill pending real infra). ADR-0014/0015. |
 | M010 | Usability & Durability Hardening | ✅ Complete (Dula-themed sign-in + real logout; usernames not UUIDs; filter/search/sort/pagination; triage-edit + create; durable agent/playbook runs — ADR-0016; per-persona E2E + real a11y fixes). Closed under §11: [M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md). |
-| M011 | Phase 10 — MLOps at Scale | 🔄 In progress (started on explicit go-ahead). PR A merged: registry lifecycle stages. |
+| M011 | Phase 10 — MLOps at Scale | ✅ Complete (registry lifecycle stages; canary-aware serving; production drift monitoring + auto-rollback; GPU serving-pool Helm + hardened Argo pipelines; real second training candidate — **retired**, safety regression despite a quality gain). Closed under §11: [M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md). |
 | M012+ | Phase 11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
@@ -342,3 +342,34 @@ cluster-scale telemetry load test).
   lifecycle transitions carrying the same `decision`) and a concurrency gap (two near-simultaneous
   promotions to `production` could both succeed); both fixed with tests. Verified: ruff/format/
   mypy clean, full workspace pytest green (30/30 in `packages/dula-ml`).
+- 2026-08-18 — **Phase 10/M011 (MLOps at Scale) build + closure.** PRs B–E completed the
+  milestone begun by PR A above: **B** `CanaryProvider` (`packages/dula-ai`) routes a
+  configurable fraction of LLM Gateway traffic to a candidate provider via a deterministic
+  prompt hash, with per-call attribution on a new `Usage.routed_provider` field (no shared
+  mutable state, so concurrent calls can't race each other's attribution) — wired in only when
+  explicitly configured. **C** `dula_ml.monitor.check_production_health()` re-evaluates whatever
+  is `production` against its own recorded baseline on a schedule (`ml/dula_train/monitor.py` +
+  a new Argo CronWorkflow) using the same gate a new candidate is judged by, and calls
+  `dula_ml.lifecycle.rollback()` on regression — manually verified end-to-end (a real
+  promote→regress→rollback round-trip against a scratch manifest, not just unit tests). **D** a
+  disabled-by-default GPU `serving` Helm component (vLLM/llama.cpp behind the same
+  `OpenAICompatProvider` contract) plus generic opt-in `nodeSelector`/`tolerations`/
+  `startupProbe`/`env` capabilities added to the shared Deployment template; hardened both Argo
+  workflows with retry/timeout/resource-request discipline. **E** ran a **real** second training
+  candidate (Qwen2.5-3B-Instruct, real 4-bit QLoRA, Modal L4 GPU) — **retired**: quality beat
+  baseline (0.62 vs 0.60 accuracy) but safety regressed (0.75 vs 1.00 refusal rate, `n_safety=4`),
+  registered honestly in `ml/registry/registry.jsonl`, same honest-retirement precedent as Phase
+  04's first candidate. Code review at every PR boundary found and fixed real issues: a
+  hash-collision edge case in the canary router, a genuinely unobservable canary routing signal
+  (fixed by adding `routed_provider` to the audit log/event), an incorrect PromQL role-label
+  assumption in the (honestly FUTURE-labeled) Prometheus rule, a redundant manifest re-read, a
+  probe-timing crash-loop risk for the GPU component (fixed with an opt-in `startupProbe`), an
+  undocumented egress gap for a bare HF model ID, incomplete cache-directory redirection under
+  the read-only-rootfs posture, and several stale doc references (a hardcoded "Phase 04" in the
+  model-card generator; a `PROJECT_CONTEXT.md` "Still open" list that hadn't been updated since
+  ADR-0014/0015 were decided). Verified: **290 pytest collected / 259 passed / 31 skipped
+  (pre-existing Postgres-dependent) / 0 failed** (confirmed via `--junit-xml`, not eyeballed),
+  ruff/format/mypy-strict clean throughout, CI's `Deploy (helm + policies + air-gap)` job green
+  on every PR (helm/kubeconform weren't available locally this milestone — CI was the
+  authoritative gate, watched to green before each merge). Closed under §11 (M011 Closure +
+  Phase 10 Completion Review). Ready for Phase 11 on go-ahead.

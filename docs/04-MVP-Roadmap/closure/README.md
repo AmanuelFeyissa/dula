@@ -51,3 +51,5 @@ and are verified. If implementation/tests/security are done but docs are not, th
 | M009 — Production (milestone) | [M009-Production-Closure.md](./M009-Production-Closure.md) | COMPLETE (GA sign-off operational) |
 | Phase 09 — Production (phase) | [Phase09-Production-Completion-Review.md](./Phase09-Production-Completion-Review.md) | COMPLETE (GA sign-off operational) |
 | M010 — Usability & Durability Hardening (milestone) | [M010-usability-durability-Closure.md](./M010-usability-durability-Closure.md) | COMPLETE |
+| M011 — MLOps at Scale (milestone) | [M011-mlops-at-scale-Closure.md](./M011-mlops-at-scale-Closure.md) | COMPLETE |
+| Phase 10 — MLOps at Scale (phase) | [Phase10-MLOps-Completion-Review.md](./Phase10-MLOps-Completion-Review.md) | COMPLETE |

@@ -20,8 +20,10 @@ related:
 
 > **Implementation status (Phase 10, CURRENT).** §2 (canary + rollback) is implemented:
 > `CanaryProvider` (`packages/dula-ai/src/dula_ai/providers.py`) routes a configurable fraction
-> of gateway traffic to a candidate; rollback is `dula_ml.lifecycle.rollback()` re-pointing the
-> `production` stage tag, triggered automatically on a detected regression
+> of gateway traffic to a candidate; rollback is `dula_ml.lifecycle.rollback()` appending a new
+> `production` transition for the prior version -- re-designating which version is current,
+> never mutating a past entry (the manifest stays append-only) -- triggered automatically on a
+> detected regression
 > (`ml/dula_train/monitor.py`, scheduled via `deploy/argo/dula-ai-monitor-cronworkflow.yaml`) or
 > manually. §1/§3 (GitOps promotion, profile-aware serving) is implemented for cloud/on-prem via
 > the `serving` Helm component (`deploy/helm/dula/values.yaml`, disabled by default — no Dula AI
@@ -43,7 +45,9 @@ flowchart LR
 
 - The LLM gateway routes a fraction of traffic to the candidate; live quality/safety and
   latency are monitored before full promotion.
-- Rollback = re-point the `production` stage tag ([./ModelRegistry.md](./ModelRegistry.md)).
+- Rollback = appending a new `production` transition for the prior version, re-designating
+  which version is current ([./ModelRegistry.md](./ModelRegistry.md) §5) -- never mutating a
+  past entry; the manifest stays append-only.
 
 ## 3. Profile Awareness
 
