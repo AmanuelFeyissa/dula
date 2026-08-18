@@ -8,6 +8,7 @@ from dula_ai.factory import RagStack, build_offline_stack
 from dula_ai.gateway import AuditHook, LLMGateway
 from dula_ai.knowledge import KnowledgeService
 from dula_ai.providers import (
+    CanaryProvider,
     ExtractiveProvider,
     LLMProvider,
     OllamaProvider,
@@ -20,7 +21,7 @@ from dula_ai.stores import OpenSearchLexicalStore, QdrantVectorStore
 from dula_ai_gateway.config import Settings
 
 
-def _provider(settings: Settings) -> LLMProvider:
+def _base_provider(settings: Settings) -> LLMProvider:
     if settings.provider == "ollama":
         return OllamaProvider(settings.ollama_model, settings.ollama_url)
     if settings.provider == "openai":
@@ -30,6 +31,18 @@ def _provider(settings: Settings) -> LLMProvider:
             api_key=settings.openai_api_key or None,
         )
     return ExtractiveProvider()
+
+
+def _provider(settings: Settings) -> LLMProvider:
+    production = _base_provider(settings)
+    if not settings.canary_candidate_model or not settings.canary_candidate_base_url:
+        return production
+    candidate = OpenAICompatProvider(
+        settings.canary_candidate_model,
+        settings.canary_candidate_base_url,
+        api_key=settings.canary_candidate_api_key or None,
+    )
+    return CanaryProvider(production, candidate, candidate_weight=settings.canary_weight)
 
 
 def _embedder(settings: Settings) -> Embedder:

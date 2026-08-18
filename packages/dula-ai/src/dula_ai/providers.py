@@ -9,7 +9,9 @@ local Ollama server (dev serving); vLLM/llama.cpp adapters follow the same proto
 
 from __future__ import annotations
 
+import hashlib
 import re
+from dataclasses import replace
 from typing import Protocol
 
 from dula_ai.text import estimate_tokens
@@ -123,3 +125,53 @@ class OpenAICompatProvider:
             completion_tokens=int(usage_raw.get("completion_tokens", estimate_tokens(text))),
         )
         return text, usage
+
+
+class CanaryProvider:
+    """Routes a fraction of calls to a candidate provider (docs/09-MLOps/DeploymentPipelines.md
+    #2, ADR-0016's "widen behind the existing interface" seam).
+
+    Implements the same LLMProvider protocol as any other provider, so the LLMGateway and every
+    caller are unaware a canary is involved -- wiring a canary in or out never touches gateway
+    code. Routing is a deterministic hash of the prompt (not raw random): the same (system,
+    user) pair always routes the same way, which is reproducible for tests/debugging and keeps
+    a single conversation's replies from flip-flopping between providers; across many distinct
+    prompts, the fraction routed to `candidate` converges to `candidate_weight`.
+
+    Which provider actually answered travels back out on `Usage.routed_provider` rather than
+    mutating any shared state on this instance, so concurrent calls never race each other's
+    attribution.
+    """
+
+    def __init__(
+        self,
+        production: LLMProvider,
+        candidate: LLMProvider,
+        *,
+        candidate_weight: float,
+        name: str | None = None,
+    ) -> None:
+        if not 0.0 <= candidate_weight <= 1.0:
+            raise ValueError(f"candidate_weight must be in [0, 1], got {candidate_weight}")
+        self._production = production
+        self._candidate = candidate
+        self._weight = candidate_weight
+        self.name = name or f"canary[{production.name}->{candidate.name}]"
+
+    def _route(self, system: str, user: str) -> LLMProvider:
+        if self._weight <= 0.0:
+            return self._production
+        if self._weight >= 1.0:
+            return self._candidate
+        # Hash each part separately (not a delimiter-joined string) so no system/user split
+        # can collide with a different pair that happens to contain the delimiter character.
+        digest = hashlib.sha256(
+            hashlib.sha256(system.encode()).digest() + hashlib.sha256(user.encode()).digest()
+        ).hexdigest()
+        bucket = int(digest[:8], 16) / 0xFFFFFFFF
+        return self._candidate if bucket < self._weight else self._production
+
+    async def generate(self, system: str, user: str, *, max_tokens: int) -> tuple[str, Usage]:
+        chosen = self._route(system, user)
+        text, usage = await chosen.generate(system, user, max_tokens=max_tokens)
+        return text, replace(usage, routed_provider=chosen.name)

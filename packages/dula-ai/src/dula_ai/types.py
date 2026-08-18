@@ -48,6 +48,10 @@ class Citation:
 class Usage:
     prompt_tokens: int
     completion_tokens: int
+    # Which provider actually answered, when routing wasn't static (CanaryProvider). None for
+    # every non-canary provider -- this is per-call attribution, distinct from the outer
+    # provider's own (static) `.name`, so it survives concurrent calls without shared state.
+    routed_provider: str | None = None
 
     @property
     def total_tokens(self) -> int:
