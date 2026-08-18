@@ -63,12 +63,22 @@ spec:
                       --actor scheduled-monitor
 
       - name: step
+        # Same hardening as dula-ai-training-workflow.yaml's `step` (M011 PR D): retry
+        # transient failures, cap runtime.
+        retryStrategy:
+          limit: "2"
+          retryPolicy: OnFailure
+          backoff: { duration: "30s", factor: "2" }
+        activeDeadlineSeconds: 1800
         inputs:
           parameters: [{ name: cmd }]
         container:
           image: "{{workflow.parameters.image}}"
           command: ["bash", "-c"]
           args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
+          resources:
+            requests: { cpu: "1", memory: "2Gi" }
+            limits: { cpu: "2", memory: "4Gi" }
           env:
             - name: HF_TOKEN
               valueFrom:
@@ -77,6 +87,14 @@ spec:
             - { name: work, mountPath: /workspace }
 
       - name: gpu-step
+        # Same hardening as dula-ai-training-workflow.yaml's `gpu-step` (M011 PR D): retry
+        # transient free-tier GPU failures, cap runtime so a stuck re-eval can't silently
+        # consume the whole GPU quota/budget for the day.
+        retryStrategy:
+          limit: "2"
+          retryPolicy: OnFailure
+          backoff: { duration: "30s", factor: "2" }
+        activeDeadlineSeconds: 3600
         inputs:
           parameters: [{ name: cmd }]
         container:
@@ -84,8 +102,8 @@ spec:
           command: ["bash", "-c"]
           args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
           resources:
-            limits:
-              nvidia.com/gpu: 1
+            requests: { cpu: "2", memory: "8Gi" }
+            limits: { cpu: "4", memory: "16Gi", nvidia.com/gpu: 1 }
           env:
             - name: HF_TOKEN
               valueFrom:

@@ -3,7 +3,7 @@ title: Model Registry
 document_id: MLO-003
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-08-18
 owner: MLOps
 audience: AI/ML & platform engineers
 phase: Documentation Bootstrap (M000)

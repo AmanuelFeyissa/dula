@@ -3,7 +3,7 @@ title: Model Lifecycle
 document_id: MLO-007
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-08-18
 owner: MLOps / AI
 audience: AI/ML & platform engineers
 phase: Documentation Bootstrap (M000)
@@ -17,6 +17,14 @@ related:
 
 > **Purpose.** Tie the MLOps pieces into one end-to-end lifecycle from data to retirement,
 > with monitoring and rollback.
+
+> **Implementation status (Phase 10, CURRENT).** The state machine in §1 is implemented
+> (`dula_ml.lifecycle`, `RegistryEntry.stage`) with one simplification: `Monitored` isn't a
+> distinct stage (a `production` entry *is* monitored, via the scheduled job in §3), and
+> `Rollback` isn't a separate stage either -- it's re-promoting a `Superseded` entry straight
+> back to `Production` (`superseded -> production` is a legal edge). §3 (production monitoring)
+> and §4 (rollback) are implemented as described; see
+> `docs/16-Operations/DulaAITrainingRunbook.md` for how to run it.
 
 ## 1. End-to-End Lifecycle
 

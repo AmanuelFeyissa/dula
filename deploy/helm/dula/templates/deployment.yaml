@@ -34,6 +34,14 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if and $c.gpu $c.gpu.enabled $c.gpu.nodeSelector }}
+      nodeSelector:
+        {{- toYaml $c.gpu.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if and $c.gpu $c.gpu.enabled $c.gpu.tolerations }}
+      tolerations:
+        {{- toYaml $c.gpu.tolerations | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml $root.Values.podSecurityContext | nindent 8 }}
       containers:
@@ -57,7 +65,22 @@ spec:
             - secretRef:
                 name: {{ $root.Values.existingSecret }}
                 optional: true
+          {{- with $c.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if and $c.probes $c.probes.enabled }}
+          {{- if and $c.probes.startup $c.probes.startup.enabled }}
+          startupProbe:
+            # Disables liveness/readiness checks until this succeeds -- for slow-starting
+            # containers (e.g. `serving` loading a multi-GB checkpoint) so kubelet doesn't kill
+            # the pod mid-load using timings tuned for fast-starting web services.
+            httpGet:
+              path: {{ $c.probes.startupPath | default $c.probes.path | default "/" }}
+              port: http
+            periodSeconds: {{ $c.probes.startup.periodSeconds | default 10 }}
+            failureThreshold: {{ $c.probes.startup.failureThreshold | default 30 }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: {{ $c.probes.livenessPath | default $c.probes.path | default "/" }}
