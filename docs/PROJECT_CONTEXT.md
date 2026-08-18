@@ -3,7 +3,7 @@ title: Project Context (Long-Lived Knowledge)
 document_id: CTX-000
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-08-18
 owner: Engineering leadership
 audience: All contributors (and future context recovery)
 phase: Documentation Bootstrap (M000)
@@ -73,9 +73,21 @@ artifact hosting** = free GPU (Kaggle/Lightning/Modal) + Hugging Face Hub for da
 keeping GitHub for code/CI (ADR-0012); Primus (ODC-BY/MIT) datasets; QLoRA on Qwen/Mistral.
 **Agent/playbook run persistence** (M010) = the AI Gateway gains an **optional** Postgres
 dependency, `InMemoryRunStore` remaining the offline/air-gapped default (ADR-0016).
+**MLOps at scale** (M011) = the model registry manifest gained a lifecycle **stage** state
+machine (`dula_ml.lifecycle`: candidate→staging→canary→production→superseded/rejected/
+archived, rollback = re-promoting a superseded version); the LLM Gateway gained an optional
+`CanaryProvider` routing a configurable traffic fraction with per-call attribution
+(`Usage.routed_provider`); a scheduled drift check + auto-rollback trigger
+(`ml/dula_train/monitor.py`, `deploy/argo/dula-ai-monitor-cronworkflow.yaml`) reuses the same
+gate a new candidate is judged by; and a disabled-by-default GPU `serving` Helm component
+runs vLLM/llama.cpp behind the same `OpenAICompatProvider` contract. DVC-vs-LakeFS resolved:
+DVC remains sufficient at Primus scale (no ADR change). A second, larger (3B) training
+candidate ran for real and was **retired** — quality improved but safety regressed — the
+platform stays on the general model, same as the first (M004) candidate.
 
-**Still open:** API gateway tech · embedding/reranker model · hardware sizing · SLSA level.
-(Plugin sandbox mechanism is now **DECIDED — ADR-0013**.)
+**Still open:** embedding/reranker model · hardware sizing (both empirical, measured when the
+relevant phase arrives). (API gateway tech is **DECIDED — ADR-0014**; SLSA level is
+**DECIDED — ADR-0015**; plugin sandbox mechanism is **DECIDED — ADR-0013**.)
 
 ## 7. Key Risks (durable watchlist)
 

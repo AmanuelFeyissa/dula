@@ -3,7 +3,7 @@ title: Glossary
 document_id: PRJ-001
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-08-18
 owner: Engineering
 audience: All contributors
 phase: Documentation Bootstrap (M000)
@@ -109,6 +109,18 @@ phase: Documentation Bootstrap (M000)
 - **Ship/retire gate** — the rule that a tuned candidate may ship only if it beats the baseline and does not regress safety; otherwise it is retired.
 - **Model registry** — the record of model versions, variants, metrics, and decisions; artifact naming `dula-<base>-<task>-<method>-vX.Y`.
 - **Model card** — a document stating a model's base, data, metrics, decision, intended use, and safety posture.
+- **Lifecycle stage** — a registered model version's position in `staging → canary → production →
+  superseded/rejected/archived`; every transition is a new, append-only registry entry, never a
+  mutation of a past one.
+- **Canary deployment** — routing a configurable fraction of live traffic to a candidate model
+  alongside production, so its real-world quality/safety/latency can be observed before full
+  promotion.
+- **Rollback (model)** — re-promoting the most recently superseded version straight back to
+  `production`; appending the registry transition is "propose and record" — actually shifting
+  live traffic to match is a separate, reviewed redeploy step.
+- **Drift detection** — scheduled re-evaluation of whatever is currently `production` against its
+  own recorded baseline, to catch quality/safety degradation over time (e.g. from changing
+  knowledge indices), independent of any new candidate being trained.
 
 ## Platform & Ops
 

@@ -3,7 +3,7 @@ title: Dataset Versioning & Lineage
 document_id: MLO-002
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-08-18
 owner: MLOps / Data
 audience: AI/ML & data engineers
 phase: Documentation Bootstrap (M000)
@@ -17,13 +17,20 @@ related:
 
 > **Purpose.** Guarantee datasets are immutable, versioned, and traceable end-to-end.
 
+> **Implementation status (Phase 10, RESOLVED — closed research item).** ADR-0010 flagged
+> LakeFS as a candidate "if DVC scaling proves insufficient." Reviewed at Phase 10/M011: at
+> current (Primus-scale) dataset volumes, DVC remains sufficient. This is not a pending
+> decision — revisit only if a real dataset-scaling problem appears, via a future superseding
+> ADR, not preemptively.
+
 ## 1. Approach
 
 - **DVC** tracks dataset versions with content hashing; large files in object storage
   (MinIO/S3). Metadata (source, license, provenance, pipeline run) stored alongside.
 - Naming: `<domain>-<purpose>-v<major.minor>`
   ([../00-Governance/NamingConventions.md](../00-Governance/NamingConventions.md)).
-- **LakeFS** is a candidate if DVC scaling is insufficient (ADR-0010).
+- **LakeFS** is a candidate if DVC scaling is insufficient (ADR-0010) — not currently needed
+  (see status note above).
 
 ## 2. Immutability & Splits
 

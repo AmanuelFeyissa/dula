@@ -75,8 +75,9 @@ Promotion requires passing the evaluation gate
 
 ## 5. Rollback
 
-- Previous `production` version is retained; rollback = re-point stage tag. Fast and
-  auditable.
+- Previous `production` version is retained (nothing is deleted); rollback appends a new
+  `production` transition for it, re-designating which version is current -- never mutating a
+  past entry, since the manifest stays append-only. Fast and auditable.
 
 ## 6. Access Control & Audit
 
