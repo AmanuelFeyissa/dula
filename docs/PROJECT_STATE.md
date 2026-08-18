@@ -18,12 +18,12 @@ phase: Documentation Bootstrap (M000)
 
 | Field | Value |
 |-------|-------|
-| **CURRENT PHASE** | Between Phase 09 (Production, COMPLETE) and Phase 10 (MLOps at scale, not started) |
-| **CURRENT MILESTONE** | M010 ✅ complete — Usability & Durability Hardening |
+| **CURRENT PHASE** | Phase 10 — MLOps at Scale (in progress; started on explicit go-ahead) |
+| **CURRENT MILESTONE** | M011 🔄 in progress — MLOps at Scale (PR A merged: registry lifecycle stages) |
 | **STATUS** | M010 done & **closed under CLAUDE.md §11** ([M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md)). A hands-on review of Phase 09's product found the backend solid but the UI read-only, unsearchable, showing approvers as raw UUIDs, storing agent/playbook runs only in memory, and bouncing visibly through Keycloak with no way to switch test personas short of recreating a container. Six PRs (A–F, `main` #17–#22) fixed all five: **A** Dula-themed Keycloak login (no interstitial) + real RP-Initiated Logout; **B** approvals attributed to real usernames + a token-leak fix; **C** filter/search/sort/pagination on alerts/incidents/assets (server-side severity ranking, URL-state-driven UI); **D** triage-edit and create Server Actions, role-aware and OPA-backed; **E** durable agent/playbook run persistence — **ADR-0016**, AI Gateway gains an *optional* Postgres dependency (`RUN_STORE=memory|postgres`, default memory), verified by tearing a FastAPI app down and confirming a run + its approval survive against a fresh instance; **F** replaced a stale, CI-unwired smoke spec with a 16-test per-persona E2E suite (analyst/responder/admin/second-tenant) plus a real axe accessibility sweep that found and fixed a missing `<main>` landmark, browser-default link-color contrast, and two chip color contrasts — all confirmed via re-running axe, not assumed fixed. 262 pytest passing; full E2E suite green 5 consecutive runs; doc-links/naming clean. |
-| **LAST COMPLETED TASK** | M010 build + closure: [M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md) |
-| **CURRENT TASK** | — (M010 complete; awaiting go-ahead for Phase 10 / M011) |
-| **NEXT TASK** | Phase 10 / M011 — MLOps at scale (Argo Workflows/MLflow/DVC + GPU serving pools; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. Dula AI iterations (larger base) continue on the Phase 04 pipeline, shipping only if they clear the gate. |
+| **LAST COMPLETED TASK** | M011 PR A: registry lifecycle stages (`dula_ml.lifecycle`, `ml/dula_train/promote.py`) |
+| **CURRENT TASK** | M011 PR B — canary-aware serving + rollback wiring in the LLM Gateway |
+| **NEXT TASK** | M011 PRs C–F: production monitoring/drift/auto-rollback, GPU serving-pool Helm + hardened Argo/DVC pipeline, a second real training candidate on a larger base model, then docs + M011/Phase 10 closure (see `docs/04-MVP-Roadmap/Phase10-MLOps.md`). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
 ## What Exists
@@ -131,7 +131,9 @@ cluster-scale telemetry load test).
 | M007 | Phase 07 — Integrations | ✅ Complete (signed plugin/connector framework; egress allowlist + SSRF; host lifecycle; SIEM/TI/ticketing connectors; plugins API + UI; agent→connector bridge; air-gapped verified) |
 | M008 | Phase 08 — Automation | ✅ Complete (declarative approval-gated playbooks over the agent runtime; grounded reporting; automation API + UI; ingestion throughput benchmark; no-bypass/no-auto-approval safety) |
 | M009 | Phase 09 — Production | ✅ Complete, buildable scope (Helm chart + 4 profile overlays; hardened workloads + Gateway API edge; Kyverno admission + cosign/SBOM release pipeline; air-gap tooling + no-egress assertion; observability + backup/DR; CI deploy job). **GA sign-off operational** (live deploy/pen-test/DR-drill pending real infra). ADR-0014/0015. |
-| M010+ | Phases 10–11 | ⏳ Not started |
+| M010 | Usability & Durability Hardening | ✅ Complete (Dula-themed sign-in + real logout; usernames not UUIDs; filter/search/sort/pagination; triage-edit + create; durable agent/playbook runs — ADR-0016; per-persona E2E + real a11y fixes). Closed under §11: [M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md). |
+| M011 | Phase 10 — MLOps at Scale | 🔄 In progress (started on explicit go-ahead). PR A merged: registry lifecycle stages. |
+| M012+ | Phase 11 | ⏳ Not started |
 
 ## Open Items Requiring Human Action
 
@@ -326,3 +328,17 @@ cluster-scale telemetry load test).
   **RUNNING.md** run-the-system guide (URLs + dev credentials), and the local dev stack was brought
   up end-to-end (web + platform-api + ai-gateway + Keycloak/OPA/Postgres, offline profile). Ready
   for Phase 10 on go-ahead.
+- 2026-08-18 — **Phase 09/M009 GA sign-off item deferred; M010 (Usability & Durability
+  Hardening) built and closed under §11** (six PRs, `main` #17–#23; see the M010 row above and
+  [M010 Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md) for the full
+  account). **Phase 10/M011 (MLOps at Scale) started on explicit go-ahead.** PR A delivered the
+  model registry lifecycle state machine: `RegistryEntry.stage` (docs/09-MLOps/ModelLifecycle.md's
+  Register→Staging→Canary→Production→Superseded/Rejected/Archived edges) and
+  `dula_ml.lifecycle.promote()`, which appends transition entries to the existing append-only
+  JSONL manifest, auto-supersedes the prior production version, and treats rollback as simply
+  re-promoting a superseded version back to production — exposed via a small CLI
+  (`ml/dula_train/promote.py`). A code-review pass before merging caught and fixed a real bug
+  (`latest_shipped()` no longer distinguished original ship/retire registrations from later
+  lifecycle transitions carrying the same `decision`) and a concurrency gap (two near-simultaneous
+  promotions to `production` could both succeed); both fixed with tests. Verified: ruff/format/
+  mypy clean, full workspace pytest green (30/30 in `packages/dula-ml`).
