@@ -85,6 +85,47 @@ def current_production(manifest_path: str | Path) -> RegistryEntry | None:
     return _current_production_from_latest(_latest_by_version(load_manifest(manifest_path)))
 
 
+def previous_production(manifest_path: str | Path) -> RegistryEntry | None:
+    """The version that was `production` immediately before the current one, or None.
+
+    This is a *single-level* rollback target -- the most recently appended `superseded`
+    transition in the manifest, in file order. If that version is itself rolled back and
+    later regresses again, `previous_production` will point at whatever it superseded (which
+    may be the version you just rolled back *from*); this module does not walk further back
+    to find an older known-good version. Bisecting to a known-good version beyond one level
+    is FUTURE scope.
+    """
+    for entry in reversed(load_manifest(manifest_path)):
+        if entry.stage == Stage.SUPERSEDED:
+            return entry
+    return None
+
+
+def rollback(
+    manifest_path: str | Path,
+    *,
+    actor: str | None = None,
+    note: str = "",
+    target: RegistryEntry | None = None,
+) -> RegistryEntry:
+    """Promote the previous production version back to `production`.
+
+    This *is* the rollback described in docs/09-MLOps/DeploymentPipelines.md #2 -- appending
+    the transition is "propose and record" (CLAUDE.md #7, human-in-command): the registry now
+    shows the intended production version, but actually shifting live traffic to it is a
+    separate, reviewed redeploy step, not something this function does.
+
+    Pass `target` when the caller already resolved `previous_production()` (e.g. to decide
+    *whether* to call this at all) so the manifest isn't re-read/re-parsed for the same
+    lookup; otherwise it's resolved here.
+    """
+    if target is None:
+        target = previous_production(manifest_path)
+    if target is None:
+        raise ValueError("no previous production version to roll back to")
+    return promote(manifest_path, target.version, Stage.PRODUCTION, actor=actor, note=note)
+
+
 def _transition_note(
     from_stage: Stage | None, to_stage: Stage, actor: str | None, note: str
 ) -> str:

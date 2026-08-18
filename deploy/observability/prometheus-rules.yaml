@@ -57,3 +57,40 @@ spec:
           annotations:
             summary: "{{ $labels.service }} 5xx rate > 5%"
             description: "Error budget burning; investigate {{ $labels.service }}."
+    - name: dula.mlops.canary
+      # Model rollout monitoring (docs/09-MLOps/ModelLifecycle.md #3, M011 PR C).
+      #
+      # The REAL, working drift-detection + auto-rollback trigger today is
+      # ml/dula_train/monitor.py, run on a schedule by
+      # deploy/argo/dula-ai-monitor-cronworkflow.yaml -- it reuses the same evaluation gate a
+      # new candidate is judged by, and appends a registry rollback transition on regression
+      # (dula_ml.lifecycle.rollback). That job's pass/fail is visible via
+      # `kubectl get workflows -l app.kubernetes.io/component=mlops` / the Argo UI, not
+      # Prometheus, because this project's Helm chart doesn't operate the Argo Workflow
+      # controller (it's an external cluster dependency, like Postgres/Qdrant) and this
+      # repo's own request-level metrics (canary vs production latency/error-rate deltas
+      # per request) need the application /metrics exporter, which does not exist yet
+      # (tracked in PROJECT_STATE.md's "remaining non-blocking items", same gap
+      # dula.slo.requests above already documents). The rule below is real once that exporter
+      # lands, provided it emits a `provider` *role* label with exactly the values
+      # "candidate"/"production" -- not the raw Usage.routed_provider provider name (e.g.
+      # "openai-compat-dula-ai-v2"), which the exporter must map to a role by comparing it
+      # against the currently-configured canary_candidate_model/production provider name at
+      # export time (packages/dula-ai/src/dula_ai/providers.py).
+      rules:
+        - alert: DulaCanaryRegression
+          expr: |
+            sum by (service) (rate(ai_call_errors_total{namespace=~"dula.*",provider="candidate"}[15m]))
+            / sum by (service) (rate(ai_call_total{namespace=~"dula.*",provider="candidate"}[15m]))
+            >
+            sum by (service) (rate(ai_call_errors_total{namespace=~"dula.*",provider="production"}[15m]))
+            / sum by (service) (rate(ai_call_total{namespace=~"dula.*",provider="production"}[15m]))
+            * 1.5
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }} canary error rate exceeds production by 50%+"
+            description: >-
+              Candidate is regressing relative to production over the last 15m; consider
+              lowering canary_weight or running ml/dula_train/monitor.py to check the gate.
