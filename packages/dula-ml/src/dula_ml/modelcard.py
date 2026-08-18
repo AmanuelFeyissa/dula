@@ -47,6 +47,7 @@ def render_model_card(entry: RegistryEntry) -> str:
             "",
             "This candidate did **not** beat the general-model baseline without regressing "
             "safety, so it is **retired** (not shipped). The platform continues on the general "
-            "model with RAG. Retiring a non-improving candidate is a valid Phase 04 outcome.",
+            "model with RAG. Retiring a non-improving candidate is a valid, expected outcome — "
+            "shipping a worse or less-safe model is never acceptable.",
         ]
     return "\n".join(lines) + "\n"
