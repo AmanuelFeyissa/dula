@@ -184,3 +184,84 @@ components:
     resources:
       requests: { cpu: 100m, memory: 192Mi }
       limits: { cpu: "1", memory: 512Mi }
+
+  # GPU model-serving pool (Phase 10/M011, ADR-0005): vLLM behind the LLM Gateway's
+  # OpenAICompatProvider -- no gateway-side code change is needed to point at this, and
+  # CanaryProvider (M011 PR B) can route a fraction of traffic to a second instance of this
+  # same component (a separate release, or a distinct `serving-candidate` copy of these values).
+  #
+  # Disabled by default: no Dula AI checkpoint has shipped yet (the Phase 04 candidate was
+  # retired by the eval gate). Flip `enabled: true` and replace the model in `command` once one
+  # does (M011 PR E). Air-gapped/CPU-only installs should instead point apps/ai-gateway's
+  # PROVIDER at "extractive" (the default, already the case in values-airgapped.yaml) or an
+  # in-cluster llama.cpp server with `gpu.enabled: false` and no GPU resources/scheduling --
+  # this component's `image`/`command`/`gpu`/`resources` are all just values, not template logic,
+  # so an llama.cpp variant is a values-only change, no chart change.
+  serving:
+    enabled: false
+    image: vllm-openai # mirror upstream vllm/vllm-openai into global.imageRegistry (ADR-0015) --
+    # every component here is expected pre-mirrored/signed, never pulled directly, air-gapped or not.
+    replicas: 1
+    port: 8000
+    command:
+      - "vllm"
+      - "serve"
+      # RECOMMENDED: a path to weights pre-staged onto a mounted volume (a separate,
+      # egress-allowed job/CI step syncs the HF Hub artifact ahead of time), not a bare HF
+      # model ID -- this pod runs under the namespace's default-deny-egress NetworkPolicy
+      # (templates/networkpolicy.yaml) like every other component, so a bare model ID (which
+      # `vllm serve` would try to download from huggingface.co at startup) hangs/crash-loops
+      # unless the operator also adds an explicit `networkPolicy.allowedEgressCIDRs` entry for
+      # it. Pre-staging keeps this component consistent with the chart's "nothing pulled from
+      # the public internet" posture (see `image` above) instead of being the one exception.
+      - "REPLACE_WITH_MOUNTED_MODEL_PATH_OR_HF_MODEL_ID"
+      - "--served-model-name"
+      - "dula-ai"
+      - "--port"
+      - "8000"
+    service:
+      enabled: true
+      port: 8000
+    route:
+      enabled: false # internal only -- reached via the ai-gateway's openai_base_url (ClusterIP),
+      # never the public edge.
+    probes:
+      enabled: true
+      path: /health
+      startup:
+        # A multi-GB checkpoint can take minutes to load; without this, the fast startupProbe-
+        # free liveness timings tuned for web services (readinessProbe below) would kill the
+        # pod mid-load, forever.
+        enabled: true
+        periodSeconds: 10
+        failureThreshold: 60 # up to ~10 minutes before the pod is considered stuck
+    # vLLM/PyTorch/Triton write to several cache dirs, none of which are /tmp (the only
+    # writable mount every component gets) by default -- containerSecurityContext.
+    # readOnlyRootFilesystem is a global default (podSecurityContext/containerSecurityContext
+    # apply uniformly, no per-component override in this chart), so without redirecting all of
+    # them the pod would crash-loop the first time it downloads a model or JIT-compiles a
+    # kernel.
+    env:
+      - name: HF_HOME
+        value: /tmp/hf-cache
+      - name: XDG_CACHE_HOME
+        value: /tmp/xdg-cache
+      - name: TRITON_CACHE_DIR
+        value: /tmp/triton-cache
+      - name: TORCHINDUCTOR_CACHE_DIR
+        value: /tmp/inductor-cache
+    hpa:
+      enabled: false # GPU pools are pre-provisioned/fixed-size, not CPU-scaled.
+    pdb:
+      enabled: false # single replica by default; a PDB here would block all voluntary eviction.
+    gpu:
+      enabled: true
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+    resources:
+      requests: { cpu: "2", memory: 8Gi, nvidia.com/gpu: 1 }
+      limits: { cpu: "4", memory: 16Gi, nvidia.com/gpu: 1 }

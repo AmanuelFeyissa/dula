@@ -51,14 +51,30 @@ spec:
             arguments:
               parameters:
                 [{ name: cmd, value: "python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --manifest out/registry.jsonl --card-out out/model_card.md" }]
+        # `decide` above already *registers* the candidate (docs/09-MLOps/ModelRegistry.md):
+        # a manifest entry with decision=ship|retire and no stage. This pipeline intentionally
+        # ends there -- promotion through staging/canary/production
+        # (ml/dula_train/promote.py, dula_ml.lifecycle, M011 PR A) is a separate,
+        # human-triggered step, never auto-run by the training pipeline.
 
     - name: step
+      # Free-tier/transient infra hardening (M011 PR D): retry a couple of times before
+      # failing the whole pipeline, and cap runtime so a hang can't burn the GPU quota this
+      # shares with gpu-step below.
+      retryStrategy:
+        limit: "2"
+        retryPolicy: OnFailure
+        backoff: { duration: "30s", factor: "2" }
+      activeDeadlineSeconds: 3600
       inputs:
         parameters: [{ name: cmd }]
       container:
         image: "{{workflow.parameters.image}}"
         command: ["bash", "-c"]
         args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
+        resources:
+          requests: { cpu: "1", memory: "2Gi" }
+          limits: { cpu: "2", memory: "4Gi" }
         env:
           - name: HF_TOKEN
             valueFrom:
@@ -67,6 +83,14 @@ spec:
           - { name: work, mountPath: /workspace }
 
     - name: gpu-step
+      # Free-tier GPU runs (Kaggle/Lightning/Modal, ADR-0012) fail transiently more often than
+      # dedicated infra (preemption, OOM, flaky downloads) -- retry before failing the whole
+      # pipeline, and cap runtime so a hang can't silently consume the whole GPU quota/budget.
+      retryStrategy:
+        limit: "2"
+        retryPolicy: OnFailure
+        backoff: { duration: "30s", factor: "2" }
+      activeDeadlineSeconds: 7200
       inputs:
         parameters: [{ name: cmd }]
       container:
@@ -74,8 +98,8 @@ spec:
         command: ["bash", "-c"]
         args: ["PYTHONPATH=ml {{inputs.parameters.cmd}}"]
         resources:
-          limits:
-            nvidia.com/gpu: 1
+          requests: { cpu: "2", memory: "8Gi" }
+          limits: { cpu: "4", memory: "16Gi", nvidia.com/gpu: 1 }
         env:
           - name: HF_TOKEN
             valueFrom:
