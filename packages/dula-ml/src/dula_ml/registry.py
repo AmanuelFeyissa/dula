@@ -31,6 +31,12 @@ class RegistryEntry(BaseModel):
     baseline_eval: EvalReport
     gate: GateResult
     decision: Literal["ship", "retire"]
+    # Lifecycle stage (docs/09-MLOps/ModelLifecycle.md): None until promoted past
+    # registration. A stage change is a *new* entry appended by dula_ml.lifecycle.promote,
+    # never a mutation of a past one -- the manifest stays append-only and auditable.
+    stage: (
+        Literal["staging", "canary", "production", "rejected", "superseded", "archived"] | None
+    ) = None
     created_at: str = Field(default_factory=lambda: dt.datetime.now(dt.UTC).isoformat())
     notes: str = ""
 

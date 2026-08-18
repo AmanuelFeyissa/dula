@@ -25,13 +25,22 @@ related:
 > (e.g. to the Hugging Face Hub, ADR-0012). MLflow remains the experiment system of record; this
 > manifest is the artifact-side, git/HF-friendly record. Artifact naming follows
 > `dula-<base>-<task>-<method>-vX.Y`.
+>
+> **Implementation status (Phase 10, CURRENT).** Stage transitions from §3/§5 below are
+> implemented in `dula_ml.lifecycle` (`promote()`, `current_production()`), exposed via the
+> `ml/dula_train/promote.py` CLI. Each transition is a new entry appended to the same
+> append-only manifest (never a mutation of a past one); the state machine enforces legal edges
+> only (e.g. a candidate must pass through `staging` and `canary` before `production`); and
+> rollback (§5) is implemented exactly as described — re-promoting a `superseded` version
+> straight back to `production`, which automatically supersedes whatever is currently there.
 
 ## 1. What the Registry Holds
 
 - Model versions (base + adapters), with lineage to dataset/experiment.
 - Variants per version (full, INT8, INT4, GGUF/AWQ) for different hardware.
 - Evaluation/benchmark reports attached to each version.
-- Stage tags: `staging`, `production`, `archived`.
+- Stage tags: `staging`, `canary`, `production`, `rejected`, `superseded`, `archived`
+  (`dula_ml.lifecycle.STAGES`).
 - Naming per [../00-Governance/NamingConventions.md](../00-Governance/NamingConventions.md)
   (`dula-<base>-<task>-<method>-vX.Y`).
 
