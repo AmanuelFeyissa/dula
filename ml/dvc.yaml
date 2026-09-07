@@ -12,6 +12,16 @@ stages:
       - ml/data/train.jsonl
       - ml/data/val.jsonl
 
+  prepare_safety_data:
+    # hh-rlhf harmless-base (MIT) -- DPO safety-restoration data (docs/08-AI/FineTuningStrategy.md).
+    cmd: PYTHONPATH=ml python -m dula_train.pref_data_prep --out ml/data
+    deps:
+      - ml/dula_train/pref_data_prep.py
+      - ml/evaluation/benchmark_seed.json
+    outs:
+      - ml/data/pref_train.jsonl
+      - ml/data/pref_val.jsonl
+
   train:
     cmd: PYTHONPATH=ml python -m dula_train.train_qlora
     deps:
@@ -21,23 +31,35 @@ stages:
     outs:
       - out/dula-qlora
 
-  eval_candidate:
-    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model out/dula-qlora --label candidate --out out/candidate.json
+  train_dpo:
+    # Safety-restoration pass over the SFT output (both prior candidates regressed
+    # safety_refusal_rate vs their own base; see ml/dula_train/train_dpo.py docstring).
+    cmd: PYTHONPATH=ml python -m dula_train.train_dpo --base-model out/dula-qlora
     deps:
+      - ml/dula_train/train_dpo.py
       - out/dula-qlora
+      - ml/data/pref_train.jsonl
+      - ml/data/pref_val.jsonl
+    outs:
+      - out/dula-qlora-dpo
+
+  eval_candidate:
+    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model out/dula-qlora-dpo --label candidate --out out/candidate.json
+    deps:
+      - out/dula-qlora-dpo
       - ml/evaluation/benchmark_seed.json
     outs:
       - out/candidate.json
 
   eval_baseline:
-    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model Qwen/Qwen2.5-3B-Instruct --label baseline --out out/baseline.json
+    cmd: PYTHONPATH=ml python -m dula_train.eval_runner --model Qwen/Qwen2.5-7B-Instruct --label baseline --out out/baseline.json
     deps:
       - ml/evaluation/benchmark_seed.json
     outs:
       - out/baseline.json
 
   decide:
-    cmd: PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --manifest out/registry.jsonl --card-out out/model_card.md
+    cmd: PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --base-model Qwen/Qwen2.5-7B-Instruct --dataset-version "primus-instruct@v1+hh-rlhf-harmless-base@v1" --method qlora+dpo --manifest out/registry.jsonl --card-out out/model_card.md
     deps:
       - out/candidate.json
       - out/baseline.json

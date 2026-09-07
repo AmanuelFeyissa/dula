@@ -29,6 +29,7 @@ def make_entry(
     adapter_uri: str | None = None,
     weight_sha256: str | None = None,
     min_quality_delta: float = 0.0,
+    method: str = "qlora",
 ) -> RegistryEntry:
     candidate = EvalReport.model_validate_json(Path(candidate_report).read_text(encoding="utf-8"))
     baseline = EvalReport.model_validate_json(Path(baseline_report).read_text(encoding="utf-8"))
@@ -37,7 +38,7 @@ def make_entry(
         name="dula-ai",
         version=version,
         base_model=base_model,
-        method="qlora",
+        method=method,  # type: ignore[arg-type]
         dataset_version=dataset_version,
         adapter_uri=adapter_uri,
         weight_sha256=weight_sha256,
@@ -58,6 +59,7 @@ def main() -> None:
     parser.add_argument("--adapter-uri", default=None)
     parser.add_argument("--manifest", default="out/registry.jsonl")
     parser.add_argument("--card-out", default="out/model_card.md")
+    parser.add_argument("--method", default="qlora", choices=["sft", "lora", "qlora", "qlora+dpo"])
     args = parser.parse_args()
 
     entry = make_entry(
@@ -67,6 +69,7 @@ def main() -> None:
         version=args.version,
         dataset_version=args.dataset_version,
         adapter_uri=args.adapter_uri,
+        method=args.method,
     )
     append_entry(entry, args.manifest)
     Path(args.card_out).parent.mkdir(parents=True, exist_ok=True)

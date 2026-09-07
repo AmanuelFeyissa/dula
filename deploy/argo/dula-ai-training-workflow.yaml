@@ -14,7 +14,7 @@ spec:
   arguments:
     parameters:
       - name: base-model
-        value: "Qwen/Qwen2.5-3B-Instruct"
+        value: "Qwen/Qwen2.5-7B-Instruct"
       - name: image
         value: "ghcr.io/amanuelfeyissa/dula-ml:latest" # built from ml/ + packages/dula-ml
   volumeClaimTemplates:
@@ -32,15 +32,25 @@ spec:
             template: step
             arguments:
               parameters: [{ name: cmd, value: "python -m dula_train.data_prep --out ml/data" }]
+          - name: prepare-safety-data
+            template: step
+            arguments:
+              parameters: [{ name: cmd, value: "python -m dula_train.pref_data_prep --out ml/data" }]
         - - name: train
             template: gpu-step
             arguments:
               parameters: [{ name: cmd, value: "python -m dula_train.train_qlora" }]
+        - - name: train-dpo
+            # Safety-restoration pass (both prior candidates regressed safety_refusal_rate vs
+            # their own base regardless of size -- ml/dula_train/train_dpo.py's docstring).
+            template: gpu-step
+            arguments:
+              parameters: [{ name: cmd, value: "python -m dula_train.train_dpo --base-model out/dula-qlora" }]
         - - name: eval-candidate
             template: gpu-step
             arguments:
               parameters:
-                [{ name: cmd, value: "python -m dula_train.eval_runner --model out/dula-qlora --label candidate --out out/candidate.json" }]
+                [{ name: cmd, value: "python -m dula_train.eval_runner --model out/dula-qlora-dpo --label candidate --out out/candidate.json" }]
           - name: eval-baseline
             template: gpu-step
             arguments:
@@ -50,7 +60,7 @@ spec:
             template: step
             arguments:
               parameters:
-                [{ name: cmd, value: "python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --manifest out/registry.jsonl --card-out out/model_card.md" }]
+                [{ name: cmd, value: "python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --base-model {{workflow.parameters.base-model}} --method qlora+dpo --manifest out/registry.jsonl --card-out out/model_card.md" }]
         # `decide` above already *registers* the candidate (docs/09-MLOps/ModelRegistry.md):
         # a manifest entry with decision=ship|retire and no stage. This pipeline intentionally
         # ends there -- promotion through staging/canary/production

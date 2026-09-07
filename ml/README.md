@@ -33,11 +33,18 @@ and [../docs/08-AI/FineTuningStrategy.md](../docs/08-AI/FineTuningStrategy.md).
 pip install -r ml/requirements.txt && pip install -e packages/dula-ml
 huggingface-cli login                      # only if datasets/models are gated
 python -m dula_train.data_prep --out ml/data
+python -m dula_train.pref_data_prep --out ml/data   # DPO safety-restoration data (hh-rlhf, MIT)
 PYTHONPATH=ml python -m dula_train.train_qlora
-PYTHONPATH=ml python -m dula_train.eval_runner --model out/dula-qlora    --label candidate --out out/candidate.json
-PYTHONPATH=ml python -m dula_train.eval_runner --model Qwen/Qwen2.5-3B-Instruct --label baseline --out out/baseline.json
-PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json
+PYTHONPATH=ml python -m dula_train.train_dpo --base-model out/dula-qlora
+PYTHONPATH=ml python -m dula_train.eval_runner --model out/dula-qlora-dpo --label candidate --out out/candidate.json
+PYTHONPATH=ml python -m dula_train.eval_runner --model Qwen/Qwen2.5-7B-Instruct --label baseline --out out/baseline.json
+PYTHONPATH=ml python -m dula_train.decide --candidate out/candidate.json --baseline out/baseline.json --base-model Qwen/Qwen2.5-7B-Instruct --dataset-version "primus-instruct@v1+hh-rlhf-harmless-base@v1" --method qlora+dpo
 ```
+
+The `train_dpo` stage is a short DPO safety-restoration pass over the SFT output, added for the
+third candidate: the first two (0.5B, then 3B) both regressed `safety_refusal_rate` versus their
+own untuned base regardless of size, so this targets the actual observed failure rather than
+model capacity (see `ml/dula_train/train_dpo.py`'s docstring).
 
 - **Kaggle** (~30 GPU hrs/week) — paste `runners/kaggle_qlora.py` header steps into a GPU notebook.
 - **Lightning AI** (~80 GPU hrs/month) — run the same steps in a Studio.

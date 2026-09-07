@@ -62,6 +62,21 @@ flowchart LR
   ([./EvaluationStrategy.md](./EvaluationStrategy.md),
   [../15-Testing/AIEvaluation.md](../15-Testing/AIEvaluation.md)).
 
+## 5a. Safety-Restoration Pass (EXPERIMENTAL, distinct from Stage 14)
+
+Both real Dula AI candidates to date (0.5B, then 3B) regressed `safety_refusal_rate` versus
+their own untuned base after plain SFT, regardless of model size — SFT on task data with no
+counterweight reliably erodes a base model's refusal behavior. The third candidate adds a short
+**DPO pass over the SFT output**, targeting refusal specifically, using Anthropic's hh-rlhf
+`harmless-base` split (MIT) as human-labelled harmlessness-preference data
+(`ml/dula_train/train_dpo.py`, `packages/dula-ml/src/dula_ml/preference.py`).
+
+This is **narrower than, and not an advance of,** the general "Preference opt (DPO/RLAIF)" row
+in §2, which remains **RESEARCH (Stage 14)** — that row is about climbing the staged capability
+ladder via preference optimization; this pass exists purely to correct an already-diagnosed
+safety regression, is judged by the exact same accuracy+safety gate as any other candidate, and
+does not itself justify moving Dula AI's overall strategy stage.
+
 ## 6. Serving Adapters
 
 - LoRA adapters served via the runtime (vLLM supports adapters); quantized variants

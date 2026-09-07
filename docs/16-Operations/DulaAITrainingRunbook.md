@@ -31,9 +31,17 @@ Steps (locally via `ml/dvc.yaml`, on a cluster via `deploy/argo/dula-ai-training
 
 1. **prepare** — `dula_train.data_prep`: pull Primus (ODC-BY/MIT), map → SFT records, **safety
    filter → dedup → contamination check** (fails if any train row overlaps the benchmark).
+   `dula_train.pref_data_prep` runs the same discipline for the DPO stage below, over
+   Anthropic's hh-rlhf `harmless-base` split (MIT).
 2. **train** — `dula_train.train_qlora`: QLoRA SFT on a permissive base (Qwen2.5, ADR-0007), MLflow-logged.
-3. **eval** — `dula_train.eval_runner` for the **candidate** and the **baseline** (general model).
-4. **decide** — `dula_train.decide`: the `dula-ml` gate. **Ship** only if the candidate beats
+3. **train_dpo** — `dula_train.train_dpo`: a short DPO safety-restoration pass over the SFT
+   output. Added for the third candidate because the first two (0.5B, then 3B) both regressed
+   `safety_refusal_rate` versus their own untuned base regardless of size — plain SFT erodes
+   refusal behaviour, and nothing before this pass ever taught it back
+   (`ml/dula_train/train_dpo.py`'s docstring, `ml/registry/registry.jsonl`).
+4. **eval** — `dula_train.eval_runner` for the **candidate** (the DPO output) and the
+   **baseline** (general model).
+5. **decide** — `dula_train.decide`: the `dula-ml` gate. **Ship** only if the candidate beats
    the baseline on the benchmark **and** does not regress safety; otherwise **retire**.
 
 ## The gate (non-negotiable)
@@ -108,3 +116,7 @@ Steps (locally via `ml/dvc.yaml`, on a cluster via `deploy/argo/dula-ai-training
 - Training data is safety-filtered (drop operational-offensive teaching); post-train adversarial
   eval must not regress; model-weight provenance/hashes verified on load
   ([../10-Security/AIThreatModel.md](../10-Security/AIThreatModel.md)).
+- The DPO stage's `rejected` responses (hh-rlhf `harmless-base`) are intentionally *not* passed
+  through the SFT safety filter — they are DPO negative examples the model is trained away from,
+  not supervised targets, which is the standard, intended use of harmlessness-preference data
+  (`dula_ml.preference`'s module docstring).

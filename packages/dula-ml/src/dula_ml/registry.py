@@ -38,7 +38,7 @@ class RegistryEntry(BaseModel):
     name: str
     version: str
     base_model: str
-    method: Literal["sft", "lora", "qlora"] = "qlora"
+    method: Literal["sft", "lora", "qlora", "qlora+dpo"] = "qlora"
     dataset_version: str
     adapter_uri: str | None = None
     artifact_uri: str | None = None

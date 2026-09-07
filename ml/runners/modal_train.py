@@ -86,16 +86,16 @@ def validate() -> dict[str, object]:
     secrets=[modal.Secret.from_name("huggingface")],
 )
 def full(
-    base_model: str = "Qwen/Qwen2.5-3B-Instruct",
-    version: str = "0.2",
+    base_model: str = "Qwen/Qwen2.5-7B-Instruct",
+    version: str = "0.3",
     use_reasoning: bool = False,
     hf_repo: str = "AmanuelFeyissa/dula-ai",
 ) -> dict[str, object]:
-    """Real run: prepare (Primus) -> QLoRA train -> eval candidate vs baseline -> decide.
+    """Real run: prepare (Primus + hh-rlhf) -> QLoRA train -> DPO -> eval vs baseline -> decide.
 
-    3B base + real 4-bit QLoRA by default (M011 PR E, docs/08-AI/TrainingStrategy.md's actual
-    target -- the 0.5B/fp16 config used for the first, Phase 04 run was deliberately smaller to
-    validate the pipeline cheaply; TrainConfig()'s own defaults are this 3B/QLoRA config).
+    7B base + real 4-bit QLoRA plus a DPO safety-restoration pass by default (the third
+    candidate -- the first two, 0.5B fp16 and 3B QLoRA, both regressed safety_refusal_rate vs
+    their own untuned base regardless of size; see ml/dula_train/train_dpo.py's docstring).
     Pushes the merged model to HF only if the gate says ship. Returns the eval reports so the
     caller registers locally.
     """
@@ -105,10 +105,18 @@ def full(
 
     sys.path.insert(0, "/root/ml")
     from dula_train.benchmark_fetch import build as build_bench
-    from dula_train.config import DatasetConfig, EvalConfig, TrainConfig
+    from dula_train.config import (
+        DatasetConfig,
+        DPOConfig,
+        EvalConfig,
+        PreferenceDatasetConfig,
+        TrainConfig,
+    )
     from dula_train.data_prep import build as build_data
     from dula_train.decide import make_entry
     from dula_train.eval_runner import run as eval_run
+    from dula_train.pref_data_prep import build as build_pref_data
+    from dula_train.train_dpo import train as train_dpo
     from dula_train.train_qlora import train
 
     build_bench(seed_file=BENCH_SEED, out_file=BENCH)
@@ -122,12 +130,23 @@ def full(
         val_fraction=ds.val_fraction,
         seed=ds.seed,
     )
+    pref_ds = PreferenceDatasetConfig()
+    build_pref_data(
+        dataset_id=pref_ds.dataset_id,
+        data_dir=pref_ds.data_dir,
+        license=pref_ds.license,
+        benchmark_file=BENCH,
+        out_dir="data",
+        val_fraction=pref_ds.val_fraction,
+        seed=pref_ds.seed,
+    )
     # Real 4-bit QLoRA (TrainConfig's own default). If merge_and_unload() fails on the 4-bit
     # base (train_qlora.py already handles this), the adapter is saved on its own -- eval_runner
     # loads it fine either way, since transformers' from_pretrained applies a PEFT adapter
     # automatically when it detects adapter_config.json (peft is in ml/requirements.txt).
     cfg = TrainConfig(base_model=base_model)
-    out_dir = train(cfg)
+    sft_dir = train(cfg)
+    out_dir = train_dpo(DPOConfig(base_model=sft_dir))
 
     eval_run(
         EvalConfig(
@@ -144,7 +163,8 @@ def full(
         baseline_report="out/baseline.json",
         base_model=base_model,
         version=version,
-        dataset_version=ds.instruct_dataset,
+        dataset_version=f"{ds.instruct_dataset}+{pref_ds.dataset_id}/{pref_ds.data_dir}",
+        method="qlora+dpo",
     )
 
     adapter_uri = None

@@ -22,7 +22,7 @@ phase: Documentation Bootstrap (M000)
 | **CURRENT MILESTONE** | M011 ✅ complete — MLOps at Scale |
 | **STATUS** | M011 done & **closed under CLAUDE.md §11** ([M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md)). Five PRs (A–E, `main` #24–#28) delivered the full data→train→eval→register→stage promotion→canary→production→monitor→rollback path: **A** model registry lifecycle stages (`dula_ml.lifecycle`, legal-edge state machine over the append-only manifest); **B** `CanaryProvider` in the LLM Gateway (configurable traffic-fraction routing, per-call attribution via `Usage.routed_provider`, zero behavior change when unconfigured); **C** production drift monitoring + auto-rollback (`ml/dula_train/monitor.py` + a new Argo CronWorkflow, reusing the same gate a new candidate is judged by; manually verified end-to-end against a scratch manifest); **D** a disabled-by-default GPU `serving` Helm component + hardened Argo pipelines (retry/timeout/resource-request discipline for free-tier GPU compute); **E** a real second training candidate (Qwen2.5-3B-Instruct QLoRA on Modal) — **retired** (quality improved 0.62 vs 0.60 but safety regressed 0.75 vs 1.00 refusal rate), registered honestly, same as Phase 04's first candidate. Code review at every PR boundary found and fixed real bugs (a registry semantic break, a promotion race, a hash-collision edge case, an unobservable canary signal, an incorrect PromQL assumption, a probe-timing crash-loop risk, an undocumented egress gap, an incomplete cache-dir redirection, plus several stale doc references) — none deferred. 290 pytest collected / 259 passed / 31 skipped (pre-existing Postgres-dependent) / 0 failed; ruff/mypy-strict clean throughout; CI's Helm/kubeconform battery green on every PR. |
 | **LAST COMPLETED TASK** | M011/Phase 10 build + closure: [M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md) |
-| **CURRENT TASK** | — (M011/Phase 10 complete; awaiting go-ahead for Phase 11) |
+| **CURRENT TASK** | Third Dula AI candidate: pipeline code complete (Qwen2.5-7B QLoRA + a new DPO safety-restoration pass), **pending the actual Kaggle GPU run** — the code cannot be exercised end-to-end on the local, GPU-less machine. Phase 11 itself awaits separate go-ahead. |
 | **NEXT TASK** | Phase 11 (not yet detailed in `docs/04-MVP-Roadmap/Phase11-AdvancedAI.md`; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. Dula AI iterations continue on the now-hardened M011 pipeline, shipping only if a future candidate clears the gate. |
 | **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
 
@@ -373,3 +373,23 @@ cluster-scale telemetry load test).
   on every PR (helm/kubeconform weren't available locally this milestone — CI was the
   authoritative gate, watched to green before each merge). Closed under §11 (M011 Closure +
   Phase 10 Completion Review). Ready for Phase 11 on go-ahead.
+- 2026-08-30 — **Third Dula AI candidate: recipe change, pipeline code complete.** Evaluated
+  `MakazhanAlpamys/Soup` (a third-party fine-tuning CLI) at the user's request: its layer
+  streaming feature targets model *capacity*, but both prior candidates (0.5B, then 3B) failed
+  on *safety* — each regressed `safety_refusal_rate` versus its own untuned base regardless of
+  size, because nothing in the pipeline ever taught refusal back after SFT. Decision: skip Soup
+  (wrong axis, and its one relevant capability — DPO — is already available via the already-
+  vendored `trl`); instead added a DPO safety-restoration pass. New: `dula_ml.preference`
+  (torch-free `PreferenceRecord` + hh-rlhf mapper, dedup, contamination check — 6 new tests,
+  46/46 passing, ruff/mypy-strict clean), `dula_train.pref_data_prep` (Anthropic hh-rlhf
+  `harmless-base`, MIT-verified via the HF API), `dula_train.train_dpo` (trl `DPOTrainer` over
+  the SFT output, PEFT-adapter reference model, no extra VRAM). `TrainConfig`'s base model
+  bumped 3B→7B (the docstring already anticipated 7B fitting a free T4/L4; safety, not capacity,
+  was always the actual gap). `registry.RegistryEntry.method` gained `"qlora+dpo"`. Wired into
+  `ml/dvc.yaml`, `ml/runners/kaggle_qlora.py` (the user's free-GPU host), `ml/runners/modal_train.py`,
+  and `deploy/argo/dula-ai-training-workflow.yaml`, so all four run paths agree. No ADR needed —
+  ADR-0010 governs tracking/registry/pipelines, not the trainer library; ADR-0007's model-size
+  choice was already "empirical." **Not yet run**: the actual Kaggle GPU training (SFT → DPO →
+  eval → decide) requires the user's Kaggle account/GPU quota, which this session cannot access;
+  a CPU `--smoke` flow check exists on both `train_qlora` and `train_dpo` to validate the wiring
+  cheaply first. The ship/retire outcome will be recorded here once that run completes.
