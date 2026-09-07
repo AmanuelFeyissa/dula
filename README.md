@@ -1,5 +1,21 @@
 # Dula — Cybersecurity AI Platform
 
+<p align="center">
+  <img src="docs/assets/screenshots/dashboard.png" alt="Dula situation-overview dashboard" width="850" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/-Python%203.12-3776AB?logo=python&logoColor=white" alt="Python 3.12" />
+  <img src="https://img.shields.io/badge/-FastAPI-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/-Next.js-000000?logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/-Kubernetes-326CE5?logo=kubernetes&logoColor=white" alt="Kubernetes" />
+  <img src="https://img.shields.io/badge/-Keycloak-4D4D4D?logo=keycloak&logoColor=white" alt="Keycloak" />
+  <img src="https://img.shields.io/badge/-Qdrant-DC244C?logoColor=white" alt="Qdrant" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Apache-2.0 license" /></a>
+</p>
+
 > **Dula** is from the Oromo language — *Duulaa* (a warrior/knight), *Abbaa Duulaa* (a
 > traditional war leader/defense commander). Naming decided in [ADR-0001](docs/adr/ADR-0001-product-naming.md).
 
@@ -32,6 +48,34 @@ for exactly what that does and doesn't mean.
 Full detail, with every verification claim and what was deferred, in
 [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) (updated after every milestone) and the
 [per-milestone closure reports](docs/04-MVP-Roadmap/closure/).
+
+## Screenshots
+
+All captured against the actual running stack (Postgres/Keycloak/OPA in Docker, the real
+FastAPI services, the real Next.js app) — nothing staged or mocked.
+
+<table>
+<tr>
+<td width="50%">
+  <img src="docs/assets/screenshots/ask-dula.png" alt="Ask Dula: grounded answer with cited evidence" />
+  <br /><sub><strong>Ask Dula</strong> — answers grounded in retrieved evidence, with citations back to the source</sub>
+</td>
+<td width="50%">
+  <img src="docs/assets/screenshots/cyber-intel.png" alt="Cyber Intelligence: IOC and ATT&CK extraction" />
+  <br /><sub><strong>Cyber Intelligence</strong> — an advisory turned into defanged IOCs, ATT&CK techniques, and a STIX 2.1 bundle</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+  <img src="docs/assets/screenshots/agents.png" alt="Investigation agent run, awaiting human approval on a consequential step" />
+  <br /><sub><strong>Agent runtime</strong> — read-only steps run on their own; the consequential step (creating a ticket) stops and waits for a human</sub>
+</td>
+<td width="50%">
+  <img src="docs/assets/screenshots/signin.png" alt="Dula-themed Keycloak sign-in page" />
+  <br /><sub><strong>Sign-in</strong> — a themed Keycloak page, not the default Keycloak UI</sub>
+</td>
+</tr>
+</table>
 
 ## Status & Honesty Notes
 
