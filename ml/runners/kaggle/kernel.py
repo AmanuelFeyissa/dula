@@ -19,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-MODE = "smoke"
+MODE = "full"
 # Resume switch: a staged SFT adapter (printed by pipeline.py as hf://<repo>/<path>) lets a
 # second session skip SFT after a capped or crashed run. Empty = train SFT.
 SFT_FROM = ""
