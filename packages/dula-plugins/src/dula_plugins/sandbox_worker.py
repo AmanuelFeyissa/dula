@@ -84,8 +84,11 @@ def _isolate(max_memory_bytes: int) -> None:
     if sys.platform.startswith("linux"):
         # Unprivileged user namespaces may be disabled: then this degrades, but the brokered
         # network (no socket in the worker's hands) still holds.
-        with contextlib.suppress(AttributeError, OSError):
-            os.unshare(os.CLONE_NEWUSER | os.CLONE_NEWNET)  # type: ignore[attr-defined]
+        unshare = getattr(os, "unshare", None)
+        flags = getattr(os, "CLONE_NEWUSER", 0) | getattr(os, "CLONE_NEWNET", 0)
+        if unshare is not None and flags:
+            with contextlib.suppress(OSError):
+                unshare(flags)
     with contextlib.suppress(ImportError, ValueError, OSError):
         import resource  # POSIX only
 
