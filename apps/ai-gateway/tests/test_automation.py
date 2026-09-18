@@ -213,3 +213,13 @@ def test_trigger_validation_and_authz(env: tuple[TestClient, Holder]) -> None:
         json={"playbook": "triage-enrich-ticket", "interval_seconds": 600},
     )
     assert denied.status_code == 403
+
+
+def test_report_pdf_download(env: tuple[TestClient, Holder]) -> None:
+    client, _ = env
+    run_id = _start(client)["run_id"]
+    resp = client.get(f"/api/v1/automation/runs/{run_id}/report.pdf")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.headers["content-disposition"].endswith(f'"dula-report-{run_id}.pdf"')
+    assert resp.content.startswith(b"%PDF-")

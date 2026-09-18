@@ -85,6 +85,11 @@ ignore_missing_imports = true
 module = ["qdrant_client.*", "opensearchpy.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# reportlab is lazy-imported inside dula_automation.pdf (the one PDF call site); untyped.
+module = ["reportlab.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 # importlib mode lets test files with the same basename live in different package test dirs
 # (e.g. multiple conftest.py / test_health.py) without collection clashes.

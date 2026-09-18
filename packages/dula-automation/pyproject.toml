@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "dula-common",
     "dula-agents",
+    "reportlab>=4.2",
 ]
 
 [dependency-groups]

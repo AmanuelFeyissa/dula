@@ -114,7 +114,7 @@ real infrastructure (GAReadiness.md). Dula AI iterations (a larger base model) c
 04 pipeline, shipping only if a future candidate clears the evaluation gate. Remaining non-blocking
 items: embedding/reranker model + hardware sizing (empirical); Terraform
 IaC + GitOps (Argo CD); container sandbox runner + third-party plugin
-loader; and automation follow-ons (durable trigger store + bus-fed event triggers, PDF reports,
+loader; and automation follow-ons (durable trigger store + bus-fed event triggers,
 cluster-scale telemetry load test).
 
 ## Milestone Ledger

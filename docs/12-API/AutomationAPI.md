@@ -41,6 +41,7 @@ enforced by the runtime at each step in addition to the endpoint action below.
 | `GET /api/v1/automation/runs/{run_id}` | `automation.read` | Read a run's trace/state |
 | `POST /api/v1/automation/runs/{run_id}/approval` | `automation.approve` | Approve/reject a paused action |
 | `GET /api/v1/automation/runs/{run_id}/report` | `reports.read` | Grounded executive + technical report |
+| `GET /api/v1/automation/runs/{run_id}/report.pdf` | `reports.read` | The same report as a PDF download (`application/pdf`) |
 | `GET /api/v1/automation/triggers` | `automation.read` | List the tenant's scheduled / event triggers |
 | `POST /api/v1/automation/triggers` | `automation.schedule` | Create a trigger (`playbook`, `goal`, and exactly one of `interval_seconds` ≥ 60 or `event_type`) |
 | `DELETE /api/v1/automation/triggers/{trigger_id}` | `automation.schedule` | Disable a trigger (revoke the delegation) |

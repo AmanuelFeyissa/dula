@@ -12,10 +12,11 @@ from typing import Any
 
 from dula_agents.types import ApprovalDecision, RunRecord, RunState
 from dula_automation.catalog import resolve_base_agent
+from dula_automation.pdf import report_to_pdf
 from dula_automation.playbook import Playbook, PlaybookError, compile_playbook
 from dula_automation.report import generate_report
 from dula_automation.triggers import Trigger, TriggerError
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from dula_ai_gateway.deps import Automation, Context, require
@@ -263,6 +264,23 @@ async def get_report(run_id: str, ctx: Context, automation: Automation) -> Repor
             for e in report.evidence
         ],
         markdown=report.to_markdown(),
+    )
+
+
+@router.get(
+    "/runs/{run_id}/report.pdf",
+    dependencies=[Depends(require("reports.read"))],
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def get_report_pdf(run_id: str, ctx: Context, automation: Automation) -> Response:
+    """The same grounded report as ``/report``, rendered as a PDF file."""
+    stored = await _stored_or_404(automation, ctx.tenant, run_id)
+    pdf = report_to_pdf(generate_report(stored.record))
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="dula-report-{run_id}.pdf"'},
     )
 
 

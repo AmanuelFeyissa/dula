@@ -136,5 +136,5 @@ operational load test in [../16-Operations/TelemetryScaleTest.md](../16-Operatio
   runs act as the trigger's creator with their snapshotted roles; the bus consumer that feeds
   event triggers and a durable trigger store are **FUTURE**.
 - Run store + approval broker are **in-memory** (durable persistence/notifications FUTURE).
-- Reports are Markdown; PDF/branded export is **FUTURE**.
+- Reports are Markdown (API/JSON) or PDF (`/report.pdf`, `dula_automation.pdf`); branded templates are **FUTURE**.
 - Cluster-scale load testing is documented but not executed in CI (**FUTURE**, needs infra).
