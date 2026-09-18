@@ -72,8 +72,10 @@ def run(mode: str, *, version: str, hf_repo: str) -> dict[str, object]:
         # full run (adapter-only SFT output -> DPO continues that adapter -> eval loads it).
         sft_cfg = TrainConfig(base_model=SMOKE_BASE, max_steps=2, max_seq_len=256)
         write_sft_smoke(sft_cfg.train_file)
+        write_sft_smoke(sft_cfg.val_file)
         dpo_kwargs: dict[str, object] = {"max_steps": 2, "max_seq_len": 256}
         write_pref_smoke(DPOConfig().train_file)
+        write_pref_smoke(DPOConfig().val_file)
         base_model = SMOKE_BASE
     else:
         bench = BENCH
