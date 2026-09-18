@@ -19,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-MODE = "smoke"
+MODE = "full"
 REPO = "https://github.com/AmanuelFeyissa/dula.git"
 WORK = Path("/kaggle/working")
 CLONE = WORK / "dula"
