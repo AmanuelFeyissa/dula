@@ -3,7 +3,7 @@ title: Project State (Current Execution State)
 document_id: STATE-000
 status: Draft
 version: 0.2.0
-last_updated: 2026-08-18
+last_updated: 2026-09-18
 owner: Engineering leadership
 audience: All contributors (and future context recovery)
 phase: Documentation Bootstrap (M000)
@@ -22,9 +22,9 @@ phase: Documentation Bootstrap (M000)
 | **CURRENT MILESTONE** | M011 ✅ complete — MLOps at Scale |
 | **STATUS** | M011 done & **closed under CLAUDE.md §11** ([M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md)). Five PRs (A–E, `main` #24–#28) delivered the full data→train→eval→register→stage promotion→canary→production→monitor→rollback path: **A** model registry lifecycle stages (`dula_ml.lifecycle`, legal-edge state machine over the append-only manifest); **B** `CanaryProvider` in the LLM Gateway (configurable traffic-fraction routing, per-call attribution via `Usage.routed_provider`, zero behavior change when unconfigured); **C** production drift monitoring + auto-rollback (`ml/dula_train/monitor.py` + a new Argo CronWorkflow, reusing the same gate a new candidate is judged by; manually verified end-to-end against a scratch manifest); **D** a disabled-by-default GPU `serving` Helm component + hardened Argo pipelines (retry/timeout/resource-request discipline for free-tier GPU compute); **E** a real second training candidate (Qwen2.5-3B-Instruct QLoRA on Modal) — **retired** (quality improved 0.62 vs 0.60 but safety regressed 0.75 vs 1.00 refusal rate), registered honestly, same as Phase 04's first candidate. Code review at every PR boundary found and fixed real bugs (a registry semantic break, a promotion race, a hash-collision edge case, an unobservable canary signal, an incorrect PromQL assumption, a probe-timing crash-loop risk, an undocumented egress gap, an incomplete cache-dir redirection, plus several stale doc references) — none deferred. 290 pytest collected / 259 passed / 31 skipped (pre-existing Postgres-dependent) / 0 failed; ruff/mypy-strict clean throughout; CI's Helm/kubeconform battery green on every PR. |
 | **LAST COMPLETED TASK** | M011/Phase 10 build + closure: [M011 Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md), [Phase 10 Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md) |
-| **CURRENT TASK** | Third Dula AI candidate: pipeline code complete (Qwen2.5-7B QLoRA + a new DPO safety-restoration pass), **pending the actual Kaggle GPU run** — the code cannot be exercised end-to-end on the local, GPU-less machine. Phase 11 itself awaits separate go-ahead. |
+| **CURRENT TASK** | **Third Dula AI candidate running on Kaggle** (kernel `amanuelfeyissa/dula-ai-train`, `ml/runners/kaggle/`): Qwen2.5-7B QLoRA SFT → DPO safety-restoration → eval → gate. The pipeline was proven end-to-end on Kaggle first with two smoke runs (Qwen2.5-0.5B down the identical code path, producing a clean adapter over the stock base). In parallel, the post-M011 code backlog is being closed (see the 2026-09-18 change-log entry). |
 | **NEXT TASK** | Phase 11 (not yet detailed in `docs/04-MVP-Roadmap/Phase11-AdvancedAI.md`; NOT started; do not begin without direction). Operational GA acceptance (live deploy, pen test, DR drill) from Phase 09 remains owned by the deploying team. Dula AI iterations continue on the now-hardened M011 pipeline, shipping only if a future candidate clears the gate. |
-| **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle. Repo: github.com/AmanuelFeyissa/dula (private) |
+| **BLOCKERS** | None. Connections live: HF (AmanuelFeyissa), Modal, Kaggle (HF token supplied to the kernel via a private Kaggle dataset). Repo: github.com/AmanuelFeyissa/dula (**public** since 2026-09-07; Apache-2.0) |
 
 ## What Exists
 
@@ -393,3 +393,31 @@ cluster-scale telemetry load test).
   eval → decide) requires the user's Kaggle account/GPU quota, which this session cannot access;
   a CPU `--smoke` flow check exists on both `train_qlora` and `train_dpo` to validate the wiring
   cheaply first. The ship/retire outcome will be recorded here once that run completes.
+- 2026-09-07 — **Repository made public as a portfolio project.** Pre-release audit (secrets, PII,
+  internal references, dangerous files, full 30-commit history) passed with no history rewrite
+  needed; README rewritten with honest per-area status, real screenshots captured against the
+  running stack, and an Apache-2.0 `LICENSE` added.
+- 2026-09-18 — **Third Dula AI candidate launched on Kaggle; post-M011 backlog closed in code.**
+  *ML:* `ml/runners/kaggle/` (thin script kernel + `pipeline.py` mirroring the Modal runner) runs
+  the candidate on the user's free Kaggle GPU; fixes found by two smoke runs on Kaggle before
+  spending real GPU hours — `dula_train.model_io` resolves adapter-only directories (a 4-bit
+  QLoRA run can't merge) and loads 4-bit on GPU for both sides of the gate; `train_dpo` continues
+  the SFT adapter instead of stacking a second one; adapter-only saves on a quantized base (peft
+  now merges into nf4 with rounding error rather than raising); single-GPU pin + gradient
+  checkpointing + seq 1024 so 7B fits a 16 GB T4; DPO capped at 300 steps for Kaggle's session
+  limit. *Connectors:* real HTTP backends behind a single egress-brokered client
+  (`dula_plugins.http`) — OpenSearch SIEM search on per-tenant indices, REST ticketing with
+  `Idempotency-Key`, live TI lookup — selected via gateway settings, fixtures remain the default.
+  *Sandbox (ADR-0013 baseline delivered):* `SubprocessRunner` runs each connector call in a fresh
+  interpreter with no socket and no secret value (HTTP relayed to the host, `$secret:` references
+  substituted host-side, Linux user+net namespace, rlimit, wall-time kill); `PLUGINS_SANDBOX=
+  subprocess`. *Observability:* the application `/metrics` exporter (`dula_common.metrics`) on
+  platform-api and ai-gateway with per-route-template HTTP series and canary-role `ai_call_*`
+  series, so the existing rules/dashboard attach to real data. *Automation:* scheduled and
+  event-triggered playbooks (`dula_automation.triggers` + `/api/v1/automation/triggers`, new
+  `automation.schedule` OPA action) — runs act as the trigger's creator with snapshotted roles.
+  *CI:* fixed the long-standing `release.yml` validation failure (`secrets` in a step `if:`).
+  Verified: 291 pytest passed / 31 skipped (+ worker 15/11), ruff/mypy-strict clean, all CI jobs
+  green on every push. **Still open:** the Kaggle run's ship/retire outcome (recorded here when
+  it lands); durable trigger store + bus-fed event triggers; PDF reports; container sandbox
+  runner; Terraform/Argo CD; GA operational acceptance.
