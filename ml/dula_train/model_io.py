@@ -58,8 +58,9 @@ def load_causal_lm(path: str, *, quant: Any | None, trainable_adapter: bool = Fa
     kwargs: dict[str, Any] = {"quantization_config": quant}
     if torch.cuda.is_available():
         kwargs["device_map"] = "auto"
-        if quant is None:
-            kwargs["torch_dtype"] = torch.float16
+        # Explicit compute dtype: the checkpoint's own dtype (bf16 for Qwen2.5) would otherwise
+        # leak into non-quantized/LoRA weights and break fp16 AMP on a T4.
+        kwargs["torch_dtype"] = torch.bfloat16 if native_bf16() else torch.float16
     model = AutoModelForCausalLM.from_pretrained(base or path, **kwargs)
     if base is None:
         return model

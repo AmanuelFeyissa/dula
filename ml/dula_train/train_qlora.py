@@ -48,8 +48,13 @@ def train(cfg: TrainConfig) -> str:
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=True,
         )
+    # torch_dtype explicitly: transformers otherwise keeps the checkpoint's dtype (bf16 for
+    # Qwen2.5), the LoRA weights inherit it, and the fp16 grad scaler rejects bf16 grads.
     model = AutoModelForCausalLM.from_pretrained(
-        cfg.base_model, quantization_config=quant, device_map="auto"
+        cfg.base_model,
+        quantization_config=quant,
+        device_map="auto" if cuda else None,
+        torch_dtype=compute_dtype if cuda else torch.float32,
     )
 
     peft_config = LoraConfig(
