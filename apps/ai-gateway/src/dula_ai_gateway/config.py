@@ -66,6 +66,18 @@ class Settings(BaseSettings):
     # Plugin/connector egress (Phase 07). Off by default = air-gapped: connectors that require
     # network egress (e.g. live TI feeds) are inert until this is enabled with an allowlist.
     plugins_egress_enabled: bool = False
+    # Real connector backends (empty = the offline fixtures). Each URL's host must be reachable
+    # under the egress policy above; the connector's allowlist is derived from it. The
+    # ``*_authorization`` values are the full Authorization header for that system (Vault in
+    # production; env only for dev) and are passed to connectors as scoped secrets, never logged.
+    siem_opensearch_url: str = ""  # e.g. https://siem.example.internal:9200
+    siem_index_pattern: str = "logs-{tenant}-*"
+    siem_authorization: str = ""
+    ticketing_create_url: str = ""  # e.g. https://tickets.example.internal/api/tickets
+    ticketing_id_field: str = "id"
+    ticketing_authorization: str = ""
+    ti_feed_host: str = ""  # e.g. ti.example.internal (https, /api/v1/lookup?indicator=)
+    ti_authorization: str = ""
 
     # Event backbone (ADR-0004) for AI-call audit events.
     events_enabled: bool = True

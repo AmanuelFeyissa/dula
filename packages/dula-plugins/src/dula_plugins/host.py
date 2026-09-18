@@ -98,6 +98,21 @@ class PluginHost:
         plugin = self._plugins.get(plugin_id)
         return plugin.connector if plugin is not None else None
 
+    def context_for(self, plugin_id: str, *, tenant: str, subject: str) -> ConnectorContext:
+        """A context carrying the plugin's own egress policy + the host's secrets.
+
+        For callers that already sit behind their own authorization boundary (the agent
+        runtime) and invoke a connector directly rather than through ``invoke``: the connector
+        still only reaches the hosts its manifest declares.
+        """
+        plugin = self._require(plugin_id)
+        return ConnectorContext(
+            tenant=tenant,
+            subject=subject,
+            egress=self._egress_for(plugin.manifest),
+            secrets=self.secrets,
+        )
+
     def find_capability(self, capability: str) -> tuple[InstalledPlugin, Capability] | None:
         for plugin in self._plugins.values():
             cap = plugin.manifest.capability(capability)

@@ -40,7 +40,7 @@ def env() -> Iterator[tuple[TestClient, Holder]]:
 
 def _wire(client: TestClient, allowed: set[str] | None) -> None:
     opa = ActionOPA(allowed=allowed)
-    plugins = build_plugins_subsystem(opa)
+    plugins = build_plugins_subsystem(opa, client.app.state.settings)  # type: ignore[attr-defined]
     client.app.state.opa = opa  # type: ignore[attr-defined]
     client.app.state.plugins = plugins  # type: ignore[attr-defined]
     client.app.state.agents = build_agent_subsystem(opa, plugins)  # type: ignore[attr-defined]

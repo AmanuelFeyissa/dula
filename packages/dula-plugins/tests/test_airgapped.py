@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import httpx
 from dula_plugins.builtin import BuiltinBackends
+from dula_plugins.connector import ConnectorContext, InMemorySecrets
+from dula_plugins.connectors.ti import ThreatIntelConnector
+from dula_plugins.egress import EgressGuard, EgressPolicy
 from dula_plugins.host import PluginHost
 
 HostFactory = Callable[..., tuple[PluginHost, BuiltinBackends]]
@@ -31,12 +35,30 @@ async def test_offline_lookup_works_when_air_gapped(
     assert result.ok  # offline enrichment needs no egress
 
 
-async def test_live_lookup_works_when_egress_enabled(
-    full_checker, backends: BuiltinBackends, host_factory: HostFactory, tenant: str
-) -> None:
-    # Egress enabled + allowlisted feed host; resolve disabled to avoid live DNS in CI.
-    host, _ = host_factory(full_checker, backends, egress_enabled=True, resolve_egress=False)
-    result = await host.invoke(
-        "ti.live_lookup", {"value": "evil.com"}, tenant=tenant, subject="u1", roles=["analyst"]
+async def test_live_lookup_works_when_egress_enabled(tenant: str) -> None:
+    # Egress enabled + allowlisted feed host; resolve disabled to avoid live DNS in CI. The feed
+    # itself is a mock transport, so the request really goes through the egress-checked client.
+    seen: list[httpx.Request] = []
+
+    def feed(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"indicator": "evil.com", "verdict": "malicious"})
+
+    connector = ThreatIntelConnector(
+        feed_host="ti.example.com", transport=httpx.MockTransport(feed)
     )
+    ctx = ConnectorContext(
+        tenant=tenant,
+        subject="u1",
+        egress=EgressGuard(
+            policy=EgressPolicy(allowed_hosts=frozenset({"ti.example.com"}), enabled=True),
+            resolve=False,
+        ),
+        secrets=InMemorySecrets({"ti.authorization": "Bearer feed-token"}),
+    )
+    result = await connector.invoke("ti.live_lookup", {"value": "evil.com"}, ctx)
     assert result.ok and result.output["live"] is True
+    assert result.output["response"]["verdict"] == "malicious"
+    assert result.untrusted
+    assert seen[0].url.host == "ti.example.com" and seen[0].url.params["indicator"] == "evil.com"
+    assert seen[0].headers["authorization"] == "Bearer feed-token"

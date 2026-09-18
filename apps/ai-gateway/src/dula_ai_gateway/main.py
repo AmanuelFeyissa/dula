@@ -87,9 +87,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.publisher = publisher
     app.state.opa = OPAClient(settings.opa_url)
     app.state.subsystem = await build_subsystem(settings, _make_audit_hook(publisher))
-    app.state.plugins = build_plugins_subsystem(
-        app.state.opa, egress_enabled=settings.plugins_egress_enabled
-    )
+    app.state.plugins = build_plugins_subsystem(app.state.opa, settings)
 
     # Agent/playbook run persistence (ADR-0016). "memory" (the default) needs no Postgres at
     # all — the offline/air-gapped path is unchanged. "postgres" makes runs and their

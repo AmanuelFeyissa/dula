@@ -11,15 +11,19 @@ from __future__ import annotations
 
 from typing import Any
 
+import httpx
 from dula_ai.intel.iocs import extract
 
 from dula_plugins.connector import ConnectorContext, ConnectorResult
 from dula_plugins.egress import EgressError
+from dula_plugins.http import EgressHttpClient, HttpError, auth_headers
 from dula_plugins.manifest import Capability, PluginManifest, SideEffect
 from dula_plugins.sdk import BaseConnector
 
 TI_PLUGIN_ID = "dula-plugin-dula-ti"
-TI_FEED_HOST = "ti.example.com"
+TI_FEED_HOST = "ti.example.com"  # placeholder; deployments configure the real feed host
+TI_FEED_PATH = "/api/v1/lookup"
+TI_SECRET_KEY = "ti.authorization"  # noqa: S105 - the secret's *name*; value is in the provider
 
 # Offline reputation fixture (normalized). Real deployments use a STIX/TAXII feed via egress.
 _REPUTATION: dict[str, str] = {
@@ -30,13 +34,13 @@ _REPUTATION: dict[str, str] = {
 }
 
 
-def ti_manifest() -> PluginManifest:
+def ti_manifest(feed_host: str = TI_FEED_HOST) -> PluginManifest:
     return PluginManifest(
         id=TI_PLUGIN_ID,
-        version="0.1.0",
+        version="0.2.0",
         publisher_key_id="dula-builtin",
         description="First-party threat-intel lookup connector.",
-        egress=[TI_FEED_HOST],
+        egress=[feed_host],
         capabilities=[
             Capability(
                 name="ti.lookup_indicator",
@@ -65,8 +69,17 @@ def _score(value: str) -> dict[str, Any]:
 
 
 class ThreatIntelConnector(BaseConnector):
-    def __init__(self) -> None:
-        super().__init__(ti_manifest())
+    def __init__(
+        self,
+        *,
+        feed_host: str = TI_FEED_HOST,
+        feed_path: str = TI_FEED_PATH,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        super().__init__(ti_manifest(feed_host))
+        self._feed_host = feed_host
+        self._feed_path = feed_path
+        self._transport = transport
         self.register("ti.lookup_indicator", self._lookup)
         self.register("ti.live_lookup", self._live_lookup)
 
@@ -87,10 +100,20 @@ class ThreatIntelConnector(BaseConnector):
         value = args.get("value")
         if not isinstance(value, str) or not value.strip():
             return ConnectorResult(ok=False, error="missing 'value'")
-        url = f"https://{TI_FEED_HOST}/api/v1/lookup?indicator={value}"
+        url = f"https://{self._feed_host}{self._feed_path}"
+        client = EgressHttpClient(ctx.egress, transport=self._transport)
         try:
-            ctx.egress.check(url)  # gated: raises when egress disabled / host not allowed
+            # The guard inside the client is the gate: air-gapped / undeclared host → denied.
+            data = await client.get_json(
+                url,
+                params={"indicator": value},
+                headers=auth_headers(ctx.secrets.get(TI_SECRET_KEY)),
+            )
         except EgressError as exc:
             return ConnectorResult(ok=False, error=f"egress denied: {exc}")
-        # A real build would perform the HTTP GET here via a sandboxed client.
-        return ConnectorResult(ok=True, output={"value": value, "feed": TI_FEED_HOST, "live": True})
+        except HttpError as exc:
+            return ConnectorResult(ok=False, error=f"feed request failed: {exc}")
+        return ConnectorResult(
+            ok=True,
+            output={"value": value, "feed": self._feed_host, "live": True, "response": data},
+        )

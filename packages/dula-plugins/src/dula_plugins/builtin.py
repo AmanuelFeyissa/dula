@@ -8,12 +8,16 @@ default** (air-gapped-first): the egress-gated `ti.live_lookup` is inert until e
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dula_plugins.connector import InMemorySecrets, SecretProvider
-from dula_plugins.connectors.siem import FixtureLogBackend, SiemSearchConnector
-from dula_plugins.connectors.ti import ThreatIntelConnector
-from dula_plugins.connectors.ticketing import FixtureTicketBackend, TicketingConnector
+from dula_plugins.connectors.siem import FixtureLogBackend, LogBackend, SiemSearchConnector
+from dula_plugins.connectors.ti import TI_FEED_HOST, ThreatIntelConnector
+from dula_plugins.connectors.ticketing import (
+    FixtureTicketBackend,
+    TicketBackend,
+    TicketingConnector,
+)
 from dula_plugins.host import AuditHook, PermissionChecker, PluginHost
 from dula_plugins.signing import TrustStore, generate_keypair, sign_manifest
 
@@ -22,8 +26,15 @@ BUILTIN_KEY_ID = "dula-builtin"
 
 @dataclass
 class BuiltinBackends:
-    logs: FixtureLogBackend
-    tickets: FixtureTicketBackend
+    """The SIEM/ticketing backends the built-in connectors run on (fixtures or HTTP)."""
+
+    logs: LogBackend
+    tickets: TicketBackend
+    # Hosts each HTTP backend may reach -- become the connectors' egress allowlists. Empty for
+    # the fixtures (nothing to reach), so those connectors stay inert on the network.
+    siem_egress: list[str] = field(default_factory=list)
+    ticketing_egress: list[str] = field(default_factory=list)
+    ti_feed_host: str = TI_FEED_HOST
 
 
 def build_offline_host(
@@ -52,9 +63,9 @@ def build_offline_host(
     )
 
     connectors = [
-        SiemSearchConnector(backends.logs),
-        ThreatIntelConnector(),
-        TicketingConnector(backends.tickets),
+        SiemSearchConnector(backends.logs, egress=backends.siem_egress),
+        ThreatIntelConnector(feed_host=backends.ti_feed_host),
+        TicketingConnector(backends.tickets, egress=backends.ticketing_egress),
     ]
     for connector in connectors:
         signed = sign_manifest(connector.manifest, private_key)

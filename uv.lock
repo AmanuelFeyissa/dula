@@ -498,6 +498,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "dula-ai" },
     { name = "dula-common" },
+    { name = "httpx" },
     { name = "pydantic" },
 ]
 
@@ -513,6 +514,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=43" },
     { name = "dula-ai", editable = "packages/dula-ai" },
     { name = "dula-common", editable = "packages/common-py" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "pydantic", specifier = ">=2.9" },
 ]
 

@@ -26,20 +26,15 @@ from dula_agents.tools import (
     ToolBackends,
 )
 from dula_common.opa import OPAClient
-from dula_plugins.connector import ConnectorContext, InMemorySecrets
+from dula_plugins.connector import ConnectorContext
 from dula_plugins.connectors.siem import SIEM_PLUGIN_ID
 from dula_plugins.connectors.ticketing import TICKETING_PLUGIN_ID
-from dula_plugins.egress import EgressGuard, EgressPolicy
 from dula_plugins.host import PluginHost
 
 from dula_ai_gateway.plugins_wiring import PluginsSubsystem
 
 _log = logging.getLogger(__name__)
 
-# Connectors invoked as agent tools do not need egress; the agent runtime is the authorization
-# boundary for these calls (it already OPA-checked the tool), so we call the connector directly
-# through a disabled egress guard.
-_INTERNAL_EGRESS = EgressGuard(policy=EgressPolicy(enabled=False), resolve=False)
 
 # A shared demo alert + logs so the investigation agent is usable out of the box in the offline
 # profile (analogous to the seeded public RAG corpus). Not real tenant data.
@@ -67,10 +62,12 @@ class _DemoLogSource(InMemoryLogSource):
         return hits[:limit]
 
 
-def _connector_ctx(tenant: str) -> ConnectorContext:
-    return ConnectorContext(
-        tenant=tenant, subject="agent-runtime", egress=_INTERNAL_EGRESS, secrets=InMemorySecrets()
-    )
+def _connector_ctx(host: PluginHost, plugin_id: str, tenant: str) -> ConnectorContext:
+    # The agent runtime is the authorization boundary for these calls (it already OPA-checked
+    # the tool), so the connector is invoked directly -- but with the plugin's own egress policy
+    # and the host's secrets, so a real HTTP backend reaches exactly the hosts its manifest
+    # declares and nothing else (and stays inert when egress is disabled).
+    return host.context_for(plugin_id, tenant=tenant, subject="agent-runtime")
 
 
 class _ConnectorLogSource:
@@ -84,7 +81,9 @@ class _ConnectorLogSource:
         if connector is None:
             return []
         result = await connector.invoke(
-            "siem.search", {"query": query, "limit": limit}, _connector_ctx(tenant)
+            "siem.search",
+            {"query": query, "limit": limit},
+            _connector_ctx(self._host, SIEM_PLUGIN_ID, tenant),
         )
         events = result.output.get("events", []) if (result.ok and result.output) else []
         return list(events)
@@ -101,7 +100,9 @@ class _ConnectorTicketSink:
         if connector is None:
             return "TICKET-ERROR"
         result = await connector.invoke(
-            "ticketing.create_ticket", {"title": title, "body": body}, _connector_ctx(tenant)
+            "ticketing.create_ticket",
+            {"title": title, "body": body},
+            _connector_ctx(self._host, TICKETING_PLUGIN_ID, tenant),
         )
         return str(result.output["ticket_id"]) if (result.ok and result.output) else "TICKET-ERROR"
 

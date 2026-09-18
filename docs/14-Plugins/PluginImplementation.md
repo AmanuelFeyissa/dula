@@ -3,7 +3,7 @@ title: Plugin Framework Implementation
 document_id: PLG-005
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-13
+last_updated: 2026-09-18
 owner: Integrations / Security
 audience: Developer, Integration Engineer, Security Engineer
 phase: Phase 07 — Integrations (M007)
@@ -104,6 +104,12 @@ consequential-blocked-direct rule, and the agent→connector bridge.
   worker + host-brokered capabilities baseline; container per orchestrated profile; pluggable
   `SandboxRunner`). The default `InProcessRunner` enforces the in-process guarantees today; the
   **subprocess/container worker runners** (OS-level isolation) are FUTURE.
-- Built-in connectors are **fixture-backed**; real SIEM/EDR/TI HTTP clients (via the egress guard)
-  and a third-party plugin loader are FUTURE.
+- Built-in connectors ship **both** offline fixtures (the default; air-gapped profile) and real
+  HTTP backends — `OpenSearchLogBackend` (SIEM `_search` on a per-tenant index pattern),
+  `HttpTicketBackend` (JSON POST + `Idempotency-Key`), and the TI live feed lookup — all through
+  `dula_plugins.http.EgressHttpClient`, the connectors' only network path: guard-checked URL,
+  redirects refused, bounded body, `Authorization` from a scoped secret. Selected by the AI
+  Gateway's `SIEM_OPENSEARCH_URL` / `TICKETING_CREATE_URL` / `TI_FEED_HOST` settings (empty =
+  fixtures); each host becomes that connector's egress allowlist. EDR connectors and a
+  third-party plugin loader are FUTURE.
 - The plugin registry + secrets are in-memory; durable registry + Vault-backed secrets are FUTURE.
