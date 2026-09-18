@@ -7,6 +7,7 @@ from dula_ai.embeddings import Embedder, HashingEmbedder, OllamaEmbedder
 from dula_ai.factory import RagStack, build_offline_stack
 from dula_ai.gateway import AuditHook, LLMGateway
 from dula_ai.knowledge import KnowledgeService
+from dula_ai.metering import MeteredProvider
 from dula_ai.providers import (
     CanaryProvider,
     ExtractiveProvider,
@@ -34,13 +35,21 @@ def _base_provider(settings: Settings) -> LLMProvider:
 
 
 def _provider(settings: Settings) -> LLMProvider:
-    production = _base_provider(settings)
+    # Each side is metered under its canary *role* before composition, so ai_call_* carry
+    # provider="production"/"candidate" exactly (deploy/observability/prometheus-rules.yaml).
+    production: LLMProvider = MeteredProvider(
+        _base_provider(settings), service=settings.service_name, role="production"
+    )
     if not settings.canary_candidate_model or not settings.canary_candidate_base_url:
         return production
-    candidate = OpenAICompatProvider(
-        settings.canary_candidate_model,
-        settings.canary_candidate_base_url,
-        api_key=settings.canary_candidate_api_key or None,
+    candidate: LLMProvider = MeteredProvider(
+        OpenAICompatProvider(
+            settings.canary_candidate_model,
+            settings.canary_candidate_base_url,
+            api_key=settings.canary_candidate_api_key or None,
+        ),
+        service=settings.service_name,
+        role="candidate",
     )
     return CanaryProvider(production, candidate, candidate_weight=settings.canary_weight)
 

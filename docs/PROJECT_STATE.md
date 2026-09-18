@@ -112,7 +112,7 @@ explicit go-ahead. **Operational GA acceptance** — live deploy across all four
 penetration test, and a DR restore drill meeting RPO/RTO — is owned by the deploying team and needs
 real infrastructure (GAReadiness.md). Dula AI iterations (a larger base model) continue on the Phase
 04 pipeline, shipping only if a future candidate clears the evaluation gate. Remaining non-blocking
-items: embedding/reranker model + hardware sizing (empirical); the app `/metrics` exporter; Terraform
+items: embedding/reranker model + hardware sizing (empirical); Terraform
 IaC + GitOps (Argo CD); container sandbox runner + third-party plugin
 loader; and automation follow-ons (scheduled/triggered playbooks, durable run store, PDF reports,
 cluster-scale telemetry load test).

@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from dula_ai.gateway import AuditRecord
 from dula_common.events import EventEnvelope, EventPublisher
 from dula_common.logging import configure_logging
+from dula_common.metrics import MetricsEndpoint, PrometheusMiddleware
 from dula_common.opa import OPAClient
 from dula_common.telemetry import setup_telemetry
 from fastapi import FastAPI
@@ -127,6 +128,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(
+        PrometheusMiddleware, service=settings.service_name, routes=app.router.routes
+    )
+    app.mount("/metrics", MetricsEndpoint(), name="metrics")
     app.include_router(health.router)
     app.include_router(ask.router)
     app.include_router(triage.router)

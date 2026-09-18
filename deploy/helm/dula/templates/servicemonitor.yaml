@@ -1,8 +1,8 @@
 {{- if .Values.metrics.enabled }}
 {{- $root := . -}}
-# Prometheus scrape config (Prometheus operator CRD). NOTE: the application-side Prometheus
-# exporter (/metrics) is wired as FUTURE — telemetry currently uses an OTel stub. This
-# ServiceMonitor is the scaffolding it will attach to (docs/16-Operations/Observability.md).
+# Prometheus scrape config (Prometheus operator CRD). platform-api and ai-gateway serve
+# /metrics (dula_common.metrics: http_request_* + ai_call_* series); the worker has no HTTP
+# port, so its scrape target is inert (docs/16-Operations/Observability.md).
 {{- range $name, $c := .Values.components }}
 {{- if and $c.enabled $c.service $c.service.enabled }}
 ---

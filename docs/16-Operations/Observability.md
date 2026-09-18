@@ -3,7 +3,7 @@ title: Observability
 document_id: OPS-001
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-09-18
 owner: Ops / Platform
 audience: Ops & platform engineers
 phase: Documentation Bootstrap (M000)
@@ -19,8 +19,12 @@ related:
 >
 > **Delivered (Phase 09):** SLO targets (availability ≥ 99.5%, p95 < 800 ms), Prometheus
 > alert/recording rules, and a Grafana dashboard at `deploy/observability/`; the Helm chart ships
-> `ServiceMonitor` scaffolding. The application **`/metrics` exporter** is **FUTURE** — telemetry
-> is currently an OTel stub, so request-level SLI rules attach once it emits real metrics.
+> `ServiceMonitor` scaffolding. **Delivered (post-M011):** the application **`/metrics` exporter**
+> (`dula_common.metrics`) on `platform-api` and `ai-gateway` — `http_requests_total` /
+> `http_request_duration_seconds` per route template, and `ai_call_total` / `ai_call_errors_total`
+> / `ai_call_duration_seconds` with a canary-role `provider` label — so the request-level SLI and
+> canary-regression rules attach to real series. OpenTelemetry **traces** remain FUTURE (the
+> `telemetry` module is still a stub).
 
 ## 1. Stack
 

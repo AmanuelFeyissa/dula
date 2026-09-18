@@ -44,7 +44,7 @@ spec:
             summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas"
             description: "Sustained saturation — review capacity/sizing."
     - name: dula.slo.requests
-      # FUTURE: attaches to the application /metrics exporter (http_request_* histograms).
+      # Attaches to the application /metrics exporter (dula_common.metrics: http_request_*).
       # SLO targets: availability >= 99.5%, p95 latency < 800ms (docs/16-Operations/Observability.md).
       rules:
         - alert: DulaHighErrorRate
@@ -69,14 +69,10 @@ spec:
       # Prometheus, because this project's Helm chart doesn't operate the Argo Workflow
       # controller (it's an external cluster dependency, like Postgres/Qdrant) and this
       # repo's own request-level metrics (canary vs production latency/error-rate deltas
-      # per request) need the application /metrics exporter, which does not exist yet
-      # (tracked in PROJECT_STATE.md's "remaining non-blocking items", same gap
-      # dula.slo.requests above already documents). The rule below is real once that exporter
-      # lands, provided it emits a `provider` *role* label with exactly the values
-      # "candidate"/"production" -- not the raw Usage.routed_provider provider name (e.g.
-      # "openai-compat-dula-ai-v2"), which the exporter must map to a role by comparing it
-      # against the currently-configured canary_candidate_model/production provider name at
-      # export time (packages/dula-ai/src/dula_ai/providers.py).
+      # per request) come from the application /metrics exporter: the AI Gateway meters the
+      # production and candidate providers separately (dula_ai.metering.MeteredProvider, wrapped
+      # before CanaryProvider composes them), so ai_call_* carry a `provider` *role* label with
+      # exactly the values "candidate"/"production" -- never the raw provider name.
       rules:
         - alert: DulaCanaryRegression
           expr: |

@@ -18,12 +18,15 @@ Prometheus rules and a Grafana dashboard for the Dula platform, aligned with the
 
 ## Status
 
-- **CURRENT:** infra-signal alerts + the Helm `ServiceMonitor` scaffolding.
-- **FUTURE:** the application Prometheus exporter (`/metrics` with `http_request_*` histograms) —
-  telemetry is currently an OTel stub (`dula_common.telemetry`); the request-level SLI rules, the
-  5xx panel, and the `dula.mlops.canary` regression alert attach once it emits real metrics
-  (including a `provider` label sourced from `Usage.routed_provider`). Tracked as a Phase 09
-  follow-on.
+- **CURRENT:** infra-signal alerts, the Helm `ServiceMonitor`, and the application Prometheus
+  exporter: `platform-api` and `ai-gateway` serve `/metrics` (`dula_common.metrics`) with
+  `http_requests_total` / `http_request_duration_seconds` per matched route template, and the
+  AI Gateway adds `ai_call_total` / `ai_call_errors_total` / `ai_call_duration_seconds` with a
+  `provider` label carrying the canary *role* (`production`/`candidate`, metered per side before
+  `CanaryProvider` composes them — `dula_ai.metering`). The request-level SLI rules, the 5xx panel,
+  and the `dula.mlops.canary` regression alert therefore attach to real series.
+- **FUTURE:** OpenTelemetry traces (`dula_common.telemetry` is still a stub) and the worker's
+  metrics (it has no HTTP listener).
 - **CURRENT (M011):** production model drift detection + auto-rollback is real today, just not
   via Prometheus — `ml/dula_train/monitor.py`, run on a schedule by
   `deploy/argo/dula-ai-monitor-cronworkflow.yaml`, re-evaluates whatever is `production` against
