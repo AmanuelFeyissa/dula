@@ -34,6 +34,7 @@ def train(cfg: DPOConfig) -> str:
         load_causal_lm,
         native_bf16,
         quant_config,
+        trainable_to_fp32,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
@@ -105,6 +106,7 @@ def train(cfg: DPOConfig) -> str:
             peft_config=peft_config,
             processing_class=tokenizer,
         )
+        trainable_to_fp32(trainer.model)
         trainer.train()
         # Same rule as train_qlora.py: adapter-only on a quantized base (the adapter references
         # the stock HF base, so eval/serving load base + adapter); merged full model on CPU.

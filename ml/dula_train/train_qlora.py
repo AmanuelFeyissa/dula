@@ -23,7 +23,7 @@ def train(cfg: TrainConfig) -> str:
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from trl import SFTConfig, SFTTrainer
 
-    from dula_train.model_io import native_bf16
+    from dula_train.model_io import native_bf16, trainable_to_fp32
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
     if tokenizer.pad_token is None:
@@ -107,6 +107,7 @@ def train(cfg: TrainConfig) -> str:
             peft_config=peft_config,
             processing_class=tokenizer,
         )
+        trainable_to_fp32(trainer.model)
         trainer.train()
         # On a quantized base, save the adapter only: peft can merge into nf4 weights now, but
         # the result is a lossy, bnb-serialized full model rather than a small adapter over the

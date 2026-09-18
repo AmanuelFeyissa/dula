@@ -70,3 +70,23 @@ def load_causal_lm(path: str, *, quant: Any | None, trainable_adapter: bool = Fa
     if quant is not None and trainable_adapter:
         model = prepare_model_for_kbit_training(model)
     return PeftModel.from_pretrained(model, path, is_trainable=trainable_adapter)
+
+
+def trainable_to_fp32(model: Any) -> dict[str, int]:
+    """Cast trainable (LoRA) params to fp32 and return the before-cast dtype histogram.
+
+    fp16 AMP's grad scaler has no bf16 kernel, and which library leaves adapters in bf16 has
+    shifted across trl/peft/transformers releases; fp32 adapters over a quantized base are the
+    standard QLoRA setup regardless.
+    """
+    import torch
+
+    seen: dict[str, int] = {}
+    for param in model.parameters():
+        if not param.requires_grad:
+            continue
+        seen[str(param.dtype)] = seen.get(str(param.dtype), 0) + param.numel()
+        if param.dtype in (torch.float16, torch.bfloat16):
+            param.data = param.data.float()
+    print(f"trainable param dtypes before fp32 cast: {seen}", flush=True)
+    return seen
