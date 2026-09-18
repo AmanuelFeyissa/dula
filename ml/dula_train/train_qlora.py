@@ -78,6 +78,8 @@ def train(cfg: TrainConfig) -> str:
         "use_cpu": not cuda,
         "bf16": bf16,
         "fp16": cuda and not bf16,
+        "gradient_checkpointing": cfg.gradient_checkpointing,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
     }
     # trl renamed the sequence-length arg across versions (max_seq_length -> max_length).
     sft_params = inspect.signature(SFTConfig.__init__).parameters

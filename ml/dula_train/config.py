@@ -24,12 +24,14 @@ class TrainConfig(BaseModel):
     train_file: str = "data/train.jsonl"
     val_file: str = "data/val.jsonl"
     output_dir: str = "out/dula-qlora"
-    max_seq_len: int = 2048
+    # 1024 + gradient checkpointing keeps a 7B nf4 run inside a single 16 GB T4.
+    max_seq_len: int = 1024
     epochs: float = 1.0
     max_steps: int = -1  # -1 = full epochs
     learning_rate: float = 2e-4
     batch_size: int = 2
     grad_accum: int = 8
+    gradient_checkpointing: bool = True
     seed: int = 42
     # MLflow experiment (ADR-0010).
     mlflow_experiment: str = "dula-ai-sft"
@@ -100,8 +102,11 @@ class DPOConfig(BaseModel):
     # session cap. 300 steps x (2 x 8) = 4.8k pairs is plenty for a restoration pass.
     max_steps: int = 300
     learning_rate: float = 5e-6
-    batch_size: int = 2
-    grad_accum: int = 8
+    # DPO forwards chosen + rejected (and the reference) per example: micro-batch 1 on a T4,
+    # same effective batch of 16 as SFT.
+    batch_size: int = 1
+    grad_accum: int = 16
+    gradient_checkpointing: bool = True
     seed: int = 42
     mlflow_experiment: str = "dula-ai-dpo"
 

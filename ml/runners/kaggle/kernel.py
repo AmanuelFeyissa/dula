@@ -45,6 +45,9 @@ def main() -> None:
     # Keep the HF cache off the 20 GB /kaggle/working quota; the 7B base alone is ~15 GB.
     os.environ.setdefault("HF_HOME", "/root/.cache/huggingface")
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    # Kaggle may hand out 2x T4. device_map="auto" would shard the model across both and the
+    # Trainer would then wrap it in DataParallel and crash; a single T4 is the target anyway.
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     if CLONE.exists():
         shutil.rmtree(CLONE)

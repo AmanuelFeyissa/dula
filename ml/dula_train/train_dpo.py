@@ -74,6 +74,8 @@ def train(cfg: DPOConfig) -> str:
         "use_cpu": not cuda,
         "bf16": bf16,
         "fp16": cuda and not bf16,
+        "gradient_checkpointing": cfg.gradient_checkpointing,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
     }
     # trl has renamed sequence-length args before (see train_qlora.py); guard the same way.
     dpo_params = inspect.signature(TRLDPOConfig.__init__).parameters
