@@ -34,6 +34,7 @@ from dula_plugins.connectors.ticketing import (
     TicketBackend,
 )
 from dula_plugins.host import PluginHost
+from dula_plugins.sandbox import InProcessRunner, SandboxRunner, SubprocessRunner
 
 from dula_ai_gateway.config import Settings
 
@@ -124,12 +125,16 @@ def backends_from_settings(settings: Settings) -> tuple[BuiltinBackends, InMemor
 
 def build_plugins_subsystem(opa: OPAClient, settings: Settings) -> PluginsSubsystem:
     backends, secrets = backends_from_settings(settings)
+    runner: SandboxRunner = (
+        SubprocessRunner() if settings.plugins_sandbox == "subprocess" else InProcessRunner()
+    )
     host, backends = build_offline_host(
         OPAConnectorChecker(opa),
         backends=backends,
         secrets=secrets,
         egress_enabled=settings.plugins_egress_enabled,
         audit=_audit,
+        runner=runner,
     )
     _log.info(
         "connectors wired",
@@ -138,6 +143,7 @@ def build_plugins_subsystem(opa: OPAClient, settings: Settings) -> PluginsSubsys
             "ticketing": type(backends.tickets).__name__,
             "ti_feed_host": backends.ti_feed_host,
             "egress_enabled": settings.plugins_egress_enabled,
+            "sandbox": type(runner).__name__,
         },
     )
     return PluginsSubsystem(host=host, backends=backends)

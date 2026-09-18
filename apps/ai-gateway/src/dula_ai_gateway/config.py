@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     # Plugin/connector egress (Phase 07). Off by default = air-gapped: connectors that require
     # network egress (e.g. live TI feeds) are inert until this is enabled with an allowlist.
     plugins_egress_enabled: bool = False
+    # Sandbox runner (ADR-0013): "inprocess" (default) or "subprocess" -- each connector call in
+    # a fresh worker process with host-brokered HTTP and secrets (see dula_plugins.sandbox).
+    plugins_sandbox: str = "inprocess"
     # Real connector backends (empty = the offline fixtures). Each URL's host must be reachable
     # under the egress policy above; the connector's allowlist is derived from it. The
     # ``*_authorization`` values are the full Authorization header for that system (Vault in

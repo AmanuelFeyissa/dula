@@ -72,7 +72,7 @@ class OpenSearchLogBackend:
             "query": {"query_string": {"query": query, "default_field": "message"}},
             "sort": [{self.timestamp_field: {"order": "desc", "unmapped_type": "date"}}],
         }
-        client = EgressHttpClient(ctx.egress, transport=self.transport)
+        client = EgressHttpClient(ctx.egress, transport=self.transport or ctx.transport)
         data = await client.post_json(
             url, body, headers=auth_headers(ctx.secrets.get(SIEM_SECRET_KEY))
         )

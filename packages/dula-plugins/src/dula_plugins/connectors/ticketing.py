@@ -82,7 +82,7 @@ class HttpTicketBackend:
         headers = auth_headers(ctx.secrets.get(TICKETING_SECRET_KEY))
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
-        client = EgressHttpClient(ctx.egress, transport=self.transport)
+        client = EgressHttpClient(ctx.egress, transport=self.transport or ctx.transport)
         data = await client.post_json(
             self.create_url, {"title": title, "body": body, "tenant": tenant}, headers=headers
         )

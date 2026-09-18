@@ -35,6 +35,10 @@ class ConnectorContext:
     subject: str
     egress: EgressGuard
     secrets: SecretProvider
+    # How the connector's HTTP leaves the process. None = direct (in-process runner); the
+    # out-of-process worker sets a transport that relays every request back to the host, which
+    # is the only side holding a real socket and the real secret values (ADR-0013).
+    transport: Any = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -101,7 +101,7 @@ class ThreatIntelConnector(BaseConnector):
         if not isinstance(value, str) or not value.strip():
             return ConnectorResult(ok=False, error="missing 'value'")
         url = f"https://{self._feed_host}{self._feed_path}"
-        client = EgressHttpClient(ctx.egress, transport=self._transport)
+        client = EgressHttpClient(ctx.egress, transport=self._transport or ctx.transport)
         try:
             # The guard inside the client is the gate: air-gapped / undeclared host → denied.
             data = await client.get_json(

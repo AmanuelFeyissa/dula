@@ -3,7 +3,7 @@ title: Project Context (Long-Lived Knowledge)
 document_id: CTX-000
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-18
+last_updated: 2026-09-18
 owner: Engineering leadership
 audience: All contributors (and future context recovery)
 phase: Documentation Bootstrap (M000)
@@ -162,8 +162,8 @@ and ticket-creation tools now **connector-backed** (agent→connector; ticket ap
 Air-gapped-first: egress is disabled by default, so live-feed connectors are inert with no
 phone-home. The **sandbox mechanism is DECIDED (ADR-0013)** — an out-of-process worker with
 host-brokered capabilities (no ambient network) as the portable baseline + a container per
-orchestrated profile, behind a pluggable `SandboxRunner`; the in-process default is delivered and
-the OS-level worker runners are FUTURE. **Phase 08 (Automation) is complete:** a security
+orchestrated profile, behind a pluggable `SandboxRunner`; the in-process default and the
+out-of-process baseline worker (`SubprocessRunner`) are delivered; the container runner is FUTURE. **Phase 08 (Automation) is complete:** a security
 **automation** layer (`packages/dula-automation`) composes the agent runtime and connectors into
 **declarative, approval-gated playbooks** and **grounded reporting**. A playbook is compiled into a
 planner and executed by the *existing* runtime, so it adds **no new execution path and no new

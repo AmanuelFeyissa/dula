@@ -52,7 +52,7 @@ enforces the in-process guarantees today; the OS/container worker runners are FU
 | `egress` | `EgressGuard` + `EgressPolicy`: default-deny allowlist, https-only, SSRF block (private/loopback/link-local/unresolvable), globally disabled when air-gapped. |
 | `connector` | `Connector` protocol, `ConnectorContext` (tenant/subject + egress guard + scoped `SecretProvider`), `ConnectorResult` (`untrusted=True`). |
 | `sdk` | `BaseConnector`: dispatch by capability, reject undeclared capabilities, enforce the manifest output-size limit. |
-| `sandbox` | `SandboxSpec` (isolation guarantees from the manifest) + `SandboxRunner` protocol + `InProcessRunner` (default). The pluggable isolation seam per **ADR-0013**; subprocess/container runners are drop-in. |
+| `sandbox` | `SandboxSpec` (isolation guarantees from the manifest) + `SandboxRunner` protocol + `InProcessRunner` (default) + `SubprocessRunner` (the ADR-0013 baseline worker; `sandbox_worker` is the child side). The pluggable isolation seam per **ADR-0013**; a container runner is drop-in. |
 | `host` | `PluginHost`: **install** (verify signature) → **enable** → **disable/revoke** (terminal); **invoke** enforces enabled → OPA permission → runs via the **sandbox runner** (scoped egress + timeout) → untrusted result; audited. |
 | `connectors/` | Built-in `siem.search` (read), `ti.lookup_indicator` (read, offline) + `ti.live_lookup` (read, egress-gated), `ticketing.create_ticket` (consequential). |
 | `builtin` | Signs + installs + enables the built-ins on an offline host (egress disabled by default). |
@@ -102,8 +102,15 @@ consequential-blocked-direct rule, and the agent→connector bridge.
 
 - **Sandbox mechanism DECIDED — [ADR-0013](../adr/ADR-0013-plugin-sandbox.md)** (out-of-process
   worker + host-brokered capabilities baseline; container per orchestrated profile; pluggable
-  `SandboxRunner`). The default `InProcessRunner` enforces the in-process guarantees today; the
-  **subprocess/container worker runners** (OS-level isolation) are FUTURE.
+  `SandboxRunner`). `InProcessRunner` (default) enforces the in-process guarantees;
+  **`SubprocessRunner`** delivers the ADR-0013 baseline: every call in a fresh interpreter that
+  holds no socket and no secret value — HTTP is relayed to the host, which applies the plugin's
+  egress guard and substitutes `$secret:<name>` references into headers; Linux workers also enter
+  an empty user+network namespace (degrades silently where unprivileged namespaces are off);
+  wall-time kill + address-space rlimit (`ResourceLimits.max_memory_bytes`). Selected with the AI
+  Gateway's `PLUGINS_SANDBOX=subprocess`; not yet the default because each call spawns a process
+  (a warm worker pool, seccomp, and the **container runner** for orchestrated profiles are
+  FUTURE). Connectors must be picklable to run there — the built-ins are.
 - Built-in connectors ship **both** offline fixtures (the default; air-gapped profile) and real
   HTTP backends — `OpenSearchLogBackend` (SIEM `_search` on a per-tenant index pattern),
   `HttpTicketBackend` (JSON POST + `Idempotency-Key`), and the TI live feed lookup — all through

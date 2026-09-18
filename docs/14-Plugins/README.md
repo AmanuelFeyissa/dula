@@ -3,7 +3,7 @@ title: Plugins — Overview
 document_id: PLG-000
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-11
+last_updated: 2026-09-18
 owner: Integrations / Security
 audience: Integration & security engineers
 phase: Documentation Bootstrap (M000)
@@ -16,8 +16,9 @@ phase: Documentation Bootstrap (M000)
 > permission model, egress allowlist + SSRF, host lifecycle, and the first connectors are
 > implemented (offline profile). The **sandbox mechanism** is **DECIDED (ADR-0013)** — an
 > out-of-process worker with host-brokered capabilities (baseline) + container per profile,
-> behind a pluggable runner; the OS-level worker runners, real external connectors, and a
-> third-party loader are FUTURE.
+> behind a pluggable runner. The baseline worker runner (`SubprocessRunner`) and real HTTP
+> connector backends (OpenSearch SIEM, REST ticketing, TI feed) are implemented; the container
+> runner and a third-party loader are FUTURE.
 
 ## Documents
 

@@ -62,8 +62,9 @@ boundary is a deployment concern, not a code change:
 The framework already realizes the enforceable-in-process guarantees (timeout, output limit, and —
 structurally — brokered-only network, since a connector receives an `EgressGuard`, never a raw
 socket). Phase 07's host is refactored to run every call through a `SandboxRunner` (default
-`InProcessRunner`); the `SubprocessRunner` (baseline worker) and `ContainerRunner` (deploy-profile)
-implement the same interface and are delivered with the plugin worker/loader (Phase 07+/08).
+`InProcessRunner`); the `SubprocessRunner` (baseline worker: fresh interpreter, host-brokered HTTP
+and secrets, Linux user+net namespace, rlimit, wall-time kill) is implemented and selectable per
+deployment; the `ContainerRunner` (deploy-profile) implements the same interface and is FUTURE.
 
 ## Consequences
 - **Portable, air-gapped-first baseline**: the subprocess worker needs no container runtime and no

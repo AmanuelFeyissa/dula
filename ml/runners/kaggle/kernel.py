@@ -32,15 +32,30 @@ def sh(*cmd: str, cwd: Path | None = None, check: bool = True) -> int:
     return subprocess.run(list(cmd), check=check, cwd=cwd).returncode  # noqa: S603
 
 
-def main() -> None:
+TOKEN_FILE = Path("/kaggle/input/dula-hf-token/hf_token.txt")
+
+
+def _hf_token() -> str | None:
     try:
         from kaggle_secrets import UserSecretsClient
 
-        os.environ["HF_TOKEN"] = UserSecretsClient().get_secret("HF_TOKEN")
-        print("HF_TOKEN loaded from Kaggle secrets", flush=True)
+        return str(UserSecretsClient().get_secret("HF_TOKEN")).strip() or None
     except Exception as exc:
-        # Only gated datasets (Primus, in "full" mode) need it; the smoke run does not.
-        print(f"no HF_TOKEN secret ({exc}); gated datasets will fail", flush=True)
+        print(f"no HF_TOKEN secret ({exc}); trying the attached dataset", flush=True)
+    if TOKEN_FILE.is_file():
+        return TOKEN_FILE.read_text(encoding="utf-8").strip() or None
+    return None
+
+
+def main() -> None:
+    # The HF token (gated Primus needs it in "full" mode; smoke does not): a Kaggle user secret
+    # named HF_TOKEN, or a private one-file dataset attached as a data source.
+    token = _hf_token()
+    if token:
+        os.environ["HF_TOKEN"] = token
+        print("HF_TOKEN loaded", flush=True)
+    else:
+        print("no HF_TOKEN available; gated datasets will fail", flush=True)
 
     # Keep the HF cache off the 20 GB /kaggle/working quota; the 7B base alone is ~15 GB.
     os.environ.setdefault("HF_HOME", "/root/.cache/huggingface")

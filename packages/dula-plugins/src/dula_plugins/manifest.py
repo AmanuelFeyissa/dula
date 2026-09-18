@@ -38,6 +38,7 @@ class Capability(BaseModel):
 class ResourceLimits(BaseModel):
     timeout_seconds: float = Field(default=10.0, gt=0, le=120)
     max_output_bytes: int = Field(default=1_000_000, gt=0, le=50_000_000)
+    max_memory_bytes: int = Field(default=512 * 1024 * 1024, gt=0, le=8 * 1024 * 1024 * 1024)
 
 
 class PluginManifest(BaseModel):

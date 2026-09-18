@@ -19,6 +19,7 @@ from dula_plugins.connectors.ticketing import (
     TicketingConnector,
 )
 from dula_plugins.host import AuditHook, PermissionChecker, PluginHost
+from dula_plugins.sandbox import InProcessRunner, SandboxRunner
 from dula_plugins.signing import TrustStore, generate_keypair, sign_manifest
 
 BUILTIN_KEY_ID = "dula-builtin"
@@ -45,6 +46,7 @@ def build_offline_host(
     egress_enabled: bool = False,
     resolve_egress: bool = True,
     audit: AuditHook | None = None,
+    runner: SandboxRunner | None = None,
 ) -> tuple[PluginHost, BuiltinBackends]:
     """Assemble a host with the built-in connectors installed + enabled → (host, backends)."""
     if backends is None:
@@ -60,6 +62,7 @@ def build_offline_host(
         egress_enabled=egress_enabled,
         resolve_egress=resolve_egress,
         audit=audit,
+        runner=runner or InProcessRunner(),
     )
 
     connectors = [
