@@ -91,6 +91,8 @@ class Settings(BaseSettings):
     # no Postgres required to run the gateway at all; "postgres" makes runs (and their
     # approvals) survive a restart. Same default database as platform-api, different tables.
     run_store: Literal["memory", "postgres"] = "memory"
+    # Scheduled/event-triggered playbooks: the in-process scheduler that fires due triggers.
+    automation_scheduler_enabled: bool = True
     database_url: str = "postgresql+asyncpg://dula:dula_dev_password@localhost:5432/dula"
 
     @property

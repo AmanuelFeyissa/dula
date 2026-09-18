@@ -152,3 +152,64 @@ def test_tenant_isolation_on_read(env: tuple[TestClient, Holder]) -> None:
     _as(holder, "tenant-b", "analyst")
     assert client.get(f"/api/v1/automation/runs/{run_id}").status_code == 404
     assert client.get(f"/api/v1/automation/runs/{run_id}/report").status_code == 404
+
+
+# --- Triggers ----------------------------------------------------------------------------
+
+
+def test_trigger_create_fire_and_runs_as_creator(env: tuple[TestClient, Holder]) -> None:
+    client, holder = env
+    resp = client.post(
+        "/api/v1/automation/triggers",
+        json={"playbook": "triage-enrich-ticket", "goal": "Hourly sweep", "interval_seconds": 3600},
+    )
+    assert resp.status_code == 201, resp.text
+    trigger = resp.json()
+    assert trigger["kind"] == "interval" and trigger["subject"] == "analyst-1"
+    assert trigger["roles"] == ["analyst"] and trigger["next_fire_at"] is not None
+
+    listed = client.get("/api/v1/automation/triggers").json()
+    assert [t["id"] for t in listed] == [trigger["id"]]
+
+    # Another tenant sees nothing and cannot fire or disable it.
+    _as(holder, "tenant-y", "analyst")
+    assert client.get("/api/v1/automation/triggers").json() == []
+    assert client.post(f"/api/v1/automation/triggers/{trigger['id']}/fire").status_code == 404
+    assert client.delete(f"/api/v1/automation/triggers/{trigger['id']}").status_code == 404
+
+    # A responder in the owning tenant fires it manually: the run acts as the creator (analyst-1
+    # with the analyst role), and the consequential ticket step still waits for a human.
+    holder["ctx"] = RequestContext(subject="responder-9", tenant="tenant-x", roles=("responder",))
+    fired = client.post(f"/api/v1/automation/triggers/{trigger['id']}/fire")
+    assert fired.status_code == 200, fired.text
+    run = fired.json()
+    assert run["goal"] == "Hourly sweep" and run["state"] == "awaiting_approval"
+    stored = client.get(f"/api/v1/automation/runs/{run['run_id']}").json()
+    assert stored["run_id"] == run["run_id"]
+    automation = client.app.state.automation  # type: ignore[attr-defined]
+    saved = automation.store._runs[run["run_id"]]
+    assert saved.record.subject == "analyst-1" and saved.roles == ("analyst",)
+
+    disabled = client.delete(f"/api/v1/automation/triggers/{trigger['id']}")
+    assert disabled.status_code == 200 and disabled.json()["enabled"] is False
+    assert client.post(f"/api/v1/automation/triggers/{trigger['id']}/fire").status_code == 404
+
+
+def test_trigger_validation_and_authz(env: tuple[TestClient, Holder]) -> None:
+    client, _ = env
+    both = client.post(
+        "/api/v1/automation/triggers",
+        json={"playbook": "triage-enrich-ticket", "interval_seconds": 600, "event_type": "x"},
+    )
+    assert both.status_code == 422
+    unknown = client.post(
+        "/api/v1/automation/triggers", json={"playbook": "nope", "interval_seconds": 600}
+    )
+    assert unknown.status_code == 404
+
+    _wire(client, ActionOPA(allowed={"automation.read", "automation.run"}))  # no .schedule
+    denied = client.post(
+        "/api/v1/automation/triggers",
+        json={"playbook": "triage-enrich-ticket", "interval_seconds": 600},
+    )
+    assert denied.status_code == 403

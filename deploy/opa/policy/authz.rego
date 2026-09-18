@@ -55,8 +55,11 @@ role_actions := {
 		"knowledge.ingest",
 		"tool.create_ticket",
 		"connector.ticketing.create",
+		# Standing delegation: a scheduled/event-triggered playbook runs as its creator, so only
+		# roles that may run playbooks interactively may schedule them (viewers may not).
+		"automation.schedule",
 	},
-	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest", "tool.create_ticket", "connector.ticketing.create"},
+	"hunter": {"alerts.create", "alerts.update", "knowledge.ingest", "tool.create_ticket", "connector.ticketing.create", "automation.schedule"},
 	"responder": {
 		"incidents.create",
 		"incidents.update",
@@ -65,6 +68,7 @@ role_actions := {
 		"tool.create_ticket",
 		"tool.isolate_host",
 		"connector.ticketing.create",
+		"automation.schedule",
 	},
 	"engineer": {
 		"assets.create",

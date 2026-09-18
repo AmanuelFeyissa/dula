@@ -14,6 +14,7 @@ from dula_agents.types import ApprovalDecision, RunRecord, RunState
 from dula_automation.catalog import resolve_base_agent
 from dula_automation.playbook import Playbook, PlaybookError, compile_playbook
 from dula_automation.report import generate_report
+from dula_automation.triggers import Trigger, TriggerError
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -173,17 +174,19 @@ async def run_playbook(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"unknown playbook '{name}' (available: {available})",
         )
+    goal = data.goal.strip() or f"Run playbook '{playbook.title}'"
     try:
-        agent = compile_playbook(playbook, resolve_base_agent(playbook))
+        record = await automation.start_playbook(
+            playbook=playbook.name,
+            goal=goal,
+            tenant=ctx.tenant,
+            subject=ctx.subject,
+            roles=tuple(ctx.roles),
+        )
     except PlaybookError as exc:  # pragma: no cover - built-ins are validated at registration
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
         ) from exc
-    goal = data.goal.strip() or f"Run playbook '{playbook.title}'"
-    record = await automation.runtime.start(
-        agent=agent, goal=goal, tenant=ctx.tenant, subject=ctx.subject, roles=list(ctx.roles)
-    )
-    await automation.store.save(record, tuple(ctx.roles))
     return _run_out(record, playbook.name)
 
 
@@ -261,3 +264,112 @@ async def get_report(run_id: str, ctx: Context, automation: Automation) -> Repor
         ],
         markdown=report.to_markdown(),
     )
+
+
+# --- Triggers: scheduled / event-triggered runs (a standing, revocable delegation) ---------
+
+
+class CreateTriggerRequest(BaseModel):
+    playbook: str
+    goal: str = ""
+    interval_seconds: int | None = Field(default=None, ge=1)
+    event_type: str | None = Field(default=None, max_length=128)
+
+
+class TriggerOut(BaseModel):
+    id: str
+    playbook: str
+    kind: str
+    goal: str
+    subject: str
+    roles: list[str]
+    interval_seconds: int | None
+    event_type: str | None
+    enabled: bool
+    next_fire_at: str | None
+    last_fired_at: str | None
+    fire_count: int
+
+
+def _trigger_out(t: Trigger) -> TriggerOut:
+    return TriggerOut(
+        id=t.trigger_id,
+        playbook=t.playbook,
+        kind=t.kind,
+        goal=t.goal,
+        subject=t.subject,
+        roles=list(t.roles),
+        interval_seconds=t.interval_seconds,
+        event_type=t.event_type,
+        enabled=t.enabled,
+        next_fire_at=t.next_fire_at.isoformat() if t.next_fire_at else None,
+        last_fired_at=t.last_fired_at.isoformat() if t.last_fired_at else None,
+        fire_count=t.fire_count,
+    )
+
+
+@router.get(
+    "/triggers",
+    response_model=list[TriggerOut],
+    dependencies=[Depends(require("automation.read"))],
+)
+async def list_triggers(ctx: Context, automation: Automation) -> list[TriggerOut]:
+    return [_trigger_out(t) for t in await automation.triggers.for_tenant(ctx.tenant)]
+
+
+@router.post(
+    "/triggers",
+    response_model=TriggerOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("automation.schedule"))],
+)
+async def create_trigger(
+    data: CreateTriggerRequest, ctx: Context, automation: Automation
+) -> TriggerOut:
+    playbook = automation.library.get(data.playbook)
+    if playbook is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"unknown playbook '{data.playbook}'"
+        )
+    try:
+        # The trigger's runs act as *this* caller with *these* roles -- nothing more.
+        trigger = await automation.triggers.create(
+            tenant=ctx.tenant,
+            playbook=playbook.name,
+            subject=ctx.subject,
+            roles=tuple(ctx.roles),
+            goal=data.goal or f"Run playbook '{playbook.title}'",
+            interval_seconds=data.interval_seconds,
+            event_type=data.event_type,
+        )
+    except TriggerError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return _trigger_out(trigger)
+
+
+@router.delete(
+    "/triggers/{trigger_id}",
+    response_model=TriggerOut,
+    dependencies=[Depends(require("automation.schedule"))],
+)
+async def disable_trigger(trigger_id: str, ctx: Context, automation: Automation) -> TriggerOut:
+    trigger = await automation.triggers.disable(ctx.tenant, trigger_id)
+    if trigger is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="trigger not found")
+    return _trigger_out(trigger)
+
+
+@router.post(
+    "/triggers/{trigger_id}/fire",
+    response_model=RunOut,
+    dependencies=[Depends(require("automation.schedule"))],
+)
+async def fire_trigger(trigger_id: str, ctx: Context, automation: Automation) -> RunOut:
+    """Fire a trigger now (operator check / manual kick); the run still acts as the creator."""
+    trigger = await automation.triggers.get(ctx.tenant, trigger_id)
+    if trigger is None or not trigger.enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="trigger not found")
+    record = await automation.triggers.fire(trigger)
+    return _run_out(record, trigger.playbook)

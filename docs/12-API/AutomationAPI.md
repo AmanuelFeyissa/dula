@@ -3,7 +3,7 @@ title: Automation API (Playbooks, Runs, Reports)
 document_id: API-007
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-13
+last_updated: 2026-09-18
 owner: AI / Backend
 audience: Developer, API consumer
 phase: Phase 08 — Automation (M008)
@@ -41,6 +41,18 @@ enforced by the runtime at each step in addition to the endpoint action below.
 | `GET /api/v1/automation/runs/{run_id}` | `automation.read` | Read a run's trace/state |
 | `POST /api/v1/automation/runs/{run_id}/approval` | `automation.approve` | Approve/reject a paused action |
 | `GET /api/v1/automation/runs/{run_id}/report` | `reports.read` | Grounded executive + technical report |
+| `GET /api/v1/automation/triggers` | `automation.read` | List the tenant's scheduled / event triggers |
+| `POST /api/v1/automation/triggers` | `automation.schedule` | Create a trigger (`playbook`, `goal`, and exactly one of `interval_seconds` ≥ 60 or `event_type`) |
+| `DELETE /api/v1/automation/triggers/{trigger_id}` | `automation.schedule` | Disable a trigger (revoke the delegation) |
+| `POST /api/v1/automation/triggers/{trigger_id}/fire` | `automation.schedule` | Fire a trigger now (returns the started run) |
+
+A trigger is a **standing, revocable delegation**: its runs start on behalf of the user who
+created it, with that user's roles as snapshotted at creation, so a scheduled run can never do
+more than its creator could interactively — and a consequential step still pauses for human
+approval. Interval triggers are fired by the AI Gateway's in-process scheduler
+(`AUTOMATION_SCHEDULER_ENABLED`, 15 s tick); event triggers fire via `TriggerService.on_event`
+(wiring the event bus consumer to it is FUTURE). Trigger storage is in-memory (durable store
+FUTURE).
 
 ## Run a playbook
 

@@ -106,9 +106,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     app.state.agents = build_agent_subsystem(app.state.opa, app.state.plugins, store=agent_store)
     app.state.automation = build_automation_subsystem(app.state.agents, store=automation_store)
+    if settings.automation_scheduler_enabled:
+        await app.state.automation.scheduler.start()
     try:
         yield
     finally:
+        await app.state.automation.scheduler.stop()
         await publisher.stop()
         if engine is not None:
             await engine.dispose()

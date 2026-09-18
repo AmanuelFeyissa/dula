@@ -282,3 +282,19 @@ test_no_roles_cannot_run_playbook if {
 		"resource": {"tenant_id": "t1"},
 	}
 }
+
+test_analyst_can_schedule_playbook if {
+	allow with input as {
+		"subject": {"roles": ["analyst"], "tenant_id": "t1"},
+		"action": "automation.schedule",
+		"resource": {"tenant_id": "t1"},
+	}
+}
+
+test_viewer_cannot_schedule_playbook if {
+	not allow with input as {
+		"subject": {"roles": ["viewer"], "tenant_id": "t1"},
+		"action": "automation.schedule",
+		"resource": {"tenant_id": "t1"},
+	}
+}

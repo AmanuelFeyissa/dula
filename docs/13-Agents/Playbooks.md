@@ -3,7 +3,7 @@ title: Automation Playbooks & Reporting
 document_id: AGT-007
 status: Draft
 version: 0.1.0
-last_updated: 2026-08-13
+last_updated: 2026-09-18
 owner: AI / Security
 audience: Developer, AI Engineer, Security Engineer
 phase: Phase 08 — Automation (M008)
@@ -131,7 +131,10 @@ operational load test in [../16-Operations/TelemetryScaleTest.md](../16-Operatio
 
 ## Limitations (Phase 08)
 
-- One built-in playbook; scheduled/triggered execution and a playbook-authoring UI are **FUTURE**.
+- One built-in playbook; a playbook-authoring UI is **FUTURE**. Scheduled (interval) and
+  event-triggered execution exist (`dula_automation.triggers`, `/api/v1/automation/triggers`):
+  runs act as the trigger's creator with their snapshotted roles; the bus consumer that feeds
+  event triggers and a durable trigger store are **FUTURE**.
 - Run store + approval broker are **in-memory** (durable persistence/notifications FUTURE).
 - Reports are Markdown; PDF/branded export is **FUTURE**.
 - Cluster-scale load testing is documented but not executed in CI (**FUTURE**, needs infra).
