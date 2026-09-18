@@ -26,6 +26,7 @@ def build(
     out_dir: str,
     val_fraction: float,
     seed: int,
+    max_pairs: int | None = None,
 ) -> dict[str, int]:
     from datasets import load_dataset  # heavy; only needed on the runner
 
@@ -43,6 +44,8 @@ def build(
 
     rng = random.Random(seed)
     rng.shuffle(unique)
+    if max_pairs is not None:
+        unique = unique[:max_pairs]
     n_val = max(1, int(len(unique) * val_fraction)) if unique else 0
     val, train = unique[:n_val], unique[n_val:]
 

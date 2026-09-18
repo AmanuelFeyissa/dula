@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -39,7 +40,40 @@ def _smoke_benchmark() -> None:
     Path(BENCH_SMOKE).write_text(json.dumps(bench, indent=2), encoding="utf-8")
 
 
-def run(mode: str, *, version: str, hf_repo: str) -> dict[str, object]:
+def _stage_adapter(local_dir: str, repo: str, path_in_repo: str) -> None:
+    """Park an intermediate adapter on the Hub so a later session can resume from it."""
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    api.create_repo(repo, repo_type="model", private=True, exist_ok=True)
+    api.upload_folder(folder_path=local_dir, repo_id=repo, path_in_repo=path_in_repo)
+    print(f"staged {local_dir} -> hf://{repo}/{path_in_repo}", flush=True)
+
+
+def _download_adapter(spec: str, local_dir: str) -> str:
+    """``repo_id/path`` (as printed by _stage_adapter, without the hf:// prefix)."""
+    from huggingface_hub import snapshot_download
+
+    parts = spec.split("/")
+    repo, sub = "/".join(parts[:2]), "/".join(parts[2:])
+    snapshot_download(repo, allow_patterns=[f"{sub}/*"] if sub else None, local_dir="out/_resume")
+    src = Path("out/_resume") / sub
+    dst = Path(local_dir)
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.copytree(src, dst)
+    print(f"resumed SFT adapter from hf://{spec} -> {local_dir}", flush=True)
+    return str(dst)
+
+
+def run(
+    mode: str,
+    *,
+    version: str,
+    hf_repo: str,
+    staging_repo: str = "AmanuelFeyissa/dula-ai-staging",
+    sft_from: str | None = None,
+) -> dict[str, object]:
     from dula_ml.modelcard import render_model_card
     from dula_ml.registry import append_entry
 
@@ -96,12 +130,19 @@ def run(mode: str, *, version: str, hf_repo: str) -> dict[str, object]:
             out_dir="data",
             val_fraction=pref_ds.val_fraction,
             seed=pref_ds.seed,
+            max_pairs=pref_ds.max_pairs,
         )
         sft_cfg = TrainConfig()
         dpo_kwargs = {}
         base_model = sft_cfg.base_model
 
-    sft_dir = train(sft_cfg)
+    if sft_from and not smoke:
+        # Resume: reuse an SFT adapter a previous (capped or crashed) session already staged.
+        sft_dir = _download_adapter(sft_from, sft_cfg.output_dir)
+    else:
+        sft_dir = train(sft_cfg)
+        if not smoke:
+            _stage_adapter(sft_dir, staging_repo, f"v{version}-sft")
     out_dir = train_dpo(DPOConfig(base_model=sft_dir, **dpo_kwargs))  # type: ignore[arg-type]
 
     eval_run(
@@ -170,8 +211,13 @@ def main() -> None:
     parser.add_argument(
         "--hf-repo", default=os.environ.get("DULA_HF_REPO", "AmanuelFeyissa/dula-ai")
     )
+    parser.add_argument(
+        "--sft-from",
+        default=os.environ.get("DULA_SFT_FROM") or None,
+        help="resume from a staged SFT adapter, e.g. AmanuelFeyissa/dula-ai-staging/v0.3-sft",
+    )
     args = parser.parse_args()
-    run(args.mode, version=args.version, hf_repo=args.hf_repo)
+    run(args.mode, version=args.version, hf_repo=args.hf_repo, sft_from=args.sft_from)
 
 
 if __name__ == "__main__":

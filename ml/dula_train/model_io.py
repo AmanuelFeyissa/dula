@@ -21,6 +21,18 @@ def adapter_base_model(path: str) -> str | None:
     return str(json.loads(cfg.read_text(encoding="utf-8"))["base_model_name_or_path"])
 
 
+def native_bf16() -> bool:
+    """True only on Ampere+ (sm_80+). ``torch.cuda.is_bf16_supported()`` also says True on a
+    T4, where bf16 is *emulated* and 5-10x slower than fp16 -- exactly what a free Kaggle/Colab
+    GPU is."""
+    import torch
+
+    if not torch.cuda.is_available():
+        return False
+    major, _ = torch.cuda.get_device_capability()
+    return major >= 8
+
+
 def quant_config(*, enabled: bool) -> Any | None:
     """nf4 4-bit config on CUDA (fp16 compute on T4, bf16 on Ampere+); None on CPU."""
     import torch
@@ -28,7 +40,7 @@ def quant_config(*, enabled: bool) -> Any | None:
 
     if not (enabled and torch.cuda.is_available()):
         return None
-    bf16 = torch.cuda.is_bf16_supported()
+    bf16 = native_bf16()
     return BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",

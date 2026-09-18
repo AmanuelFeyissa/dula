@@ -80,6 +80,9 @@ class PreferenceDatasetConfig(BaseModel):
     seed: int = 42
     out_dir: str = "data"
     benchmark_file: str = "evaluation/benchmark_seed.json"
+    # Keep only what the DPO pass will consume (see DPOConfig.max_steps); tokenizing all 42k
+    # pairs cost minutes per run for nothing.
+    max_pairs: int = 2_400
 
 
 class DPOConfig(BaseModel):
@@ -96,11 +99,13 @@ class DPOConfig(BaseModel):
     val_file: str = "data/pref_val.jsonl"
     output_dir: str = "out/dula-qlora-dpo"
     beta: float = 0.1
-    max_seq_len: int = 1024
+    # 512 total / 384 prompt (keep_end) fits chosen+rejected+reference passes on a 16 GB T4.
+    max_seq_len: int = 512
+    max_prompt_len: int = 384
     epochs: float = 1.0
     # harmless-base is ~42k pairs; a full epoch of 7B DPO on a T4 would blow Kaggle's 12h
-    # session cap. 300 steps x (2 x 8) = 4.8k pairs is plenty for a restoration pass.
-    max_steps: int = 300
+    # session cap. 120 steps x 16 = 1,920 pairs is enough for a restoration pass.
+    max_steps: int = 120
     learning_rate: float = 5e-6
     # DPO forwards chosen + rejected (and the reference) per example: micro-batch 1 on a T4,
     # same effective batch of 16 as SFT.

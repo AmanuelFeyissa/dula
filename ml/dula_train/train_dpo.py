@@ -15,6 +15,7 @@ import argparse
 import inspect
 import json
 from pathlib import Path
+from typing import Any
 
 from dula_train.config import DPOConfig
 
@@ -28,14 +29,19 @@ def train(cfg: DPOConfig) -> str:
     from trl import DPOConfig as TRLDPOConfig
     from trl import DPOTrainer
 
-    from dula_train.model_io import adapter_base_model, load_causal_lm, quant_config
+    from dula_train.model_io import (
+        adapter_base_model,
+        load_causal_lm,
+        native_bf16,
+        quant_config,
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     cuda = torch.cuda.is_available()
-    bf16 = cuda and torch.cuda.is_bf16_supported()  # Ampere+ (A100/L4); False on Kaggle T4
+    bf16 = native_bf16()  # Ampere+ only; a T4 only *emulates* bf16 (slow)
 
     # A 4-bit SFT run leaves an adapter-only directory: continue training that same adapter.
     # Either way the reference model is the base with adapters disabled (no second copy in
@@ -57,8 +63,8 @@ def train(cfg: DPOConfig) -> str:
         )
     )
 
-    train_ds = load_dataset("json", data_files=cfg.train_file, split="train")
-    eval_ds = load_dataset("json", data_files=cfg.val_file, split="train")
+    train_ds = load_dataset("json", data_files=cfg.train_file, split="train").map(_conversational)
+    eval_ds = load_dataset("json", data_files=cfg.val_file, split="train").map(_conversational)
 
     dpo_kwargs: dict[str, object] = {
         "output_dir": cfg.output_dir,
@@ -84,6 +90,8 @@ def train(cfg: DPOConfig) -> str:
         dpo_kwargs["max_length"] = cfg.max_seq_len
     elif "max_seq_length" in dpo_params:
         dpo_kwargs["max_seq_length"] = cfg.max_seq_len
+    if "max_prompt_length" in dpo_params:
+        dpo_kwargs["max_prompt_length"] = cfg.max_prompt_len
     dpo_args = TRLDPOConfig(**dpo_kwargs)
 
     mlflow.set_experiment(cfg.mlflow_experiment)
@@ -110,6 +118,15 @@ def train(cfg: DPOConfig) -> str:
 
     print(json.dumps({"output_dir": cfg.output_dir, "base_model": cfg.base_model}))
     return cfg.output_dir
+
+
+def _conversational(row: dict[str, Any]) -> dict[str, Any]:
+    """trl's conversational preference format: the chat template then owns the boundaries."""
+    return {
+        "prompt": [{"role": "user", "content": row["prompt"]}],
+        "chosen": [{"role": "assistant", "content": row["chosen"]}],
+        "rejected": [{"role": "assistant", "content": row["rejected"]}],
+    }
 
 
 def _write_smoke_data(path: str) -> None:

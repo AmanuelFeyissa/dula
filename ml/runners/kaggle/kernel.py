@@ -19,7 +19,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-MODE = "full"
+MODE = "smoke"
+# Resume switch: a staged SFT adapter (printed by pipeline.py as hf://<repo>/<path>) lets a
+# second session skip SFT after a capped or crashed run. Empty = train SFT.
+SFT_FROM = ""
 REPO = "https://github.com/AmanuelFeyissa/dula.git"
 WORK = Path("/kaggle/working")
 CLONE = WORK / "dula"
@@ -63,6 +66,10 @@ def main() -> None:
     # Kaggle may hand out 2x T4. device_map="auto" would shard the model across both and the
     # Trainer would then wrap it in DataParallel and crash; a single T4 is the target anyway.
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    # The first 7B run died of allocator fragmentation (3.5 GB reserved-but-unallocated).
+    os.environ.setdefault("PYTORCH_ALLOC_CONF", "expandable_segments:True")
+    if SFT_FROM:
+        os.environ["DULA_SFT_FROM"] = SFT_FROM
 
     if CLONE.exists():
         shutil.rmtree(CLONE)
@@ -86,7 +93,7 @@ def main() -> None:
         if (out / name).exists():
             shutil.copy2(out / name, RESULT / name)
     # The adapter is small (LoRA r=16); keep it as kernel output so it can be pulled without HF.
-    for sub in ("dula-qlora-dpo", "smoke-dpo"):
+    for sub in ("dula-qlora", "dula-qlora-dpo", "smoke-dpo"):
         if (out / sub).is_dir():
             shutil.copytree(out / sub, RESULT / sub, dirs_exist_ok=True)
     # The clone (plus any merged model) would otherwise count against the output quota.

@@ -23,6 +23,8 @@ def train(cfg: TrainConfig) -> str:
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from trl import SFTConfig, SFTTrainer
 
+    from dula_train.model_io import native_bf16
+
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -35,7 +37,7 @@ def train(cfg: TrainConfig) -> str:
         )
 
     cuda = torch.cuda.is_available()
-    bf16 = cuda and torch.cuda.is_bf16_supported()  # Ampere+ (A100/L4); False on Kaggle T4
+    bf16 = native_bf16()  # Ampere+ only; a T4 only *emulates* bf16 (slow)
     compute_dtype = torch.bfloat16 if bf16 else torch.float16
 
     quant = None
