@@ -101,14 +101,14 @@ def train(cfg: TrainConfig) -> str:
             processing_class=tokenizer,
         )
         trainer.train()
-        # Save a full, self-contained model when possible (merge LoRA into the base) so the
-        # evaluator/serving can load it directly. Merging isn't supported on a 4-bit base, so
-        # fall back to saving just the adapter there.
-        try:
+        # On a quantized base, save the adapter only: peft can merge into nf4 weights now, but
+        # the result is a lossy, bnb-serialized full model rather than a small adapter over the
+        # stock base (which model_io loads everywhere and merges losslessly in fp16 for serving).
+        if quant is None:
             merged = trainer.model.merge_and_unload()
             merged.save_pretrained(cfg.output_dir)
-        except Exception:
-            trainer.save_model(cfg.output_dir)
+        else:
+            trainer.model.save_pretrained(cfg.output_dir)
         tokenizer.save_pretrained(cfg.output_dir)
         mlflow.log_artifacts(cfg.output_dir, artifact_path="model")
 

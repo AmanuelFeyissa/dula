@@ -42,7 +42,8 @@ def train(cfg: DPOConfig) -> str:
     # VRAM) -- for the adapter case that is the *untuned* base, which is exactly the refusal
     # behaviour this pass is meant to pull the policy back toward.
     continuing_adapter = adapter_base_model(cfg.base_model) is not None
-    model = load_causal_lm(cfg.base_model, quant=quant_config(enabled=True), trainable_adapter=True)
+    quant = quant_config(enabled=True)
+    model = load_causal_lm(cfg.base_model, quant=quant, trainable_adapter=True)
     peft_config = (
         None
         if continuing_adapter
@@ -97,13 +98,13 @@ def train(cfg: DPOConfig) -> str:
             processing_class=tokenizer,
         )
         trainer.train()
-        # Same merge-with-adapter-fallback as train_qlora.py: merging isn't supported on a
-        # 4-bit base, so fall back to saving just the adapter there.
-        try:
+        # Same rule as train_qlora.py: adapter-only on a quantized base (the adapter references
+        # the stock HF base, so eval/serving load base + adapter); merged full model on CPU.
+        if quant is None:
             merged = trainer.model.merge_and_unload()
             merged.save_pretrained(cfg.output_dir)
-        except Exception:
-            trainer.save_model(cfg.output_dir)
+        else:
+            trainer.model.save_pretrained(cfg.output_dir)
         tokenizer.save_pretrained(cfg.output_dir)
         mlflow.log_artifacts(cfg.output_dir, artifact_path="model")
 
