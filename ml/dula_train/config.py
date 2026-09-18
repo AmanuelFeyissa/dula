@@ -96,7 +96,9 @@ class DPOConfig(BaseModel):
     beta: float = 0.1
     max_seq_len: int = 1024
     epochs: float = 1.0
-    max_steps: int = -1
+    # harmless-base is ~42k pairs; a full epoch of 7B DPO on a T4 would blow Kaggle's 12h
+    # session cap. 300 steps x (2 x 8) = 4.8k pairs is plenty for a restoration pass.
+    max_steps: int = 300
     learning_rate: float = 5e-6
     batch_size: int = 2
     grad_accum: int = 8

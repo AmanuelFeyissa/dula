@@ -33,9 +33,15 @@ class _Backend:
         self._cfg = cfg
         self._pipe = None
         if cfg.endpoint is None:
-            from transformers import pipeline
+            from transformers import AutoTokenizer, pipeline
 
-            self._pipe = pipeline("text-generation", model=cfg.model)
+            from dula_train.model_io import load_causal_lm, quant_config
+
+            # 4-bit on GPU so a 7B candidate *and* its baseline fit a free T4; on CPU (smoke)
+            # the tiny model loads as-is. Both sides of the gate load the same way.
+            model = load_causal_lm(cfg.model, quant=quant_config(enabled=True))
+            tokenizer = AutoTokenizer.from_pretrained(cfg.model)
+            self._pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     def generate(self, prompt: str) -> str:
         if self._pipe is not None:

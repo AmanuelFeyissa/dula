@@ -24,9 +24,11 @@ def train(cfg: DPOConfig) -> str:
     import torch
     from datasets import load_dataset
     from peft import LoraConfig
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from transformers import AutoTokenizer
     from trl import DPOConfig as TRLDPOConfig
     from trl import DPOTrainer
+
+    from dula_train.model_io import adapter_base_model, load_causal_lm, quant_config
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.base_model)
     if tokenizer.pad_token is None:
@@ -34,29 +36,24 @@ def train(cfg: DPOConfig) -> str:
 
     cuda = torch.cuda.is_available()
     bf16 = cuda and torch.cuda.is_bf16_supported()  # Ampere+ (A100/L4); False on Kaggle T4
-    compute_dtype = torch.bfloat16 if bf16 else torch.float16
 
-    quant = None
-    if cuda:
-        quant = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=compute_dtype,
-            bnb_4bit_use_double_quant=True,
+    # A 4-bit SFT run leaves an adapter-only directory: continue training that same adapter.
+    # Either way the reference model is the base with adapters disabled (no second copy in
+    # VRAM) -- for the adapter case that is the *untuned* base, which is exactly the refusal
+    # behaviour this pass is meant to pull the policy back toward.
+    continuing_adapter = adapter_base_model(cfg.base_model) is not None
+    model = load_causal_lm(cfg.base_model, quant=quant_config(enabled=True), trainable_adapter=True)
+    peft_config = (
+        None
+        if continuing_adapter
+        else LoraConfig(
+            r=16,
+            lora_alpha=32,
+            lora_dropout=0.05,
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules="all-linear",
         )
-    model = AutoModelForCausalLM.from_pretrained(
-        cfg.base_model, quantization_config=quant, device_map="auto"
-    )
-
-    # peft_config below means DPOTrainer disables the adapter to get the reference logprobs
-    # instead of materializing a second copy of the base model -- no extra VRAM for a ref model.
-    peft_config = LoraConfig(
-        r=16,
-        lora_alpha=32,
-        lora_dropout=0.05,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules="all-linear",
     )
 
     train_ds = load_dataset("json", data_files=cfg.train_file, split="train")
