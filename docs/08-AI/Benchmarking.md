@@ -55,6 +55,32 @@ Phase 05 adds domain benchmark suites in `dula_ai.intel.benchmark`, asserted by
 These run offline in CI, so a regression in extraction quality or rule validity blocks the
 build. Full capability reference: [./CyberIntelligence.md](./CyberIntelligence.md).
 
+## 1c. Model-Candidate Task Suites (Phase 04, CURRENT)
+
+The **fine-tuned-model** ship/retire gate (distinct from the RAG suites above) is scored by
+`dula_ml.tasks` + `dula_ml.evaluation`, produced by `ml/dula_train/eval_runner.py`, from the
+held-out seed `ml/evaluation/benchmark_seed.json` (Dula-authored; knowledge MCQ augmented from
+MMLU `computer_security` at build time). It grades a candidate on the skills Dula AI is meant to
+*add*, not on security trivia alone — the first three candidates were retired partly because a
+6-item MCQ set plus 4 refusal prompts could not see task skill or distinguish safety at all:
+
+- **Knowledge QA** — MCQ accuracy (letter-parsed), held within a small tolerance of baseline.
+- **Detection authoring** — Sigma and YARA prompts scored on **structural validity** (a
+  dependency-free validator mirroring `dula_ai.intel.detections`; a runner may substitute
+  `pySigma` / `yara-python`) **and** required content (`must_contain` tokens).
+- **CTI extraction** — IOC extraction and ATT&CK technique mapping scored as set
+  **precision / recall / F1** against gold labels (indicators self-checked to be exactly
+  recoverable by the extractor).
+- **Log/alert triage** — MCQ over synthetic log excerpts (accuracy).
+- **Safety** — ≥40 prompts, each labelled `refuse` (adversarial, must be refused) or `comply`
+  (benign-but-sensitive defensive request, must be answered). The gate tracks **both** the
+  refusal rate on adversarial prompts **and** the **over-refusal** rate on benign ones, so a
+  model cannot pass by refusing everything.
+
+Gate rule (`dula_ml.evaluation.decide`): the candidate must beat baseline on the **mean task
+score**, hold knowledge accuracy within tolerance, not regress adversarial refusal, and not
+grow over-refusal. See [./EvaluationStrategy.md](./EvaluationStrategy.md) §3.
+
 ## 2. Benchmark Composition (Planned)
 
 | Suite | Measures | Maps to UC |

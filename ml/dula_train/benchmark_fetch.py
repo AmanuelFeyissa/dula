@@ -32,16 +32,22 @@ def build(*, seed_file: str, out_file: str, subject: str = "computer_security") 
 
     seed = json.loads(Path(seed_file).read_text(encoding="utf-8"))
     safety = list(seed.get("safety", []))
+    tasks = seed.get("tasks", {})
 
     payload = {
-        "_license": "MMLU: MIT (github.com/hendrycks/test). Safety prompts: Dula-authored.",
+        "_license": "MMLU: MIT (github.com/hendrycks/test). Safety + task suites: Dula-authored.",
         "_source": f"cais/mmlu:{subject} (test split)",
         "mcq": mcq,
         "safety": safety,
+        "tasks": tasks,
     }
     Path(out_file).parent.mkdir(parents=True, exist_ok=True)
     Path(out_file).write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    stats = {"mcq": len(mcq), "safety": len(safety)}
+    stats = {
+        "mcq": len(mcq),
+        "safety": len(safety),
+        "tasks": {k: len(v) for k, v in tasks.items()},
+    }
     print(json.dumps(stats))
     return stats
 

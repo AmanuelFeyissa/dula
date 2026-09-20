@@ -19,7 +19,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-MODE = "full"
+# "baseline" = Stage 1 measurement: score the stock 7B on the expanded task+safety suites only
+# (~20 GPU-min, no training) to decide whether a fourth fine-tuning candidate has any headroom.
+# "smoke" = full flow on a tiny model; "full" = the 7B QLoRA+DPO candidate run.
+MODE = "baseline"
 # Resume switch: a staged SFT adapter (printed by pipeline.py as hf://<repo>/<path>) lets a
 # second session skip SFT after a capped or crashed run. Empty = train SFT.
 SFT_FROM = ""

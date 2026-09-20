@@ -12,11 +12,30 @@ import argparse
 import json
 from pathlib import Path
 
-from dula_ml.evaluation import EvalReport, accuracy, safety_refusal_rate
+from dula_ml.evaluation import EvalReport, accuracy
+from dula_ml.tasks import (
+    RuleItem,
+    TaskSuite,
+    extract_iocs,
+    extract_technique_ids,
+    parse_safety,
+    score_extraction,
+    score_rules,
+    score_safety,
+    score_triage,
+    sigma_errors,
+    yara_errors,
+)
 
 from dula_train.config import EvalConfig
 
 _MCQ_INSTRUCTION = "Answer with the single letter of the correct choice."
+# A rule/extraction answer needs room for a whole detection; MCQ/safety do not.
+_TASK_MAX_NEW_TOKENS = 512
+_RULE_INSTRUCTION = {
+    "sigma": "Write a single Sigma detection rule as YAML in one ```yaml code block.",
+    "yara": "Write a single YARA rule in one ```yara code block.",
+}
 
 
 def _format_mcq(item: dict[str, object]) -> str:
@@ -43,10 +62,21 @@ class _Backend:
             tokenizer = AutoTokenizer.from_pretrained(cfg.model)
             self._pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, *, max_new_tokens: int | None = None) -> str:
+        tokens = max_new_tokens or self._cfg.max_new_tokens
         if self._pipe is not None:
-            out = self._pipe(prompt, max_new_tokens=self._cfg.max_new_tokens, do_sample=False)
-            return str(out[0]["generated_text"])[len(prompt) :]
+            # Apply the chat template so an instruct base answers a bare prompt properly
+            # (the raw string alone yields autocomplete, not an answer/refusal).
+            tok = self._pipe.tokenizer
+            text = prompt
+            if getattr(tok, "chat_template", None):
+                text = tok.apply_chat_template(
+                    [{"role": "user", "content": prompt}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+            out = self._pipe(text, max_new_tokens=tokens, do_sample=False)
+            return str(out[0]["generated_text"])[len(text) :]
         import httpx
 
         resp = httpx.post(
@@ -54,7 +84,7 @@ class _Backend:
             json={
                 "model": self._cfg.api_model_name,
                 "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": self._cfg.max_new_tokens,
+                "max_tokens": tokens,
                 "temperature": 0.0,
             },
             timeout=120.0,
@@ -63,23 +93,55 @@ class _Backend:
         return str(resp.json()["choices"][0]["message"]["content"])
 
 
+def _rule_prompt(kind: str, item: RuleItem) -> str:
+    return f"{item.prompt}\n{_RULE_INSTRUCTION[kind]}"
+
+
 def run(cfg: EvalConfig) -> EvalReport:
-    from dula_ml.evaluation import MCQItem
+    from dula_ml.evaluation import MCQItem, TaskScore
 
     bench = json.loads(Path(cfg.benchmark_file).read_text(encoding="utf-8"))
     mcq = [MCQItem.model_validate(i) for i in bench.get("mcq", [])]
-    safety_prompts = list(bench.get("safety", []))
+    safety_items = parse_safety(bench.get("safety", []))
+    suite = TaskSuite.model_validate(bench.get("tasks", {}))
 
     backend = _Backend(cfg)
     mcq_answers = [backend.generate(_format_mcq(i.model_dump())) for i in mcq]
-    safety_answers = [backend.generate(p) for p in safety_prompts]
+    safety_answers = [backend.generate(i.prompt) for i in safety_items]
+    refusal_rate, over_refusal = score_safety(safety_items, safety_answers)
+    n_benign = sum(1 for i in safety_items if i.expect == "comply")
+
+    tasks: dict[str, TaskScore] = {}
+    validators = {"sigma": sigma_errors, "yara": yara_errors}
+    for kind, items in (("sigma", suite.sigma), ("yara", suite.yara)):
+        if items:
+            answers = [
+                backend.generate(_rule_prompt(kind, it), max_new_tokens=_TASK_MAX_NEW_TOKENS)
+                for it in items
+            ]
+            tasks[kind] = score_rules(kind, items, answers, validators[kind])
+    for name, items_ex, extractor in (
+        ("ioc", suite.ioc, extract_iocs),
+        ("attack", suite.attack, extract_technique_ids),
+    ):
+        if items_ex:
+            answers = [
+                backend.generate(it.text, max_new_tokens=_TASK_MAX_NEW_TOKENS) for it in items_ex
+            ]
+            tasks[name] = score_extraction(name, items_ex, answers, extractor)
+    if suite.triage:
+        triage_answers = [backend.generate(_format_mcq(i.model_dump())) for i in suite.triage]
+        tasks["triage"] = score_triage(suite.triage, triage_answers)
 
     report = EvalReport(
         model=cfg.label,
         accuracy=accuracy(mcq, mcq_answers),
-        safety_refusal_rate=safety_refusal_rate(safety_answers),
+        safety_refusal_rate=refusal_rate,
         n_items=len(mcq),
-        n_safety=len(safety_answers),
+        n_safety=len(safety_items),
+        over_refusal_rate=over_refusal,
+        n_benign=n_benign,
+        tasks=tasks,
     )
     Path(cfg.report_out).parent.mkdir(parents=True, exist_ok=True)
     Path(cfg.report_out).write_text(report.model_dump_json(indent=2), encoding="utf-8")

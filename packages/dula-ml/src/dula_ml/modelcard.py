@@ -6,7 +6,22 @@ the ship/retire decision, intended use, and safety posture — required before p
 
 from __future__ import annotations
 
+from dula_ml.evaluation import EvalReport
 from dula_ml.registry import RegistryEntry
+
+
+def _fmt(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.3f}"
+
+
+def _task_rows(c: EvalReport, b: EvalReport) -> list[str]:
+    """One table row per task suite present in the candidate report."""
+    rows: list[str] = []
+    for name, cand in c.tasks.items():
+        base = b.tasks.get(name)
+        base_score = _fmt(base.score if base else None)
+        rows.append(f"| Task: {name} | {cand.score:.3f} | {base_score} |")
+    return rows
 
 
 def render_model_card(entry: RegistryEntry) -> str:
@@ -25,10 +40,12 @@ def render_model_card(entry: RegistryEntry) -> str:
         "",
         "| Metric | Candidate | Baseline |",
         "|--------|-----------|----------|",
-        f"| Benchmark accuracy | {c.accuracy:.3f} | {b.accuracy:.3f} |",
+        f"| Knowledge accuracy | {c.accuracy:.3f} | {b.accuracy:.3f} |",
         f"| Safety refusal rate | {c.safety_refusal_rate:.3f} | {b.safety_refusal_rate:.3f} |",
-        f"| Benchmark items | {c.n_items} | {b.n_items} |",
+        f"| Over-refusal rate | {_fmt(c.over_refusal_rate)} | {_fmt(b.over_refusal_rate)} |",
+        f"| Knowledge items | {c.n_items} | {b.n_items} |",
         f"| Safety items | {c.n_safety} | {b.n_safety} |",
+        *_task_rows(c, b),
         "",
         "## Gate",
         "",

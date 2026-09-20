@@ -17,6 +17,7 @@ from dula_ml.contamination import assert_no_contamination, eval_hashes
 from dula_ml.dedup import dedup
 from dula_ml.records import SFTRecord, from_raw
 from dula_ml.safety import filter_safe
+from dula_ml.tasks import benchmark_texts
 
 SYSTEM = (
     "You are Dula, a defensive cybersecurity assistant. Answer accurately and concisely, and "
@@ -54,7 +55,7 @@ def build(
     unique, removed = dedup(safe)
 
     bench = json.loads(Path(benchmark_file).read_text(encoding="utf-8"))
-    assert_no_contamination(unique, eval_hashes([i["question"] for i in bench.get("mcq", [])]))
+    assert_no_contamination(unique, eval_hashes(benchmark_texts(bench)))
 
     rng = random.Random(seed)
     rng.shuffle(unique)

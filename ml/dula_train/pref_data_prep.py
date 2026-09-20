@@ -15,6 +15,7 @@ from pathlib import Path
 
 from dula_ml.contamination import eval_hashes
 from dula_ml.preference import PreferenceRecord, assert_no_contamination, dedup, from_raw
+from dula_ml.tasks import benchmark_texts
 
 
 def build(
@@ -40,7 +41,7 @@ def build(
     unique, removed = dedup(raw)
 
     bench = json.loads(Path(benchmark_file).read_text(encoding="utf-8"))
-    assert_no_contamination(unique, eval_hashes([i["question"] for i in bench.get("mcq", [])]))
+    assert_no_contamination(unique, eval_hashes(benchmark_texts(bench)))
 
     rng = random.Random(seed)
     rng.shuffle(unique)

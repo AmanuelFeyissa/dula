@@ -34,9 +34,11 @@ SMOKE_BASE = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
 def _smoke_benchmark() -> None:
-    """First 5 MCQ items + every safety prompt: enough to exercise both gate signals."""
+    """A tiny slice of every suite: enough to exercise all gate signals cheaply."""
     bench = json.loads(Path(BENCH).read_text(encoding="utf-8"))
     bench["mcq"] = bench["mcq"][:5]
+    bench["safety"] = bench.get("safety", [])[:2]
+    bench["tasks"] = {k: v[:1] for k, v in bench.get("tasks", {}).items()}
     Path(BENCH_SMOKE).write_text(json.dumps(bench, indent=2), encoding="utf-8")
 
 
@@ -64,6 +66,41 @@ def _download_adapter(spec: str, local_dir: str) -> str:
     shutil.copytree(src, dst)
     print(f"resumed SFT adapter from hf://{spec} -> {local_dir}", flush=True)
     return str(dst)
+
+
+def run_baseline(*, base_model: str = "Qwen/Qwen2.5-7B-Instruct") -> dict[str, object]:
+    """Stage-1 measurement: score only the stock base model on the full task benchmark.
+
+    No training, no dataset prep -- ~20 GPU-min. This establishes the decision point: if the
+    stock model already scores well on the task suites (detection authoring, CTI extraction,
+    triage) there is no headroom for a fourth fine-tuning candidate to justify shipping.
+    """
+    from dula_train.benchmark_fetch import build as build_bench
+    from dula_train.config import EvalConfig
+    from dula_train.eval_runner import run as eval_run
+
+    build_bench(seed_file=BENCH_SEED, out_file=BENCH)
+    report = eval_run(
+        EvalConfig(
+            model=base_model,
+            label="baseline",
+            benchmark_file=BENCH,
+            report_out="out/baseline.json",
+            max_new_tokens=64,
+        )
+    )
+    result: dict[str, object] = {
+        "mode": "baseline",
+        "base_model": base_model,
+        "accuracy": report.accuracy,
+        "safety_refusal_rate": report.safety_refusal_rate,
+        "over_refusal_rate": report.over_refusal_rate,
+        "task_mean": report.task_mean(),
+        "tasks": {k: {"score": v.score, "detail": v.detail} for k, v in report.tasks.items()},
+    }
+    Path("out/result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print("DULA_RESULT " + json.dumps(result))
+    return result
 
 
 def run(
@@ -196,6 +233,12 @@ def run(
         "baseline_accuracy": entry.baseline_eval.accuracy,
         "candidate_safety": entry.candidate_eval.safety_refusal_rate,
         "baseline_safety": entry.baseline_eval.safety_refusal_rate,
+        "candidate_over_refusal": entry.candidate_eval.over_refusal_rate,
+        "baseline_over_refusal": entry.baseline_eval.over_refusal_rate,
+        "candidate_task_mean": entry.candidate_eval.task_mean(),
+        "baseline_task_mean": entry.baseline_eval.task_mean(),
+        "candidate_tasks": {k: v.score for k, v in entry.candidate_eval.tasks.items()},
+        "baseline_tasks": {k: v.score for k, v in entry.baseline_eval.tasks.items()},
         "adapter_uri": adapter_uri,
         "output_dir": out_dir,
     }
@@ -206,8 +249,8 @@ def run(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Dula AI candidate pipeline on Kaggle.")
-    parser.add_argument("--mode", choices=["smoke", "full"], default="full")
-    parser.add_argument("--version", default="0.3")
+    parser.add_argument("--mode", choices=["smoke", "full", "baseline"], default="full")
+    parser.add_argument("--version", default="0.4")
     parser.add_argument(
         "--hf-repo", default=os.environ.get("DULA_HF_REPO", "AmanuelFeyissa/dula-ai")
     )
@@ -217,7 +260,10 @@ def main() -> None:
         help="resume from a staged SFT adapter, e.g. AmanuelFeyissa/dula-ai-staging/v0.3-sft",
     )
     args = parser.parse_args()
-    run(args.mode, version=args.version, hf_repo=args.hf_repo, sft_from=args.sft_from)
+    if args.mode == "baseline":
+        run_baseline()
+    else:
+        run(args.mode, version=args.version, hf_repo=args.hf_repo, sft_from=args.sft_from)
 
 
 if __name__ == "__main__":

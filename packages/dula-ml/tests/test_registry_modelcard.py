@@ -55,6 +55,6 @@ def test_latest_shipped_ignores_lifecycle_transitions(tmp_path: Path) -> None:
 
 def test_model_card_states_decision(tmp_path: Path) -> None:
     ship_card = render_model_card(_entry("ship"))
-    assert "SHIP" in ship_card and "Benchmark accuracy" in ship_card
+    assert "SHIP" in ship_card and "Knowledge accuracy" in ship_card
     retire_card = render_model_card(_entry("retire"))
     assert "RETIRE" in retire_card and "Retirement note" in retire_card
