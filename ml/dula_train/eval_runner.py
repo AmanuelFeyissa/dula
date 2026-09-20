@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 from dula_ml.evaluation import EvalReport, accuracy
@@ -105,9 +106,18 @@ def run(cfg: EvalConfig) -> EvalReport:
     safety_items = parse_safety(bench.get("safety", []))
     suite = TaskSuite.model_validate(bench.get("tasks", {}))
 
+    # Opt-in raw-answer capture (DULA_EVAL_DUMP=path): lets us audit *why* a suite scored the
+    # way it did (e.g. a validator rejecting well-formed rules) without a second GPU run.
+    dump: dict[str, list[dict[str, str]]] = {}
+
+    def gen(prompt: str, bucket: str, item_id: str, **kw: int) -> str:
+        answer = backend.generate(prompt, **kw)
+        dump.setdefault(bucket, []).append({"id": item_id, "prompt": prompt, "answer": answer})
+        return answer
+
     backend = _Backend(cfg)
-    mcq_answers = [backend.generate(_format_mcq(i.model_dump())) for i in mcq]
-    safety_answers = [backend.generate(i.prompt) for i in safety_items]
+    mcq_answers = [gen(_format_mcq(i.model_dump()), "mcq", i.id) for i in mcq]
+    safety_answers = [gen(i.prompt, "safety", i.id) for i in safety_items]
     refusal_rate, over_refusal = score_safety(safety_items, safety_answers)
     n_benign = sum(1 for i in safety_items if i.expect == "comply")
 
@@ -116,7 +126,7 @@ def run(cfg: EvalConfig) -> EvalReport:
     for kind, items in (("sigma", suite.sigma), ("yara", suite.yara)):
         if items:
             answers = [
-                backend.generate(_rule_prompt(kind, it), max_new_tokens=_TASK_MAX_NEW_TOKENS)
+                gen(_rule_prompt(kind, it), kind, it.id, max_new_tokens=_TASK_MAX_NEW_TOKENS)
                 for it in items
             ]
             tasks[kind] = score_rules(kind, items, answers, validators[kind])
@@ -126,12 +136,20 @@ def run(cfg: EvalConfig) -> EvalReport:
     ):
         if items_ex:
             answers = [
-                backend.generate(it.text, max_new_tokens=_TASK_MAX_NEW_TOKENS) for it in items_ex
+                gen(it.text, name, it.id, max_new_tokens=_TASK_MAX_NEW_TOKENS) for it in items_ex
             ]
             tasks[name] = score_extraction(name, items_ex, answers, extractor)
     if suite.triage:
-        triage_answers = [backend.generate(_format_mcq(i.model_dump())) for i in suite.triage]
+        triage_answers = [gen(_format_mcq(i.model_dump()), "triage", i.id) for i in suite.triage]
         tasks["triage"] = score_triage(suite.triage, triage_answers)
+
+    dump_path = os.environ.get("DULA_EVAL_DUMP")
+    if dump_path:
+        target = Path(dump_path)
+        if target.is_dir() or not target.suffix:
+            target = target / f"answers_{cfg.label}.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(dump, indent=2), encoding="utf-8")
 
     report = EvalReport(
         model=cfg.label,

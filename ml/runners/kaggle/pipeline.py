@@ -80,6 +80,8 @@ def run_baseline(*, base_model: str = "Qwen/Qwen2.5-7B-Instruct") -> dict[str, o
     from dula_train.eval_runner import run as eval_run
 
     build_bench(seed_file=BENCH_SEED, out_file=BENCH)
+    # Capture raw model answers so a suspicious suite score can be audited without a second run.
+    os.environ.setdefault("DULA_EVAL_DUMP", "out")
     report = eval_run(
         EvalConfig(
             model=base_model,

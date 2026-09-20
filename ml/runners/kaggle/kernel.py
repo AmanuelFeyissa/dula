@@ -92,6 +92,8 @@ def main() -> None:
         "baseline.json",
         "registry_entry.jsonl",
         "model_card.md",
+        "answers_baseline.json",
+        "answers_candidate.json",
     ):
         if (out / name).exists():
             shutil.copy2(out / name, RESULT / name)
