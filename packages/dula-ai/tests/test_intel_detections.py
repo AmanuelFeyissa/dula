@@ -76,3 +76,36 @@ def test_coverage_parent_covers_subtechnique_target() -> None:
     report = cov.coverage([["attack.t1059"]], target=["T1059.001"])
     assert report.gaps == []
     assert report.coverage_ratio == 1.0
+
+
+def test_sigma_normalize_text_fixes_model_key_mistakes() -> None:
+    # The shape stock Qwen2.5-7B-Instruct emits: name/log_source instead of title/logsource.
+    drafted = (
+        "name: Encoded PowerShell\n"
+        "log_source:\n"
+        "    category: process_creation\n"
+        "    product: windows\n"
+        "detection:\n"
+        "    selection:\n"
+        "        CommandLine|contains: '-enc'\n"
+        "    condition: selection\n"
+        "level: high\n"
+    )
+    assert not sigma.validate_text(drafted).valid  # non-spec keys as drafted
+    corrected, result = sigma.normalize_text(drafted)
+    assert result.valid
+    assert "title:" in corrected and "logsource:" in corrected
+    assert "log_source:" not in corrected
+
+
+def test_sigma_normalize_text_does_not_clobber_correct_keys() -> None:
+    good = (
+        "title: Real Title\n"
+        "name: friendly name\n"  # a stray lowercase field, not the rule title
+        "logsource:\n    product: windows\n"
+        "detection:\n    selection:\n        a: b\n    condition: selection\n"
+    )
+    corrected, result = sigma.normalize_text(good)
+    assert result.valid
+    assert "title: Real Title" in corrected  # title kept; name left as-is
+    assert "name: friendly name" in corrected

@@ -83,6 +83,12 @@ detection authoring is **defensive-only**.
   only defined identifiers (Sigma); a valid rule identifier, balanced braces, a `condition`,
   and defined string references (YARA). `validate_text` grades an **externally-supplied**
   (e.g. model-drafted) rule — invalid rules are rejected, never emitted.
+- **Normalization** (`sigma.normalize_text`) corrects the common non-spec top-level keys a
+  general LLM emits for a Sigma rule (`name:`→`title:`, `log_source:`→`logsource:`) before
+  validation, then re-validates. This closes, in the platform layer, the one detection-authoring
+  gap Stage-1 evaluation found in the stock model (which knows the content but mis-names keys),
+  without fine-tuning — the platform's own authoring path (`build_ioc_rule`) is deterministic and
+  always valid regardless.
 - **ATT&CK coverage** (`coverage.coverage`) — maps a detection set's tags to techniques and
   tactics, and reports gaps and a coverage ratio against a target technique set. A parent
   technique covers its sub-technique targets.

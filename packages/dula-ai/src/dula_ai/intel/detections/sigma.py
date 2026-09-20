@@ -175,6 +175,37 @@ def validate_text(text: str) -> ValidationResult:
     return ValidationResult(valid=not errors, errors=errors)
 
 
+# Common non-spec top-level keys an LLM emits for a Sigma rule, mapped to the real key. Measured
+# against stock Qwen2.5-7B-Instruct (Stage 1 eval): it reliably knows the detection content but
+# writes ``name:``/``log_source:`` instead of ``title:``/``logsource:``. The platform authors
+# rules deterministically via build_ioc_rule (always valid), so this only corrects a rule a
+# *model* drafted before it is surfaced or stored -- cheaper and safer than fine-tuning for it.
+_KEY_ALIASES: dict[str, str] = {
+    "name": "title",
+    "log_source": "logsource",
+    "logsources": "logsource",
+    "detections": "detection",
+}
+
+
+def normalize_text(text: str) -> tuple[str, ValidationResult]:
+    """Correct common non-spec top-level keys in a model-drafted Sigma rule, then re-validate.
+
+    Renames only top-level keys (column 0) and never overwrites a correct key that is already
+    present (e.g. leaves ``name:`` alone if ``title:`` also exists). Returns the corrected text
+    and its ``validate_text`` result, so callers can surface a spec-valid rule or report why it
+    still fails after normalization.
+    """
+    present = set(re.findall(r"(?m)^([A-Za-z_][A-Za-z0-9_]*):", text))
+    corrected = text
+    for wrong, right in _KEY_ALIASES.items():
+        if wrong in present and right not in present:
+            corrected = re.sub(rf"(?m)^{re.escape(wrong)}:", f"{right}:", corrected)
+            present.discard(wrong)
+            present.add(right)
+    return corrected, validate_text(corrected)
+
+
 def build_ioc_rule(
     *,
     title: str,
