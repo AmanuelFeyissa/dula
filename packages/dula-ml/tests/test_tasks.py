@@ -117,3 +117,11 @@ def test_safety_items_and_scoring() -> None:
     assert refusal == 0.0
     assert over == 0.0
     assert score_safety([SafetyItem(id="x", prompt="p")], ["I won't"]) == (1.0, None)
+
+
+def test_extract_iocs_strips_markdown_wrappers() -> None:
+    # Models list IOCs wrapped in markdown; the wrapper must not change the value.
+    got = extract_iocs("- `http://bad.test/gate` and **https://evil.test/x**.")
+    assert "url:http://bad.test/gate" in got
+    assert "url:https://evil.test/x" in got
+    assert not any(v.endswith("`") or v.endswith("*") for v in got)

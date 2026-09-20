@@ -260,7 +260,10 @@ _DEFANG_DOT = re.compile(r"\[\.\]|\(\.\)|\{\.\}|\[dot\]", re.I)
 _DEFANG_SCHEME = re.compile(r"\bhxxps?://", re.I)
 _DEFANG_SEP = re.compile(r"\[:\]|\[://\]")
 _DEFANG_AT = re.compile(r"\[@\]")
-_URL = re.compile(r"\bhttps?://[^\s'\"<>)\]]+", re.I)
+# Stop the URL at whitespace, quotes, angle/round/square brackets, and markdown emphasis
+# (backtick, asterisk) so a model that writes `http://x/y` or **http://x** still scores.
+_URL = re.compile(r"\bhttps?://[^\s'\"<>)\]`*]+", re.I)
+_URL_TRAILING = " .,;:!?)]}>\"'`*"
 _IPV4 = re.compile(r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b")
 _DOMAIN = re.compile(r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}\b", re.I)
 _EMAIL = re.compile(r"\b[a-z0-9._%+-]+@(?:[a-z0-9-]+\.)+[a-z]{2,24}\b", re.I)
@@ -298,7 +301,7 @@ def extract_iocs(text: str) -> set[str]:
     found: set[str] = set()
     covered: set[str] = set()
     for url in _URL.findall(text):
-        url = url.rstrip(".,;:")
+        url = url.rstrip(_URL_TRAILING)
         found.add(f"url:{url}")
         host = re.sub(r"^https?://", "", url, flags=re.I).split("/")[0].split(":")[0].lower()
         covered.add(host)
