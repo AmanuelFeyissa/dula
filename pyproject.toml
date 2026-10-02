@@ -21,6 +21,12 @@ dev = [
     "mypy>=1.11",
     "ruff>=0.6",
 ]
+# Documentation site (MkDocs Material) — see mkdocs.yml. Python-native and air-gap-friendly
+# (ADR-0002, CLAUDE.md §10.5): `uv run --group docs mkdocs serve` / `... mkdocs build`.
+docs = [
+    "mkdocs-material>=9.5",
+    "pymdown-extensions>=10.9",
+]
 
 [tool.uv.workspace]
 # Members are added as packages are created (each must have its own pyproject.toml).

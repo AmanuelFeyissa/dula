@@ -78,3 +78,6 @@ mlruns/
 *.tfstate
 *.tfstate.*
 .terraform/
+
+# ---- Docs site build output (MkDocs) ----
+/site/

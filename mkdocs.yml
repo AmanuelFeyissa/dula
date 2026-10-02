@@ -1,0 +1,166 @@
+# Dula documentation site (MkDocs Material). Builds a static, offline-capable site from the
+# existing docs/ tree — no content duplication. Build: `uv run --group docs mkdocs build`.
+site_name: Dula
+site_description: Dula — a cybersecurity AI ecosystem (platform + cybersecurity-specialized AI).
+site_author: Dula
+site_url: https://amanuelfeyissa.github.io/dula/
+copyright: Apache-2.0 licensed. Dula is a defensive cybersecurity AI ecosystem.
+
+repo_name: AmanuelFeyissa/dula
+repo_url: https://github.com/AmanuelFeyissa/dula
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/shield-check
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - content.tabs.link
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+
+# Many engineering docs link to repo-root files (CLAUDE.md, the top-level README) that live
+# outside the published site; those resolve on GitHub but not here, so downgrade rather than fail.
+# In-site relative links are still validated by tools/check-doc-links.sh (CLAUDE.md §9).
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: info
+    unrecognized_links: info
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/AmanuelFeyissa/dula
+
+# Not every file in docs/ appears in the curated journey below; the rest still build and remain
+# reachable via search and cross-links.
+not_in_nav: |
+  /PROJECT_REVIEW-M000.md
+  /SUMMARY.md
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Overview: getting-started.md
+      - Install (Docker): 17-User-Documentation/InstallationGuide.md
+      - Local development: 11-Deployment/LocalDevelopment.md
+  - Core concepts:
+      - What is Dula: 02-Vision/Vision.md
+      - Guiding principles: 02-Vision/GuidingPrinciples.md
+      - Target users: 02-Vision/TargetUsers.md
+      - Use cases: 02-Vision/UseCases.md
+      - System architecture: 03-Architecture/SystemArchitecture.md
+      - AI architecture: 03-Architecture/AIArchitecture.md
+  - Using Dula:
+      - Overview: 17-User-Documentation/README.md
+      - Ask Dula: 17-User-Documentation/AskDulaUserGuide.md
+      - Alerts, incidents & assets: 17-User-Documentation/CoreEntitiesUserGuide.md
+      - Cyber intelligence: 17-User-Documentation/CyberIntelligenceUserGuide.md
+      - Investigation agent: 17-User-Documentation/AgentsUserGuide.md
+      - Playbooks & automation: 17-User-Documentation/PlaybooksUserGuide.md
+      - Integrations & connectors: 17-User-Documentation/IntegrationsUserGuide.md
+  - Administration:
+      - Deployment profiles: 11-Deployment/README.md
+      - Docker: 11-Deployment/DockerDeployment.md
+      - Kubernetes: 11-Deployment/KubernetesDeployment.md
+      - Cloud: 11-Deployment/CloudDeployment.md
+      - On-prem: 11-Deployment/OnPremDeployment.md
+      - Air-gapped: 11-Deployment/AirGappedDeployment.md
+      - Authentication: 12-API/Authentication.md
+      - Authorization & roles: 12-API/Authorization.md
+      - Observability: 16-Operations/Observability.md
+      - Monitoring: 16-Operations/Monitoring.md
+      - Backup & recovery: 16-Operations/BackupRecovery.md
+      - Disaster recovery: 11-Deployment/DisasterRecovery.md
+      - Runbooks: 16-Operations/OperationalRunbooks.md
+      - GA readiness: 11-Deployment/GAReadiness.md
+  - Developer:
+      - Project overview: 01-Project/README.md
+      - Project structure: 01-Project/ProjectStructure.md
+      - Technology stack: 01-Project/TechnologyStack.md
+      - Dependencies: 01-Project/Dependencies.md
+      - API standards: 12-API/APIStandards.md
+      - Core domain API: 12-API/CoreDomainAPI.md
+      - AI Gateway API: 12-API/AIGatewayAPI.md
+      - Agents API: 12-API/AgentsAPI.md
+      - Automation API: 12-API/AutomationAPI.md
+      - Integrations API: 12-API/IntegrationsAPI.md
+      - Agent framework: 13-Agents/AgentFramework.md
+      - Plugin development: 14-Plugins/PluginImplementation.md
+      - RAG architecture: 03-Architecture/RAGArchitecture.md
+  - Security:
+      - Overview: 10-Security/README.md
+      - Threat model: 10-Security/ThreatModel.md
+      - AI threat model: 10-Security/AIThreatModel.md
+      - Agent security: 10-Security/AgentSecurity.md
+      - Plugin security: 10-Security/PluginSecurity.md
+      - Supply chain: 10-Security/SupplyChainSecurity.md
+      - Secure development: 10-Security/SecureDevelopment.md
+  - Reference:
+      - Glossary: 01-Project/Glossary.md
+      - Architecture decisions: adr/README.md
+      - Roadmap: 04-MVP-Roadmap/MVPOverview.md
+      - Project state: PROJECT_STATE.md
+      - Project context: PROJECT_CONTEXT.md
