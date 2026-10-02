@@ -40,6 +40,7 @@ phase: Documentation Bootstrap (M000)
 - [ADR-0014 — Edge / API Gateway Technology](./adr/ADR-0014-edge-gateway.md)
 - [ADR-0015 — Supply-Chain & Release Integrity](./adr/ADR-0015-supply-chain-release-integrity.md)
 - [ADR-0016 — Agent & Playbook Run Persistence](./adr/ADR-0016-agent-run-persistence.md)
+- [ADR-0017 — Advanced-AI Directions Deferred](./adr/ADR-0017-advanced-ai-deferral.md)
 
 ## 00 — Governance
 - [Documentation Standards](./00-Governance/DocumentationStandards.md)
@@ -114,6 +115,8 @@ phase: Documentation Bootstrap (M000)
   - [M010 — Usability & Durability Hardening Closure](./04-MVP-Roadmap/closure/M010-usability-durability-Closure.md)
   - [M011 — MLOps at Scale Closure](./04-MVP-Roadmap/closure/M011-mlops-at-scale-Closure.md)
   - [Phase 10 — MLOps at Scale Completion Review](./04-MVP-Roadmap/closure/Phase10-MLOps-Completion-Review.md)
+  - [M012 — Advanced AI Closure](./04-MVP-Roadmap/closure/M012-AdvancedAI-Closure.md)
+  - [Phase 11 — Advanced AI Completion Review](./04-MVP-Roadmap/closure/Phase11-AdvancedAI-Completion-Review.md)
 
 ## 05 — Backend
 - [Overview](./05-Backend/README.md)

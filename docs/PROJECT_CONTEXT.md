@@ -84,6 +84,16 @@ runs vLLM/llama.cpp behind the same `OpenAICompatProvider` contract. DVC-vs-Lake
 DVC remains sufficient at Primus scale (no ADR change). A second, larger (3B) training
 candidate ran for real and was **retired** — quality improved but safety regressed — the
 platform stays on the general model, same as the first (M004) candidate.
+**Advanced AI** (M012, Phase 11) = **deferred, evidence-based** (ADR-0017). Phase 11 is
+trigger-gated research; after a third (7B) fine-tune also retired, a measurement-first evaluation
+overhaul (`dula_ml.tasks` task suites + a 44-prompt safety suite scoring refusal **and**
+over-refusal) showed the **stock base + RAG + deterministic cyber-intelligence tooling** already
+meets every shipped capability, with the one real gap (Sigma rule *validity*) fixed in the
+platform layer (`sigma.normalize_text`), not the weights. So no advanced-AI direction
+(DPO/RLAIF, distillation, task-specialized models, pretraining) is pursued; the eval harness,
+benchmark, and staged SFT adapter stay ready, and a direction re-opens only on ADR-0017's
+measurable triggers. **This closes the MVP roadmap: Phases 01–11 all have closure + completion
+reviews.** Dula AI is an *adaptation + tooling* product by evidence, not a bespoke fine-tune.
 
 **Still open:** embedding/reranker model · hardware sizing (both empirical, measured when the
 relevant phase arrives). (API gateway tech is **DECIDED — ADR-0014**; SLSA level is

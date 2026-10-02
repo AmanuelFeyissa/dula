@@ -31,7 +31,7 @@ flowchart LR
 
 | Theme | Description | Trigger to pursue | Maturity |
 |-------|-------------|-------------------|----------|
-| Preference optimization | DPO/RLAIF to align outputs | SFT/LoRA plateau measured | RESEARCH |
+| Preference optimization | DPO/RLAIF to align outputs | SFT/LoRA plateau measured — **evaluated 2026-10, trigger NOT met: deferred ([ADR-0017](../adr/ADR-0017-advanced-ai-deferral.md))** | RESEARCH |
 | Distillation | Small fast models from large | Need small model at quality | RESEARCH |
 | Task-specialized models | Classify/extract/detect models | High-volume narrow task | RESEARCH |
 | Continued pretraining | Domain corpus pretraining | Clear ceiling from adaptation | RESEARCH |
