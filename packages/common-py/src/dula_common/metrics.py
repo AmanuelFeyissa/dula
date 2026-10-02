@@ -77,14 +77,28 @@ class MetricsEndpoint:
 
 
 def route_template(routes: Iterable[Any], scope: Scope) -> str:
-    """The path template of the route that matches ``scope``, or ``unmatched``."""
-    for route in routes:
-        matches = getattr(route, "matches", None)
+    """The path template of the route that served ``scope``, or ``unmatched``.
+
+    Primary source is ``scope["route"]``, which Starlette sets on the shared scope dict while
+    dispatching; because this middleware is pure-ASGI it sees that mutation after the inner app
+    returns. This is the only reliable source on modern FastAPI (>=0.115), where ``include_router``
+    adds a lazy ``_IncludedRouter`` wrapper whose public ``matches()`` returns ``NONE`` — so
+    re-matching the top-level route table misses every mounted API route. The manual match is kept
+    only as a fallback for the framework's own routes (``/openapi.json``, ``/docs``), which do not
+    set ``scope["route"]``.
+    """
+    route = scope.get("route")
+    if route is not None:
+        path = getattr(route, "path", None) or getattr(route, "path_format", None)
+        if path:
+            return str(path)
+    for candidate in routes:
+        matches = getattr(candidate, "matches", None)
         if matches is None:
             continue
         match, _ = matches(scope)
         if getattr(match, "name", "") == "FULL":
-            return str(getattr(route, "path", "unmatched"))
+            return str(getattr(candidate, "path", "unmatched"))
     return "unmatched"
 
 

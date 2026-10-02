@@ -68,3 +68,26 @@ def test_metrics_endpoint_serves_prometheus_exposition_and_is_not_self_counted()
         if labels[0] == "test-svc" and labels[2] == "/metrics"
     )
     assert after == before  # scraping is not itself a counted request
+
+
+def test_included_router_routes_resolve_to_their_template() -> None:
+    # Regression: modern FastAPI wraps include_router()'d routes in a lazy _IncludedRouter whose
+    # matches() returns NONE, so re-scanning the route table labelled every mounted API route
+    # "unmatched". The template must come from scope["route"] instead.
+    from fastapi import APIRouter
+
+    app = FastAPI()
+    app.add_middleware(PrometheusMiddleware, service="router-svc", routes=app.router.routes)
+    router = APIRouter(prefix="/api/v1")
+
+    @router.get("/widgets/{widget_id}")
+    async def widget(widget_id: str) -> dict[str, str]:
+        return {"id": widget_id}
+
+    app.include_router(router)
+    client = TestClient(app)
+
+    before = _count("router-svc", "GET", "/api/v1/widgets/{widget_id}", "200")
+    assert client.get("/api/v1/widgets/abc").status_code == 200
+    assert _count("router-svc", "GET", "/api/v1/widgets/{widget_id}", "200") == before + 1
+    assert _count("router-svc", "GET", "unmatched", "200") == 0.0
